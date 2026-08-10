@@ -1,0 +1,36 @@
+﻿:host { display:block; min-height:100dvh; background:var(--taji-canvas); }
+.app-shell { min-height:100dvh; display:grid; grid-template-columns:16.5rem 1fr; }
+aside { position:sticky; top:0; height:100dvh; padding:1.8rem 1.25rem; display:flex; flex-direction:column; border-right:1px solid var(--taji-border); background:rgba(255,255,255,.9); backdrop-filter:blur(16px); }
+nav { display:grid; gap:.35rem; margin-top:2.5rem; }
+nav a,nav .disabled { min-height:2.85rem; padding:0 .85rem; display:flex; align-items:center; gap:.75rem; border-radius:.8rem; color:#718096; font-size:.86rem; font-weight:620; text-decoration:none; }
+nav .active { color:var(--taji-primary-strong); background:var(--taji-primary-soft); }
+nav a span,nav .disabled>span { width:1.2rem; font-size:1.2rem; text-align:center; }
+nav small { margin-left:auto; padding:.18rem .4rem; border-radius:99px; color:#8c99aa; background:#edf1f5; font-size:.56rem; text-transform:uppercase; }
+.aside-bottom { margin-top:auto; display:grid; gap:1rem; }
+.aside-bottom>button { min-height:2.7rem; display:flex; align-items:center; gap:.7rem; padding:0 .8rem; border:0; border-radius:.8rem; color:#6f7c8e; background:transparent; font:inherit; font-size:.84rem; font-weight:650; cursor:pointer; }
+.aside-bottom>button:hover { color:#b43c49; background:#fff1f2; }
+.mini-profile { display:flex; align-items:center; gap:.7rem; padding:.8rem; border-radius:.9rem; background:#f7f9fc; }
+.mini-profile>span,.avatar { width:2.2rem; height:2.2rem; display:grid; place-items:center; border:0; border-radius:.7rem; color:white; background:linear-gradient(145deg,var(--taji-primary),#725df1); font-size:.72rem; font-weight:800; }
+.mini-profile b,.mini-profile small { display:block; max-width:9rem; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.mini-profile b { color:var(--taji-ink); font-size:.74rem; }.mini-profile small { margin-top:.15rem;color:var(--taji-muted);font-size:.62rem; }
+main { min-width:0; padding:clamp(1.3rem,3vw,2.7rem); }
+.topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.8rem; }
+.eyebrow { color:var(--taji-muted); font-size:.68rem; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+h1 { margin:.35rem 0 0; color:var(--taji-ink); font-size:clamp(1.65rem,3vw,2.25rem); letter-spacing:-.04em; }.avatar{width:2.8rem;height:2.8rem;}
+.welcome { min-height:14rem; position:relative; overflow:hidden; padding:clamp(1.5rem,4vw,2.7rem); display:flex; align-items:center; border-radius:1.7rem; color:white; background:linear-gradient(120deg,#075fdd,#1489ff); box-shadow:0 1.5rem 3rem rgba(15,111,255,.17); }
+.welcome::after { content:''; position:absolute; width:20rem;height:20rem;right:-8rem;top:-9rem;border:1px solid rgba(255,255,255,.2);border-radius:50%; }
+.welcome>div:first-child { max-width:36rem; position:relative; z-index:2; }
+.pill { display:inline-flex; padding:.4rem .65rem; border-radius:99px; background:rgba(255,255,255,.15); font-size:.68rem; font-weight:700; }
+.welcome h2 { margin:.85rem 0 .6rem; font-size:clamp(1.7rem,4vw,2.7rem); line-height:1.05; letter-spacing:-.045em; }.welcome p { margin:0; color:rgba(255,255,255,.76); line-height:1.6; }
+.welcome-art { width:12rem;height:10rem;position:absolute;right:7%;bottom:0; }.welcome-art span,.welcome-art i{position:absolute;bottom:0;background:white;border-radius:.8rem .8rem 0 0;box-shadow:0 1rem 2rem rgba(2,51,123,.2)}.welcome-art span{width:5rem;height:8rem;left:1rem}.welcome-art i{width:5.5rem;height:6rem;left:5.4rem;background:#bfe2ff}.welcome-art b{position:absolute;right:.2rem;top:.5rem;width:2.5rem;height:2.5rem;display:grid;place-items:center;border-radius:50%;color:#16855e;background:#d8faec;}
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin:1rem 0; }
+.stats article { min-height:5.7rem; padding:1rem 1.1rem; display:flex; align-items:center; gap:.8rem; border:1px solid var(--taji-border); border-radius:1.1rem; background:white; }
+.stat-icon { width:2.7rem;height:2.7rem;display:grid;place-items:center;border-radius:.85rem;font-weight:850}.blue{color:#0f6fff;background:#e9f3ff}.green{color:#16855e;background:#e5f9f0}.violet{color:#7154db;background:#f0ecff}
+.stats small,.stats b{display:block}.stats small{color:var(--taji-muted);font-size:.68rem}.stats b{margin-top:.25rem;color:var(--taji-ink);font-size:.87rem}
+.content-grid { display:grid; grid-template-columns:1.4fr .8fr; gap:1rem; }
+.panel { padding:1.3rem; border:1px solid var(--taji-border); border-radius:1.2rem; background:white; }
+.panel-title { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }.panel h3{margin:.3rem 0 0;color:var(--taji-ink);font-size:1.05rem}.role-badge{padding:.35rem .55rem;border-radius:99px;color:var(--taji-primary-strong);background:var(--taji-primary-soft);font-size:.65rem;font-weight:750}
+.permissions { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.2rem; }.permissions span{padding:.5rem .7rem;border:1px solid #dfe9f7;border-radius:.65rem;color:#47627f;background:#f8fbff;font-size:.72rem}
+dl{margin:1rem 0 0}dl div{padding:.65rem 0;border-bottom:1px solid #edf1f5}dl div:last-child{border:0}dt{color:var(--taji-muted);font-size:.65rem}dd{margin:.2rem 0 0;color:var(--taji-ink);font-size:.8rem;font-weight:650;overflow-wrap:anywhere}
+@media(max-width:950px){.app-shell{grid-template-columns:5rem 1fr}aside{padding:1.5rem .7rem;align-items:center}aside taji-logo{max-width:2.5rem;overflow:hidden}nav a,nav .disabled{width:3rem;padding:0;justify-content:center;font-size:0}nav small,.mini-profile div,.aside-bottom>button:not(:focus) { font-size:0 }.aside-bottom>button{width:3rem;justify-content:center}.stats{grid-template-columns:1fr}.content-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.app-shell{display:block}aside{height:4.5rem;position:fixed;inset:auto 0 0;z-index:20;display:flex;flex-direction:row;justify-content:center;border:0;border-top:1px solid var(--taji-border);padding:.5rem}aside taji-logo,.mini-profile,.aside-bottom{display:none}nav{margin:0;display:flex}nav .disabled{display:none}nav a{width:auto;padding:0 1.2rem;font-size:.75rem}main{padding:1.2rem 1rem 6rem}.welcome-art{display:none}.stats{grid-template-columns:1fr}.topbar{margin-bottom:1rem}}

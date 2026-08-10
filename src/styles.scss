@@ -1,0 +1,34 @@
+﻿:root {
+  color-scheme: light;
+  --taji-primary:#0f6fff;
+  --taji-primary-strong:#075ad7;
+  --taji-primary-soft:#eaf4ff;
+  --taji-focus:rgba(15,111,255,.17);
+  --taji-ink:#10233c;
+  --taji-muted:#6f7f93;
+  --taji-border:#dce4ed;
+  --taji-canvas:#f4f7fb;
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-synthesis:none;
+}
+* { box-sizing:border-box; }
+html { min-width:320px; background:var(--taji-canvas); }
+body { min-width:320px; min-height:100dvh; margin:0; color:var(--taji-ink); background:var(--taji-canvas); -webkit-font-smoothing:antialiased; }
+button,input { font:inherit; }
+a { color:var(--taji-primary-strong); font-weight:680; text-underline-offset:.18em; }
+.auth-heading { margin-bottom:1.6rem; }
+.auth-heading .kicker { display:inline-block; margin-bottom:.62rem; color:var(--taji-primary-strong); font-size:.68rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+.auth-heading h2 { margin:0; color:var(--taji-ink); font-size:clamp(1.65rem,3vw,2.15rem); line-height:1.12; letter-spacing:-.045em; }
+.auth-heading p { margin:.7rem 0 0; color:var(--taji-muted); font-size:.9rem; line-height:1.55; }
+.auth-form { display:grid; gap:1.05rem; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.form-action { margin-top:.55rem; text-align:right; }
+.form-action a { font-size:.78rem; text-decoration:none; }
+.auth-switch { margin:1.4rem 0 0; color:var(--taji-muted); font-size:.82rem; text-align:center; }
+.auth-switch a { text-decoration:none; }
+.success-state { padding:.5rem 0; text-align:center; }
+.success-icon { width:4rem; height:4rem; margin:0 auto 1.3rem; display:grid; place-items:center; border-radius:1.25rem; color:#14865f; background:#e1f9ee; font-size:1.6rem; font-weight:800; }
+.success-state .auth-heading { margin-bottom:1.5rem; }
+.button-link { min-height:3.25rem; padding:.8rem 1.25rem; display:flex; align-items:center; justify-content:center; border-radius:1rem; color:white; background:linear-gradient(135deg,var(--taji-primary),var(--taji-primary-strong)); box-shadow:0 12px 24px rgba(15,111,255,.2); text-decoration:none; }
+@media(max-width:560px){.form-grid{grid-template-columns:1fr}.auth-heading{margin-bottom:1.3rem}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}

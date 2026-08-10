@@ -1,0 +1,59 @@
+# ==============================================================================
+# GitIgnore para Frontend (Angular) - Proyecto Taji
+# ==============================================================================
+
+# Output compilado de Angular / TypeScript
+/dist
+/tmp
+/out-tsc
+/bazel-out
+/.angular
+
+# Dependencias de Node
+/node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+lerna-debug.log
+
+# Cachés de herramientas
+/.angular/cache
+.sass-cache/
+.eslintcache
+
+# Archivos de entorno local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs y Editores de código
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+
+# Cobertura y logs de testing
+/coverage
+testem.log
+/typings
+__screenshots__/
+.vitest-cache/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini

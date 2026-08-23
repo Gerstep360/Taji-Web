@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+﻿import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -37,6 +37,7 @@ export class LoginPage {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly changeDetector = inject(ChangeDetectorRef);
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
@@ -60,7 +61,11 @@ export class LoginPage {
     const { email, password } = this.form.getRawValue();
     this.auth.login(email, password).subscribe({
       next: () => void this.router.navigateByUrl('/inicio'),
-      error: (error: unknown) => { this.errorMessage = apiErrorMessage(error, 'Correo o contraseña incorrectos.'); this.loading = false; },
+      error: (error: unknown) => {
+        this.errorMessage = apiErrorMessage(error, 'Correo o contraseña incorrectos.');
+        this.loading = false;
+        this.changeDetector.markForCheck();
+      },
     });
   }
 }

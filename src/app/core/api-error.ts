@@ -12,6 +12,8 @@ export function apiErrorMessage(
 ): string {
   if (!(error instanceof HttpErrorResponse)) return fallback;
   const body = error.error as Record<string, unknown> | null;
+  if (typeof body?.['detail'] === 'string') return body['detail'];
+
   const envelope = body?.['error'] as ErrorEnvelope | undefined;
   if (envelope && typeof envelope === 'object') {
     const fieldMessage = firstFieldMessage(envelope.fields);
@@ -19,7 +21,6 @@ export function apiErrorMessage(
     if (typeof envelope.message === 'string') return envelope.message;
   }
 
-  if (typeof body?.['detail'] === 'string') return body['detail'];
   if (typeof body?.['message'] === 'string') return body['message'];
   const legacyField = firstFieldMessage(body);
   return legacyField || fallback;

@@ -20,6 +20,14 @@ export function apiErrorMessage(
   }
 
   if (typeof body?.['detail'] === 'string') return body['detail'];
+
+  const envelope = body?.['error'] as ErrorEnvelope | undefined;
+  if (envelope && typeof envelope === 'object') {
+    const fieldMessage = firstFieldMessage(envelope.fields);
+    if (fieldMessage) return fieldMessage;
+    if (typeof envelope.message === 'string') return envelope.message;
+  }
+
   if (typeof body?.['message'] === 'string') return body['message'];
   const legacyField = firstFieldMessage(body);
   return legacyField || fallback;

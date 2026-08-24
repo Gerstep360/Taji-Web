@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+﻿import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -40,6 +40,7 @@ import { FieldComponent } from '../../../shared/ui/field.component';
 export class ForgotPasswordPage {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(AuthApi);
+  private readonly changeDetector = inject(ChangeDetectorRef);
   readonly form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
   submitted = false;
   loading = false;
@@ -59,8 +60,17 @@ export class ForgotPasswordPage {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
     this.api.forgotPassword(this.form.controls.email.value).subscribe({
-      next: (response) => { this.message = response.message; this.sent = true; this.loading = false; },
-      error: (error: unknown) => { this.errorMessage = apiErrorMessage(error); this.loading = false; },
+      next: (response) => {
+        this.message = response.message;
+        this.sent = true;
+        this.loading = false;
+        this.changeDetector.markForCheck();
+      },
+      error: (error: unknown) => {
+        this.errorMessage = apiErrorMessage(error);
+        this.loading = false;
+        this.changeDetector.markForCheck();
+      },
     });
   }
 }

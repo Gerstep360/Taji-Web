@@ -1,4 +1,4 @@
-﻿import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 
 type ErrorEnvelope = {
   code?: unknown;
@@ -12,6 +12,13 @@ export function apiErrorMessage(
 ): string {
   if (!(error instanceof HttpErrorResponse)) return fallback;
   const body = error.error as Record<string, unknown> | null;
+  const envelope = body?.['error'] as ErrorEnvelope | undefined;
+  if (envelope && typeof envelope === 'object') {
+    const fieldMessage = firstFieldMessage(envelope.fields);
+    if (fieldMessage) return fieldMessage;
+    if (typeof envelope.message === 'string') return envelope.message;
+  }
+
   if (typeof body?.['detail'] === 'string') return body['detail'];
 
   const envelope = body?.['error'] as ErrorEnvelope | undefined;

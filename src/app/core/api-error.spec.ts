@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { apiErrorMessage } from './api-error';
+import { apiErrorMessage, apiFieldErrors } from './api-error';
 
 describe('apiErrorMessage', () => {
   it('reads the uniform backend validation envelope', () => {
@@ -16,6 +16,7 @@ describe('apiErrorMessage', () => {
     });
 
     expect(apiErrorMessage(error)).toBe('Correo: Ya existe una cuenta con este correo.');
+    expect(apiFieldErrors(error)).toEqual({ email: 'Ya existe una cuenta con este correo.' });
   });
 
   it('keeps compatibility with legacy detail responses', () => {

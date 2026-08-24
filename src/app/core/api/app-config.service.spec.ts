@@ -32,14 +32,16 @@ describe('AppConfigService', () => {
     expect(service.config().requestTimeoutMs).toBe(8000);
   });
 
-  it('uses safe defaults when runtime config is unavailable', async () => {
+  it('fails clearly when the generated runtime config is unavailable', async () => {
     const loading = service.load();
     http.expectOne('/config/app-config.json').flush('missing', {
       status: 404,
       statusText: 'Not Found',
     });
-    await loading;
+    await expect(loading).rejects.toThrow(
+      'No se pudo cargar la configuración generada desde Frontend/.env.',
+    );
 
-    expect(service.endpoint('/health/')).toBe('/api/v1/health/');
+    expect(() => service.endpoint('/health/')).toThrow('todavía no está disponible');
   });
 });

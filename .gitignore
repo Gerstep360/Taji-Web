@@ -28,6 +28,9 @@ lerna-debug.log
 .env.test.local
 .env.production.local
 
+# Archivo runtime generado desde .env
+/public/config/app-config.json
+
 # IDEs y Editores de código
 .idea/
 .project

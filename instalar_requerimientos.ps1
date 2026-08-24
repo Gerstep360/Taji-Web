@@ -28,27 +28,23 @@ if ($LASTEXITCODE -eq 0) {
     throw "Ocurrió un error al ejecutar 'npm install'."
 }
 
-# 3. Verificar o crear configuración inicial de app-config.json
-$configDir = Join-Path $PSScriptRoot "public\config"
-$configPath = Join-Path $configDir "app-config.json"
+# 3. Preparar .env local y generar la configuración consumida por Angular
+$envPath = Join-Path $PSScriptRoot ".env"
+$envExamplePath = Join-Path $PSScriptRoot ".env.example"
+if (-not (Test-Path $envPath)) {
+    Write-Host "[3/3] Creando .env desde .env.example..." -ForegroundColor Yellow
+    Copy-Item -LiteralPath $envExamplePath -Destination $envPath
+    Write-Host "      Edita TAJI_API_BASE_URL en .env con la IP real del Backend." -ForegroundColor Yellow
+}
 
-if (-not (Test-Path $configPath)) {
-    Write-Host "[3/3] Generando archivo de configuración inicial public/config/app-config.json..." -ForegroundColor Yellow
-    if (-not (Test-Path $configDir)) {
-        New-Item -ItemType Directory -Path $configDir -Force | Out-Null
-    }
-    $defaultConfig = @{
-        apiBaseUrl = "http://localhost:8000/api/v1"
-        requestTimeoutMs = 12000
-    } | ConvertTo-Json
-    [System.IO.File]::WriteAllText($configPath, $defaultConfig, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host "      Archivo public/config/app-config.json creado." -ForegroundColor Green
-} else {
-    Write-Host "[3/3] Archivo public/config/app-config.json ya existe." -ForegroundColor Green
+& npm run config
+if ($LASTEXITCODE -ne 0) {
+    throw "La configuración de .env no es válida."
 }
 
 Write-Host "`n==================================================" -ForegroundColor Cyan
 Write-Host "   Instalación completada con éxito." -ForegroundColor Green
+Write-Host "   Configura la IP del Backend en .env." -ForegroundColor Cyan
 Write-Host "   Puedes iniciar la aplicación web ejecutando:" -ForegroundColor Cyan
 Write-Host "   .\iniciar.ps1" -ForegroundColor Yellow
 Write-Host "==================================================" -ForegroundColor Cyan

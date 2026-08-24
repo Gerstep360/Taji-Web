@@ -27,4 +27,16 @@ describe('apiErrorMessage', () => {
 
     expect(apiErrorMessage(error)).toBe('Sesión inválida.');
   });
+
+  it('prioritizes login details over the generic error envelope', () => {
+    const error = new HttpErrorResponse({
+      status: 401,
+      error: {
+        detail: 'Usuario no encontrado o no registrado. Regístrate para continuar.',
+        error: { code: 'authentication_failed', message: 'Correo o contraseña incorrectos.' },
+      },
+    });
+
+    expect(apiErrorMessage(error)).toBe('Usuario no encontrado o no registrado. Regístrate para continuar.');
+  });
 });

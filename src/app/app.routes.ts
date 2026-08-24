@@ -28,11 +28,34 @@ export const routes: Routes = [
     title: 'Nueva contraseña | Taji',
   },
   {
-    path: 'inicio',
+    path: '',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
-    title: 'Inicio | Taji',
+    loadComponent: () => import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
+    children: [
+      {
+        path: 'inicio',
+        loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
+        title: 'Inicio | Taji',
+      },
+      {
+        path: 'acceso-denegado',
+        loadComponent: () => import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),
+        data: { code: '403', title: 'Acceso denegado', message: 'No tienes permisos para acceder a esta sección.' },
+        title: 'Acceso denegado | Taji',
+      },
+      {
+        path: 'error-servidor',
+        loadComponent: () => import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),
+        data: { code: '500', title: 'Algo salió mal', message: 'No pudimos completar la operación. Intenta nuevamente más tarde.' },
+        title: 'Error del servidor | Taji',
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+    ],
   },
-  { path: '', pathMatch: 'full', redirectTo: 'inicio' },
-  { path: '**', redirectTo: 'inicio' },
+  {
+    path: '**',
+    loadComponent: () => import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),
+    data: { code: '404', title: 'Página no encontrada', message: 'La dirección que ingresaste no corresponde a una página disponible.' },
+    title: 'Página no encontrada | Taji',
+  },
 ];

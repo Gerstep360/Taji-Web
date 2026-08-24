@@ -1,5 +1,6 @@
 ﻿import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 
 import { AuthService } from './auth.service';
@@ -8,6 +9,7 @@ const NON_REFRESHABLE = /\/(login|register|refresh|forgot-password|reset-passwor
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
+  const router = inject(Router);
   const requestWithCookies = request.clone({ withCredentials: true });
 
   return next(requestWithCookies).pipe(
@@ -19,6 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         switchMap(() => next(requestWithCookies)),
         catchError((refreshError: HttpErrorResponse) => {
           auth.clearSession();
+          void router.navigateByUrl('/iniciar-sesion');
           return throwError(() => refreshError);
         }),
       );

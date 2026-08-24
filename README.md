@@ -1,158 +1,78 @@
-```text
- ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
- ║                                                                                                              ║
- ║  ████████╗ █████╗   ██████╗ ██╗   ███████╗██████╗  ██████╗ ███╗   ██╗████████╗███████╗███╗   ██╗██████╗      ║
- ║  ╚══██╔══╝██╔══██╗    ██╔══╝██║   ██╔════╝██╔══██╗██╔═══██╗████╗  ██║╚══██╔══╝██╔════╝████╗  ██║██╔══██╗     ║
- ║     ██║   ███████║    ██║   ██║   █████╗  ██████╔╝██║   ██║██╔██╗ ██║   ██║   █████╗  ██╔██╗ ██║██║  ██║     ║
- ║     ██║   ██╔══██║██  ██║   ██║   ██╔══╝  ██╔══██╗██║   ██║██║╚██╗██║   ██║   ██╔══╝  ██║╚██╗██║██║  ██║     ║
- ║     ██║   ██║  ██║╚█████╔╝  ██║   ██║     ██║  ██║╚██████╔╝██║ ╚████║   ██║   ███████╗██║ ╚████║██████╔╝     ║
- ║     ╚═╝   ╚═╝  ╚═╝ ╚════╝   ╚═╝   ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝╚═════╝      ║
- ║                                                                                                              ║
- ║                 TAJI — Aplicación Web para Condominios (Angular Framework)                                   ║
- ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-```
+# Taji Web
 
-# TAJI Frontend Web — Aplicación Angular SPA
+Aplicación SPA de Taji construida con Angular y TypeScript. La base integrada cubre T076 y T077 con rutas modulares, cliente HTTP centralizado, layout, rutas privadas, navegación, interceptores y páginas 403, 404 y 500.
 
-Aplicación Web cliente de la plataforma **Taji**, desarrollada en **Angular** como una Single Page Application (SPA). Proporciona la interfaz de usuario para la administración de condominios, inicio de sesión con JWT mediante cookies HttpOnly, control de acceso basado en roles (RBAC) y modelos de dominio tipados strictly.
+> El backlog menciona React para T076, pero este repositorio y los cambios recibidos desde main están implementados en Angular. Se mantuvo la tecnología real del proyecto para no sustituir ni duplicar la aplicación.
 
----
+## Requisitos
 
-## Requisitos Previos
+- Node.js 20 o 22
+- npm 10 o superior
+- PowerShell para los scripts PS1
 
-- **Node.js**: Versión 18.x, 20.x o 22.x
-- **npm**: Incluido con Node.js (se recomienda npm 10+)
-- **PowerShell**: (Para ejecutar los scripts de automatización `.ps1` en Windows)
+## Configuración de la API
 
----
+La fuente editable es .env; no se guarda la IP en TypeScript ni se reescribe desde PowerShell.
 
-## Instalación y Configuración del Entorno
+~~~powershell
+Copy-Item .env.example .env
+~~~
 
-Puedes instalar y preparar las dependencias del proyecto de dos formas: mediante el script automático de PowerShell o usando comandos CLI manuales.
+Edita .env:
 
-### Opción 1: Mediante Script de PowerShell (Recomendado)
+~~~dotenv
+TAJI_API_BASE_URL=http://192.168.100.223:8000/api/v1
+TAJI_API_TIMEOUT_MS=12000
+~~~
 
-Abre una terminal PowerShell en la carpeta `Frontend` y ejecuta:
+TAJI_API_BASE_URL debe ser una URL HTTP(S) absoluta y terminar en /api/v1. .env está ignorado por Git. .env.example documenta las variables sin imponer la IP de una máquina concreta.
 
-```powershell
+Antes de start, build y test, scripts/generate-app-config.mjs valida .env y genera public/config/app-config.json. Ese JSON también está ignorado: es un artefacto, no otra fuente de configuración.
+
+## Instalación y ejecución
+
+~~~powershell
 .\instalar_requerimientos.ps1
-```
-
-Este script automatiza los siguientes pasos:
-1. Verifica que Node.js y `npm` estén correctamente instalados.
-2. Ejecuta `npm install` para descargar e instalar los paquetes de `package.json`.
-3. Crea el archivo de configuración [public/config/app-config.json](file:///c:/Users/rojas/Documents/Proyectos/Sistemas%20de%20informacion%20II/Frontend/public/config/app-config.json) con la URL inicial de la API.
-
----
-
-### Opción 2: Mediante Comandos Manuales (CLI)
-
-Si prefieres realizar la instalación manualmente:
-
-1. **Navegar al directorio Frontend**:
-   ```powershell
-   cd Frontend
-   ```
-
-2. **Instalar las dependencias de Node**:
-   ```powershell
-   npm install
-   ```
-
-3. **Verificar o crear la configuración de Runtime**:
-   Asegúrate de que exista el archivo `public/config/app-config.json` con el siguiente contenido:
-   ```json
-   {
-     "apiBaseUrl": "http://localhost:8000/api/v1",
-     "requestTimeoutMs": 12000
-   }
-   ```
-
----
-
-## Cómo Ejecutar la Aplicación Web
-
-### Opción 1: Mediante Script PowerShell (Recomendado para Red Local / MVP)
-
-Para levantar la interfaz web configurando automáticamente la IP de la red local (LAN) para comunicarse con el Backend Django:
-
-```powershell
 .\iniciar.ps1
-```
+~~~
 
-#### Parámetros opcionales del script `iniciar.ps1`:
-- **`-MachineIp`**: Especifica manualmente una dirección IP local en lugar de la auto-detectada.
-- **`-ApiPort`**: Define el puerto del Backend (por defecto `8000`).
-- **`-WebPort`**: Define el puerto de desarrollo de Angular (por defecto `4200`).
+iniciar.ps1 no cambia la API; solamente valida que exista .env y levanta Angular en 0.0.0.0. El puerto web es opcional:
 
-**Ejemplos de uso:**
-```powershell
-# Especificar IP de la máquina
-.\iniciar.ps1 -MachineIp "192.168.100.50"
-
-# Especificar puerto web diferente
+~~~powershell
 .\iniciar.ps1 -WebPort 4300
-```
+~~~
 
----
+También puedes usar npm:
 
-### Opción 2: Mediante Comandos Manuales (CLI)
+~~~powershell
+npm install
+npm start
+~~~
 
-1. **Iniciar servidor de desarrollo (Angular CLI)**:
-   ```powershell
-   npm start
-   ```
-   *Esto iniciará el servidor en `http://localhost:4200` utilizando la configuración de proxy `proxy.conf.json`.*
+## Verificación
 
-2. **Iniciar permitiendo conexiones desde la red local**:
-   ```powershell
-   npx ng serve --host 0.0.0.0 --port 4200
-   ```
-
----
-
-## Scripts PowerShell Incluidos
-
-| Script | Descripción | Parámetros Principales |
-| --- | --- | --- |
-| [instalar_requerimientos.ps1](file:///c:/Users/rojas/Documents/Proyectos/Sistemas%20de%20informacion%20II/Frontend/instalar_requerimientos.ps1) | Verifica Node/npm, ejecuta `npm install` y crea la configuración base `app-config.json`. | Ninguno |
-| [iniciar.ps1](file:///c:/Users/rojas/Documents/Proyectos/Sistemas%20de%20informacion%20II/Frontend/iniciar.ps1) | Detecta la IP LAN de la máquina, actualiza runtime `app-config.json` e inicia Angular en `0.0.0.0`. | `-MachineIp`, `-ApiPort`, `-WebPort` |
-
----
-
-## Comandos Útiles de Desarrollo
-
-```powershell
-# Ejecutar compilación de desarrollo continua
-npm run watch
-
-# Compilar para Producción (Crea el bundle optimizado en dist/)
+~~~powershell
+npm run config
+npm test -- --watch=false
 npm run build
+~~~
 
-# Ejecutar Pruebas Unitarias (Vitest)
-npm test
-```
+## Estructura relevante
 
----
-
-## Estructura del Proyecto Frontend
-
-```text
+~~~text
 Frontend/
-├── public/
-│   └── config/
-│       └── app-config.json   # Configuración editable en runtime (API URL, Timeouts)
-├── src/
-│   ├── app/
-│   │   ├── core/             # Servicios centrales de API, interceptores HTTP y guardias de ruta
-│   │   ├── domain/           # Contratos TypeScript e interfaces de las 47 tablas de dominio
-│   │   └── features/         # Módulos y pantallas de usuario (Auth, Dashboard, Condominios, etc.)
-│   ├── assets/               # Recurso estáticos, fuentes, íconos y marca Taji
-│   ├── index.html            # HTML principal
-│   └── main.ts               # Punto de entrada de Angular
-├── angular.json              # Configuración de compilación e infraestructura Angular
-├── iniciar.ps1               # Script de lanzamiento con autodetección de IP LAN
-├── instalar_requerimientos.ps1 # Script de instalación de Node.js y dependencias
-├── package.json              # Dependencias de proyecto y scripts npm
-└── proxy.conf.json           # Configuración de proxy para desarrollo local
-```
+├── .env.example
+├── scripts/
+│   └── generate-app-config.mjs
+├── public/config/
+│   └── app-config.json       # Generado e ignorado
+├── src/app/
+│   ├── core/                 # Configuración, HTTP, errores, sesión y guardas
+│   ├── domain/               # Contratos TypeScript
+│   ├── features/             # Pantallas por funcionalidad
+│   ├── layout/               # Shell y navegación autenticada
+│   └── app.routes.ts         # Rutas públicas, privadas y errores
+├── iniciar.ps1
+├── instalar_requerimientos.ps1
+└── package.json
+~~~

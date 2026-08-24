@@ -1,47 +1,23 @@
 param(
-    [string]$MachineIp,
-    [int]$ApiPort = 8000,
     [int]$WebPort = 4200
 )
 
 $ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
 
-function Get-TajiLanIPv4 {
-    param([string]$PreferredAddress)
-
-    if (-not [string]::IsNullOrWhiteSpace($PreferredAddress)) {
-        $parsedAddress = $null
-        if (-not [System.Net.IPAddress]::TryParse($PreferredAddress, [ref]$parsedAddress)) {
-            throw "La dirección '$PreferredAddress' no es una IP válida."
-        }
-        return $PreferredAddress
-    }
-
-    $candidate = Get-NetIPConfiguration |
-        Where-Object {
-            $_.NetAdapter.Status -eq "Up" -and
-            $null -ne $_.IPv4Address -and
-            $null -ne $_.IPv4DefaultGateway -and
-            $_.IPv4Address.IPAddress -notlike "169.254.*"
-        } |
-        Sort-Object { $_.NetAdapter.InterfaceMetric } |
-        Select-Object -First 1
-
-    if ($null -eq $candidate) {
-        throw "No se encontró una IPv4 LAN activa. Usa -MachineIp."
-    }
-    return $candidate.IPv4Address.IPAddress
+$envPath = Join-Path $PSScriptRoot ".env"
+if (-not (Test-Path $envPath)) {
+    throw "Falta .env. Copia .env.example como .env y configura TAJI_API_BASE_URL."
 }
 
-$lanIp = Get-TajiLanIPv4 -PreferredAddress $MachineIp
-$configPath = Join-Path $PSScriptRoot "public\config\app-config.json"
-$config = @{
-    apiBaseUrl = "http://${lanIp}:$ApiPort/api/v1"
-    requestTimeoutMs = 12000
-} | ConvertTo-Json
-[System.IO.File]::WriteAllText($configPath, $config, (New-Object System.Text.UTF8Encoding($false)))
+$apiLine = Get-Content $envPath |
+    Where-Object { $_ -match "^\s*TAJI_API_BASE_URL\s*=" } |
+    Select-Object -Last 1
+if ([string]::IsNullOrWhiteSpace($apiLine)) {
+    throw "TAJI_API_BASE_URL no está definido en .env."
+}
 
-Write-Host "Taji Web: http://${lanIp}:$WebPort" -ForegroundColor Cyan
-Write-Host "API configurada: http://${lanIp}:$ApiPort/api/v1" -ForegroundColor DarkCyan
-Set-Location $PSScriptRoot
+$apiBaseUrl = ($apiLine -split "=", 2)[1].Trim().Trim('"').Trim("'")
+Write-Host "Taji Web: http://localhost:$WebPort" -ForegroundColor Cyan
+Write-Host "API configurada desde .env: $apiBaseUrl" -ForegroundColor DarkCyan
 & npm start -- --host 0.0.0.0 --port $WebPort

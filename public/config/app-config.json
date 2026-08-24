@@ -1,4 +1,0 @@
-{
-    "requestTimeoutMs":  12000,
-    "apiBaseUrl":  "http://192.168.0.3:8000/api/v1"
-}

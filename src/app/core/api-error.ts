@@ -16,17 +16,10 @@ export function apiErrorMessage(
   if (envelope && typeof envelope === 'object') {
     const [field, message] = Object.entries(normalizeFieldErrors(envelope.fields))[0] ?? [];
     if (field && message) return `${fieldLabel(field)}: ${message}`;
-    if (typeof envelope.message === 'string') return envelope.message;
   }
 
   if (typeof body?.['detail'] === 'string') return body['detail'];
-
-  const envelope = body?.['error'] as ErrorEnvelope | undefined;
-  if (envelope && typeof envelope === 'object') {
-    const fieldMessage = firstFieldMessage(envelope.fields);
-    if (fieldMessage) return fieldMessage;
-    if (typeof envelope.message === 'string') return envelope.message;
-  }
+  if (envelope && typeof envelope.message === 'string') return envelope.message;
 
   if (typeof body?.['message'] === 'string') return body['message'];
   const [field, message] = Object.entries(normalizeFieldErrors(body))[0] ?? [];

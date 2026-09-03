@@ -81,7 +81,7 @@ export class RegisterPage {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
     this.auth.register(this.form.getRawValue()).subscribe({
-      next: () => void this.router.navigate(['/iniciar-sesion'], { state: { registered: true } }),
+      next: () => void this.router.navigate(['/iniciar-sesion'], { state: { pendingApproval: true } }),
       error: (error: unknown) => {
         this.applyServerErrors(error);
         this.errorMessage = apiErrorMessage(error);

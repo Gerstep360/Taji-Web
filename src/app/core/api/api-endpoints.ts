@@ -13,5 +13,13 @@
     options: '/staff/options/',
     detail: (id: number) => `/staff/${id}/`,
   },
+  roles: {
+    root: '/roles/',
+    permissions: '/roles/permissions/',
+    rolePermissions: (slug: string) => `/roles/${slug}/permissions/`,
+    users: '/roles/users/',
+    pendingResidents: '/roles/residents/pending/',
+    residentReview: (id: number) => `/roles/residents/${id}/review/`,
+  },
   health: '/health/',
 } as const;

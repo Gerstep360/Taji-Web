@@ -51,6 +51,13 @@ export const routes: Routes = [
         title: 'Personal | Taji',
       },
       {
+        path: 'roles-y-permisos',
+        canActivate: [permissionGuard('manage_roles')],
+        loadComponent: () =>
+          import('./features/cu2/cu2.page').then((m) => m.Cu2Page),
+        title: 'Roles y Permisos | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),

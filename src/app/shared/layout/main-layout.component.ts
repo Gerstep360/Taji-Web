@@ -18,6 +18,11 @@ import { LogoComponent } from '../ui/logo.component';
               ><span aria-hidden="true">♙</span> Personal</a
             >
           }
+          @if (canManageRoles()) {
+            <a routerLink="/roles-y-permisos" routerLinkActive="active"
+              ><span aria-hidden="true">⚙</span> Roles y Permisos</a
+            >
+          }
           @for (item of pendingModules; track item) {
             <span class="disabled" aria-disabled="true"
               ><span>·</span> {{ item }} <small>Pronto</small></span
@@ -58,6 +63,9 @@ export class MainLayoutComponent {
   readonly user = this.auth.user;
   readonly canManageStaff = computed(() =>
     Boolean(this.user()?.is_superuser || this.user()?.role?.permissions.includes('manage_staff')),
+  );
+  readonly canManageRoles = computed(() =>
+    Boolean(this.user()?.is_superuser || this.user()?.role?.permissions.includes('manage_roles')),
   );
   readonly pendingModules = ['Visitas', 'Incidencias', 'Reservas', 'Comunicados'];
 

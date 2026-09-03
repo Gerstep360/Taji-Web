@@ -8,5 +8,10 @@
     forgotPassword: '/auth/forgot-password/',
     resetPassword: '/auth/reset-password/',
   },
+  staff: {
+    root: '/staff/',
+    options: '/staff/options/',
+    detail: (id: number) => `/staff/${id}/`,
+  },
   health: '/health/',
 } as const;

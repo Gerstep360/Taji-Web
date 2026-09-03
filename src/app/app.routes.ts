@@ -1,4 +1,4 @@
-﻿import { Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 
 import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guard';
 
@@ -6,21 +6,22 @@ export const routes: Routes = [
   {
     path: 'iniciar-sesion',
     canActivate: [guestGuard],
-    loadComponent: () => import('./features/auth/login/login.page').then((m) => m.LoginPage),
+    loadComponent: () =>
+      import('./paquetes/paquete1_usuarios_condominio/cu01_autenticacion').then((m) => m.LoginPage),
     title: 'Iniciar sesión | Taji',
   },
   {
     path: 'crear-cuenta',
     canActivate: [guestGuard],
     loadComponent: () =>
-      import('./features/auth/register/register.page').then((m) => m.RegisterPage),
+      import('./paquetes/paquete1_usuarios_condominio/cu01_autenticacion').then((m) => m.RegisterPage),
     title: 'Crear cuenta | Taji',
   },
   {
     path: 'olvide-contrasena',
     canActivate: [guestGuard],
     loadComponent: () =>
-      import('./features/auth/forgot-password/forgot-password.page').then(
+      import('./paquetes/paquete1_usuarios_condominio/cu01_autenticacion').then(
         (m) => m.ForgotPasswordPage,
       ),
     title: 'Recuperar contraseña | Taji',
@@ -29,7 +30,7 @@ export const routes: Routes = [
     path: 'restablecer-contrasena',
     canActivate: [guestGuard],
     loadComponent: () =>
-      import('./features/auth/reset-password/reset-password.page').then((m) => m.ResetPasswordPage),
+      import('./paquetes/paquete1_usuarios_condominio/cu01_autenticacion').then((m) => m.ResetPasswordPage),
     title: 'Nueva contraseña | Taji',
   },
   {
@@ -47,14 +48,15 @@ export const routes: Routes = [
       {
         path: 'personal',
         canActivate: [permissionGuard('manage_staff')],
-        loadComponent: () => import('./features/staff/staff.page').then((m) => m.StaffPage),
+        loadComponent: () =>
+          import('./paquetes/paquete1_usuarios_condominio/cu07_personal').then((m) => m.StaffPage),
         title: 'Personal | Taji',
       },
       {
         path: 'roles-y-permisos',
         canActivate: [permissionGuard('manage_roles')],
         loadComponent: () =>
-          import('./features/cu2/cu2.page').then((m) => m.Cu2Page),
+          import('./paquetes/paquete1_usuarios_condominio/cu02_roles_permisos').then((m) => m.Cu2Page),
         title: 'Roles y Permisos | Taji',
       },
       {

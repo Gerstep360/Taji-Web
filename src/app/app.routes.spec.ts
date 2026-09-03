@@ -14,4 +14,11 @@ describe('application routes', () => {
     expect(privateChildren.some((route) => route.path === 'error-servidor')).toBe(true);
     expect(routes.some((route) => route.path === '**')).toBe(true);
   });
+
+  it('registers CU07 as a protected lazy route', () => {
+    const privateChildren = routes.find((route) => route.path === '')?.children ?? [];
+    const staffRoute = privateChildren.find((route) => route.path === 'personal');
+    expect(staffRoute?.canActivate?.length).toBe(1);
+    expect(staffRoute?.loadComponent).toBeTypeOf('function');
+  });
 });

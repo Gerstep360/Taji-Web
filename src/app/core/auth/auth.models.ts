@@ -12,6 +12,7 @@ export interface Role {
 export interface User {
   id: number;
   email: string;
+  is_superuser: boolean;
   first_name: string;
   last_name: string;
   full_name: string;

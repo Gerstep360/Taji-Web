@@ -22,4 +22,14 @@
     residentReview: (id: number) => `/roles/residents/${id}/review/`,
   },
   health: '/health/',
+  sectors: {
+    root: '/sectors/',
+    options: '/sectors/options/',
+    detail: (id: number) => `/sectors/${id}/`,
+  },
+  units: {
+    root: '/units/',
+    options: '/units/options/',
+    detail: (id: number) => `/units/${id}/`,
+  },
 } as const;

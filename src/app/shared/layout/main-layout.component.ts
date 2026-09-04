@@ -160,7 +160,9 @@ export class MainLayoutComponent {
         {
           label: 'Sectores y Unidades',
           icon: 'layout-grid',
-          isAvailable: false,
+          route: '/sectores-unidades',
+          permission: 'manage_units',
+          isAvailable: true,
         },
         {
           label: 'Residentes y Copropietarios',

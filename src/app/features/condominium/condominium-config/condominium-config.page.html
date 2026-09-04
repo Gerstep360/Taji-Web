@@ -1,0 +1,56 @@
+<div class="container my-4">
+  <h2>Configuración General del Condominio</h2>
+
+  @if (loading) {
+    <p>Cargando datos...</p>
+  } @else {
+    @if (message) {
+      <div class="alert alert-info">{{ message }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="mb-3">
+        <label class="form-label">Nombre del Condominio</label>
+        <input type="text" class="form-control" formControlName="name" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Razón Social</label>
+        <input type="text" class="form-control" formControlName="legal_name" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input type="text" class="form-control" formControlName="address" />
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Teléfono</label>
+          <input type="text" class="form-control" formControlName="phone" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Correo Electrónico</label>
+          <input type="email" class="form-control" formControlName="email" />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Zona Horaria</label>
+        <input type="text" class="form-control" formControlName="timezone" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Resumen del Reglamento</label>
+        <textarea class="form-control" rows="3" formControlName="rules_summary"></textarea>
+      </div>
+
+      <!-- Solo se muestra al administrador -->
+      @if (isAdmin) {
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving">
+          {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+      }
+    </form>
+  }
+</div>

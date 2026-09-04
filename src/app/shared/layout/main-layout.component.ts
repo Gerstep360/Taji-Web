@@ -13,6 +13,11 @@ import { LogoComponent } from '../ui/logo.component';
         <taji-logo />
         <nav aria-label="Navegación principal">
           <a routerLink="/inicio" routerLinkActive="active"><span>⌂</span> Inicio</a>
+          @if (canManageResidents()) {
+            <a routerLink="/residentes-y-copropietarios" routerLinkActive="active"
+              ><span aria-hidden="true">⌘</span> Residentes y copropietarios</a
+            >
+          }
           @if (canManageStaff()) {
             <a routerLink="/personal" routerLinkActive="active"
               ><span aria-hidden="true">♙</span> Personal</a
@@ -63,6 +68,11 @@ export class MainLayoutComponent {
   readonly user = this.auth.user;
   readonly canManageStaff = computed(() =>
     Boolean(this.user()?.is_superuser || this.user()?.role?.permissions.includes('manage_staff')),
+  );
+  readonly canManageResidents = computed(() =>
+    Boolean(
+      this.user()?.is_superuser || this.user()?.role?.permissions.includes('manage_residents'),
+    ),
   );
   readonly canManageRoles = computed(() =>
     Boolean(this.user()?.is_superuser || this.user()?.role?.permissions.includes('manage_roles')),

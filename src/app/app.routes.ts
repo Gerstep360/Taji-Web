@@ -51,6 +51,13 @@ export const routes: Routes = [
         title: 'Personal | Taji',
       },
       {
+        path: 'residentes-y-copropietarios',
+        canActivate: [permissionGuard('manage_residents')],
+        loadComponent: () =>
+          import('./features/residents/resident.page').then((m) => m.ResidentPage),
+        title: 'Residentes y copropietarios | Taji',
+      },
+      {
         path: 'roles-y-permisos',
         canActivate: [permissionGuard('manage_roles')],
         loadComponent: () =>

@@ -45,7 +45,13 @@ export class AppConfigService {
   }
 
   private normalizeBaseUrl(value: string | undefined): string {
-    const trimmed = value?.trim().replace(/\/+$/, '') ?? '';
+    let trimmed = value?.trim().replace(/\/+$/, '') ?? '';
+
+    // Sanitizar automáticamente el puerto interno :8000 si está configurado en producción
+    if (trimmed.includes(':8000')) {
+      trimmed = trimmed.replace(':8000/api/v1', '/taji/api/v1').replace(':8000', '');
+    }
+
     let url: URL;
     try {
       url = new URL(trimmed);

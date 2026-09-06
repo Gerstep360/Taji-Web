@@ -18,18 +18,31 @@ describe('AppConfigService', () => {
 
   afterEach(() => http.verify());
 
-  it('loads a LAN API URL without rebuilding Angular', async () => {
+  it('loads a public API URL without rebuilding Angular', async () => {
     const loading = service.load();
     http.expectOne('config/app-config.json').flush({
-      apiBaseUrl: 'http://192.168.100.223:8000/api/v1/',
+      apiBaseUrl: 'http://192.168.100.223/taji/api/v1/',
       requestTimeoutMs: 8000,
     });
     await loading;
 
     expect(service.endpoint('/auth/login/')).toBe(
-      'http://192.168.100.223:8000/api/v1/auth/login/',
+      'http://192.168.100.223/taji/api/v1/auth/login/',
     );
     expect(service.config().requestTimeoutMs).toBe(8000);
+  });
+
+  it('sanitizes internal port 8000 to public Nginx subpath', async () => {
+    const loading = service.load();
+    http.expectOne('config/app-config.json').flush({
+      apiBaseUrl: 'http://167.86.106.105:8000/api/v1',
+      requestTimeoutMs: 8000,
+    });
+    await loading;
+
+    expect(service.endpoint('/auth/login/')).toBe(
+      'http://167.86.106.105/taji/api/v1/auth/login/',
+    );
   });
 
   it('fails clearly when the generated runtime config is unavailable', async () => {

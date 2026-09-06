@@ -52,6 +52,9 @@ export class AppConfigService {
       trimmed = trimmed.replace(':8000/api/v1', '/taji/api/v1').replace(':8000', '');
     }
 
+    // Convertir https a http para direcciones IP puras (los certificados SSL no aplican a IPs)
+    trimmed = trimmed.replace(/^https:\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, 'http://$1');
+
     let url: URL;
     try {
       url = new URL(trimmed);

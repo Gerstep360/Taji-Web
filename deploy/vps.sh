@@ -148,11 +148,12 @@ do_deploy_frontend() {
     # Sanitizar archivo de configuracion previo en disco antes de cargarlo
     sed -i -E 's|:8000/api/v1|/taji/api/v1|g' "$CONFIG" 2>/dev/null || true
     sed -i -E 's|:8000||g' "$CONFIG" 2>/dev/null || true
+    sed -i -E 's|^BACKEND_ORIGIN=https://([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|BACKEND_ORIGIN=http://\1|g' "$CONFIG" 2>/dev/null || true
 
     . "$CONFIG"
 
-    if [[ "$BACKEND_ORIGIN" == *":8000"* ]]; then
-        BACKEND_ORIGIN=$(echo "$BACKEND_ORIGIN" | sed -E 's|:8000/api/v1|/taji/api/v1|g' | sed -E 's|:8000||g')
+    if [[ "$BACKEND_ORIGIN" == *":8000"* || "$BACKEND_ORIGIN" == https://* ]]; then
+        BACKEND_ORIGIN=$(echo "$BACKEND_ORIGIN" | sed -E 's|:8000/api/v1|/taji/api/v1|g' | sed -E 's|:8000||g' | sed -E 's|^https://([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|http://\1|g')
     fi
 
     validate

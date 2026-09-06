@@ -40,6 +40,9 @@ function validateApiBaseUrl(value) {
     cleanValue = cleanValue.replace(':8000/api/v1', '/taji/api/v1').replace(':8000', '');
   }
 
+  // Convertir https a http para direcciones IP puras
+  cleanValue = cleanValue.replace(/^https:\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, 'http://$1');
+
   let url;
   try {
     url = new URL(cleanValue);

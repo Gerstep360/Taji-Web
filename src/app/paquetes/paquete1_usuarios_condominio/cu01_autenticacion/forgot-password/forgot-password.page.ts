@@ -18,20 +18,20 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
         <div class="success-state">
           <span class="success-icon" aria-hidden="true">?</span>
           <div class="auth-heading"><h2>Revisa tu correo</h2><p>{{ message }}</p></div>
-          <a class="button-link" routerLink="/iniciar-sesion">Volver a iniciar sesi�n</a>
+          <a class="button-link" routerLink="/iniciar-sesion">Volver a iniciar sesión</a>
         </div>
       } @else {
         <div class="auth-heading">
           <span class="kicker">Recupera tu acceso</span>
-          <h2>�Olvidaste tu contrase�a?</h2>
+          <h2>¿Olvidaste tu contraseña?</h2>
           <p>Escribe tu correo y te enviaremos un enlace seguro.</p>
         </div>
         <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <taji-alert [message]="errorMessage" />
-          <taji-field label="Correo electr�nico" type="email" icon="mail" placeholder="tu@correo.com" autocomplete="email" formControlName="email" [error]="fieldError" />
+          <taji-field label="Correo electrónico" type="email" icon="mail" placeholder="tu@correo.com" autocomplete="email" formControlName="email" [error]="fieldError" />
           <taji-button type="submit" [loading]="loading">Enviar enlace</taji-button>
         </form>
-        <p class="auth-switch"><a routerLink="/iniciar-sesion">? Volver a iniciar sesi�n</a></p>
+        <p class="auth-switch"><a routerLink="/iniciar-sesion">? Volver a iniciar sesión</a></p>
       }
     </taji-auth-shell>
   `,
@@ -51,7 +51,7 @@ export class ForgotPasswordPage {
   get fieldError(): string {
     const control = this.form.controls.email;
     if (!(control.touched || this.submitted) || !control.errors) return '';
-    return control.errors['required'] ? 'Ingresa tu correo.' : 'Ingresa un correo v�lido.';
+    return control.errors['required'] ? 'Ingresa tu correo.' : 'Ingresa un correo válido.';
   }
 
   submit(): void {

@@ -1,5 +1,17 @@
 import { expect, test, Page } from '@playwright/test';
 
+test('los formularios públicos conservan los textos en español', async ({ page }) => {
+  for (const [path, heading] of [
+    ['/crear-cuenta', 'Crea tu cuenta'],
+    ['/olvide-contrasena', '¿Olvidaste tu contraseña?'],
+    ['/restablecer-contrasena', 'Crea una nueva contraseña'],
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('\uFFFD');
+  }
+});
+
 async function login(page: Page, email = 'admin@sprint1.taji.test') {
   await page.goto('/iniciar-sesion');
   await page.getByRole('textbox', { name: 'Correo electrónico' }).fill(email);

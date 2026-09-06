@@ -23,6 +23,8 @@ funcionalidad dentro de su paquete y corregir las rutas relativas de importació
 - La pantalla de inicio queda en CU30 y los errores compartidos en `shared/pages`.
 - Se eliminan registros de depuración de sesión. La configuración pública admite
   variables de CI/VPS, valida la URL y no depende de una IP privada del equipo.
+- Registro y recuperación conservan sus textos, normalizados de Windows-1252 a
+  UTF-8 para que Angular muestre correctamente las tildes.
 
 Las carpetas vacías de CU futuros son estructura prevista, no implementaciones
 terminadas. No se agregan funciones ajenas al Sprint 1 para aparentar cobertura.

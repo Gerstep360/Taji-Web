@@ -72,6 +72,24 @@ export const routes: Routes = [
         title: 'Configuración del Condominio | Taji',
       },
       {
+        path: 'sectores-unidades',
+        canActivate: [permissionGuard('manage_units')],
+        loadComponent: () =>
+          import('./paquetes/paquete1_usuarios_condominio/cu04_sectores_unidades').then(
+            (m) => m.SectoresUnidadesPage,
+          ),
+        title: 'Sectores y Unidades | Taji',
+      },
+      {
+        path: 'residentes-unidades',
+        canActivate: [permissionGuard('manage_residents')],
+        loadComponent: () =>
+          import('./paquetes/paquete1_usuarios_condominio/cu06_residentes_unidades').then(
+            (m) => m.ResidentesUnidadesPage,
+          ),
+        title: 'Residentes y Copropietarios | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),

@@ -20,10 +20,34 @@ export interface User {
   phone: string;
   role: Role | null;
   date_joined: string;
+  resident_units?: ResidentUnitSummary[];
+  linked_residents?: LinkedResident[];
+}
+
+export interface ResidentUnitSummary {
+  id: number;
+  unit_id: number;
+  unit_code: string;
+  relation_type: string;
+  relation_type_display: string;
+  is_primary: boolean;
+  start_date: string;
+}
+
+export interface LinkedResident {
+  resident_id: number;
+  full_name: string;
+  unit_code: string;
+  relation_type: string;
+  relation_type_display: string;
 }
 
 export interface AuthResponse {
   message: string;
+  user: User;
+}
+
+export interface MeResponse {
   user: User;
 }
 

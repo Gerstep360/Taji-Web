@@ -11,7 +11,7 @@ import {
   RegisterRequest,
   ResetPasswordRequest,
 } from './auth.contracts';
-import { AuthResponse, User } from './auth.models';
+import { AuthResponse, MeResponse, User } from './auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApi {
@@ -26,7 +26,7 @@ export class AuthApi {
     return this.api.post<RegisterRequest, AuthResponse>(API_ENDPOINTS.auth.register, request);
   }
 
-  me(): Observable<{ user: User }> {
+  me(): Observable<MeResponse> {
     return this.api.get<{ user: User }>(API_ENDPOINTS.auth.me);
   }
 

@@ -1,5 +1,5 @@
 ﻿import { computed, inject, Injectable, signal } from '@angular/core';
-import { firstValueFrom, Observable, shareReplay, tap, finalize } from 'rxjs';
+import { firstValueFrom, Observable, shareReplay, tap, finalize, switchMap, map } from 'rxjs';
 
 import { AuthApi } from './auth.api';
 import { RegisterRequest } from './auth.contracts';
@@ -43,10 +43,9 @@ export class AuthService {
 
   login(email: string, password: string): Observable<AuthResponse> {
     return this.api.login(email, password).pipe(
-      tap((response) => {
-        this.currentUser.set(response.user);
-        this.sessionHint.markActive();
-      }),
+      tap(() => this.sessionHint.markActive()),
+      switchMap((response) => this.api.me().pipe(map((profile) => ({ ...response, user: profile.user })))),
+      tap((response) => this.currentUser.set(response.user)),
     );
   }
 

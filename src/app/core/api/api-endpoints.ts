@@ -34,4 +34,21 @@
   },
 
   health: '/health/',
+  sectors: {
+    root: '/sectors/',
+    options: '/sectors/options/',
+    detail: (id: number) => `/sectors/${id}/`,
+  },
+  units: {
+    root: '/units/',
+    options: '/units/options/',
+    detail: (id: number) => `/units/${id}/`,
+  },
+  residentDirectory: {
+    root: '/resident-directory/',
+  },
+  residentUnits: {
+    root: '/resident-units/',
+    detail: (id: number) => `/resident-units/${id}/`,
+  },
 } as const;

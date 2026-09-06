@@ -60,6 +60,11 @@ export const routes: Routes = [
         title: 'Roles y Permisos | Taji',
       },
       {
+        path: 'condominium/config',
+        loadComponent: () => import('./features/condominium/condominium-config/condominium-config.page').then((m) => m.CondominiumConfigPage),
+        title: 'Configuración del Condominio | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),

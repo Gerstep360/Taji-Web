@@ -8,11 +8,17 @@
     forgotPassword: '/auth/forgot-password/',
     resetPassword: '/auth/reset-password/',
   },
+
+  condominium: {
+    current: '/condominiums/current/',
+  },
+
   staff: {
     root: '/staff/',
     options: '/staff/options/',
     detail: (id: number) => `/staff/${id}/`,
   },
+
   roles: {
     root: '/roles/',
     permissions: '/roles/permissions/',
@@ -21,5 +27,6 @@
     pendingResidents: '/roles/residents/pending/',
     residentReview: (id: number) => `/roles/residents/${id}/review/`,
   },
+
   health: '/health/',
 } as const;

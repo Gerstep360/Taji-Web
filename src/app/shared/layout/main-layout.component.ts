@@ -155,7 +155,8 @@ export class MainLayoutComponent {
         {
           label: 'Datos del Condominio',
           icon: 'building',
-          isAvailable: false,
+          route: '/condominium/config',
+          isAvailable: true,
         },
         {
           label: 'Sectores y Unidades',

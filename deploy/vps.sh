@@ -321,7 +321,16 @@ run_action() {
         . "$CONFIG"
         echo -e "${YELLOW}Comprobando estado de salud de la aplicacion Web...${RESET}"
         
-        if check_web_health; then
+        healthy=0
+        for i in {1..10}; do
+            if check_web_health; then
+                healthy=1
+                break
+            fi
+            sleep 1
+        done
+
+        if [[ $healthy -eq 1 ]]; then
             echo -e "${BRIGHT_GREEN}[OK] Frontend Web responde correctamente (HTTP 200 OK)${RESET}"
             return 0
         else

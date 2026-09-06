@@ -1,4 +1,4 @@
-﻿import { HttpBackend, HttpClient } from '@angular/common/http';
+import { HttpBackend, HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -22,7 +22,7 @@ export class AppConfigService {
   async load(): Promise<void> {
     try {
       const loaded = await firstValueFrom(
-        this.http.get<Partial<RuntimeAppConfig>>('/config/app-config.json'),
+        this.http.get<Partial<RuntimeAppConfig>>('config/app-config.json'),
       );
       this.state.set({
         apiBaseUrl: this.normalizeBaseUrl(loaded.apiBaseUrl),

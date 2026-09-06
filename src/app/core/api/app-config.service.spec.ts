@@ -1,4 +1,4 @@
-﻿import { TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
@@ -20,7 +20,7 @@ describe('AppConfigService', () => {
 
   it('loads a LAN API URL without rebuilding Angular', async () => {
     const loading = service.load();
-    http.expectOne('/config/app-config.json').flush({
+    http.expectOne('config/app-config.json').flush({
       apiBaseUrl: 'http://192.168.100.223:8000/api/v1/',
       requestTimeoutMs: 8000,
     });
@@ -34,7 +34,7 @@ describe('AppConfigService', () => {
 
   it('fails clearly when the generated runtime config is unavailable', async () => {
     const loading = service.load();
-    http.expectOne('/config/app-config.json').flush('missing', {
+    http.expectOne('config/app-config.json').flush('missing', {
       status: 404,
       statusText: 'Not Found',
     });

@@ -71,7 +71,28 @@ animated_progress_bar() {
     fi
 }
 
-fail() { echo -e "${RED}ERROR: $*${RESET}" >&2; return 1 2>/dev/null || exit 1; }
+release_lock() {
+    exec 9>&- 2>/dev/null || true
+    rm -f "$LOCK_FILE" 2>/dev/null || true
+}
+
+acquire_lock() {
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        echo -e "${YELLOW}[!] Se detecto un bloqueo anterior no liberado. Limpiando lock...${RESET}"
+        exec 9>&- 2>/dev/null || true
+        rm -f "$LOCK_FILE" 2>/dev/null || true
+        exec 9>"$LOCK_FILE"
+        flock -n 9 || fail 'No se pudo obtener el bloqueo de despliegue web.'
+    fi
+}
+
+fail() {
+    echo -e "${RED}ERROR: $*${RESET}" >&2
+    release_lock
+    return 1 2>/dev/null || exit 1
+}
+
 [[ $EUID -eq 0 ]] || fail 'Este script debe ejecutarse con sudo.'
 
 validate() {
@@ -309,8 +330,7 @@ run_action() {
         SUBPATH="/taji"
     fi
 
-    exec 9>"$LOCK_FILE"
-    flock -n 9 || fail 'Hay otro despliegue web en curso.'
+    acquire_lock
 
     if [[ $MODE == "install" ]]; then
         validate
@@ -337,6 +357,7 @@ run_action() {
     fi
 
     do_deploy_frontend
+    release_lock
 }
 
 if [[ $# -gt 0 ]]; then

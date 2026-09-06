@@ -7,6 +7,7 @@ ROOT=/opt/taji-web
 CONFIG=/etc/taji-web/web.env
 SITE=/etc/nginx/sites-available/taji-web
 LOCK_FILE=/var/lock/taji-web-deploy.lock
+BUILD_LOG=/var/log/taji-web-build.log
 
 # --- ANSI Colors & Graphical Effects ---
 CYAN='\033[0;36m'
@@ -118,6 +119,43 @@ do_update_git() {
     fi
 }
 
+show_frontend_logs() {
+    clear
+    echo -e "${BRIGHT_CYAN}+------------------------------------------------------------------------+${RESET}"
+    echo -e "${BRIGHT_CYAN}|                  LOGS DE OPERACION Y COMPILACION FRONTEND              |${RESET}"
+    echo -e "${BRIGHT_CYAN}+------------------------------------------------------------------------+${RESET}\n"
+
+    echo -e "${BRIGHT_YELLOW}=== [1/4] ARCHIVO DE CONFIGURACION WEBENV (/etc/taji-web/web.env) ===${RESET}"
+    if [[ -f /etc/taji-web/web.env ]]; then
+        cat /etc/taji-web/web.env
+    else
+        echo -e "${RED}No se encontro /etc/taji-web/web.env${RESET}"
+    fi
+
+    echo -e "\n${BRIGHT_YELLOW}=== [2/4] APP-CONFIG.JSON PUBLICADO EN PRODUCCION ===${RESET}"
+    if [[ -f /opt/taji-web/current/dist/taji-web/browser/config/app-config.json ]]; then
+        cat /opt/taji-web/current/dist/taji-web/browser/config/app-config.json
+    elif [[ -f /opt/taji-web/current/dist/taji-web/config/app-config.json ]]; then
+        cat /opt/taji-web/current/dist/taji-web/config/app-config.json
+    else
+        echo -e "${RED}No se encontro app-config.json en /opt/taji-web/current/dist/...${RESET}"
+    fi
+
+    echo -e "\n${BRIGHT_YELLOW}=== [3/4] ULTIMOS LOGS DE COMPILACION ANGULAR (/var/log/taji-web-build.log) ===${RESET}"
+    if [[ -f "$BUILD_LOG" ]]; then
+        tail -n 35 "$BUILD_LOG"
+    else
+        echo -e "${GRAY}No hay logs de compilacion acumulados aun.${RESET}"
+    fi
+
+    echo -e "\n${BRIGHT_YELLOW}=== [4/4] ULTIMOS LOGS DE ERROR NGINX (/var/log/nginx/error.log) ===${RESET}"
+    if [[ -f /var/log/nginx/error.log ]]; then
+        tail -n 25 /var/log/nginx/error.log
+    else
+        echo -e "${GRAY}No hay errores recientes en /var/log/nginx/error.log${RESET}"
+    fi
+}
+
 do_deploy_frontend() {
     do_update_git
 
@@ -176,7 +214,7 @@ NGINX
 
     (runuser -u taji-web -- env PATH="$NODE_DIR/bin:/usr/bin:/bin" HOME=/var/lib/taji-web \
       TAJI_API_BASE_URL="$BACKEND_ORIGIN" TAJI_API_TIMEOUT_MS=12000 \
-      bash -c 'cd "$1"; npm ci --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm run build -- --base-href /taji/ >/dev/null 2>&1' _ "$RELEASE") &
+      bash -c 'cd "$1"; npm ci --include=dev --no-audit --no-fund >"$2" 2>&1 && npm run build -- --base-href /taji/ >>"$2" 2>&1' _ "$RELEASE" "$BUILD_LOG") &
     animated_progress_bar $! "Compilando aplicacion Angular produccion (sub-ruta /taji/)"
 
     if [[ -d "$RELEASE/dist/taji-web/browser" ]]; then
@@ -273,6 +311,11 @@ NGINX
 
 run_action() {
     local MODE=$1
+
+    if [[ $MODE == "logs" ]]; then
+        show_frontend_logs
+        return 0
+    fi
 
     if [[ $MODE == "gitpull" ]]; then
         do_update_git
@@ -375,17 +418,19 @@ while true; do
     echo -e "|  ${BRIGHT_CYAN}[3]${RESET}  ${WHITE}[#] Sincronizar Cambios de Git (git pull origin main)${RESET}            |"
     echo -e "|  ${BRIGHT_CYAN}[4]${RESET}  ${WHITE}[?] Verificar Estado de Salud Web (Health Check)${RESET}                 |"
     echo -e "|  ${BRIGHT_CYAN}[5]${RESET}  ${WHITE}[!] Reiniciar Servicio Nginx Web${RESET}                                 |"
-    echo -e "|  ${BRIGHT_CYAN}[6]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
+    echo -e "|  ${BRIGHT_CYAN}[6]${RESET}  ${WHITE}[~] Ver Logs de Nginx y Compilacion Web${RESET}                          |"
+    echo -e "|  ${BRIGHT_CYAN}[7]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
     echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}\n"
     
-    read -p " Selecciona una opcion [1-6]: " CHOICE
+    read -p " Selecciona una opcion [1-7]: " CHOICE
     case "$CHOICE" in
         1) run_action "install" || true ;;
         2) run_action "update" || true ;;
         3) run_action "gitpull" || true ;;
         4) run_action "health" || true ;;
         5) run_action "restart" || true ;;
-        6) echo -e "${YELLOW}Operacion finalizada.${RESET}"; exit 0 ;;
+        6) run_action "logs" || true ;;
+        7) echo -e "${YELLOW}Operacion finalizada.${RESET}"; exit 0 ;;
         *) echo -e "${RED}Opcion invalida.${RESET}" ;;
     esac
 

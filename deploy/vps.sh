@@ -196,7 +196,8 @@ NGINX
     fi
 
     chown -R taji-web:taji-web "$RELEASE"
-    touch "$BUILD_LOG" && chown taji-web:taji-web "$BUILD_LOG" && chmod 0664 "$BUILD_LOG" 2>/dev/null || true
+    rm -f "$BUILD_LOG" 2>/dev/null || true
+    touch "$BUILD_LOG" && chown taji-web:taji-web "$BUILD_LOG" && chmod 0666 "$BUILD_LOG" 2>/dev/null || true
 
     (runuser -u taji-web -- env PATH="$NODE_DIR/bin:/usr/bin:/bin" HOME=/var/lib/taji-web \
       TAJI_API_BASE_URL="$BACKEND_ORIGIN" TAJI_API_TIMEOUT_MS=12000 \

@@ -122,38 +122,22 @@ do_update_git() {
 show_frontend_logs() {
     clear
     echo -e "${BRIGHT_CYAN}+------------------------------------------------------------------------+${RESET}"
-    echo -e "${BRIGHT_CYAN}|                  LOGS DE OPERACION Y COMPILACION FRONTEND              |${RESET}"
-    echo -e "${BRIGHT_CYAN}+------------------------------------------------------------------------+${RESET}\n"
+    echo -e "${BRIGHT_CYAN}|        MONITOR DE LOGS EN TIEMPO REAL - FRONTEND NGINX / BUILD         |${RESET}"
+    echo -e "${BRIGHT_CYAN}+------------------------------------------------------------------------+${RESET}"
+    echo -e "${BRIGHT_YELLOW} Presiona [CTRL + C] para detener los logs y volver al menu principal.${RESET}\n"
 
-    echo -e "${BRIGHT_YELLOW}=== [1/4] ARCHIVO DE CONFIGURACION WEBENV (/etc/taji-web/web.env) ===${RESET}"
+    echo -e "${BRIGHT_WHITE}=== CONFIGURACION ACTIVA EN /etc/taji-web/web.env ===${RESET}"
     if [[ -f /etc/taji-web/web.env ]]; then
         cat /etc/taji-web/web.env
-    else
-        echo -e "${RED}No se encontro /etc/taji-web/web.env${RESET}"
     fi
+    echo ""
 
-    echo -e "\n${BRIGHT_YELLOW}=== [2/4] APP-CONFIG.JSON PUBLICADO EN PRODUCCION ===${RESET}"
-    if [[ -f /opt/taji-web/current/dist/taji-web/browser/config/app-config.json ]]; then
-        cat /opt/taji-web/current/dist/taji-web/browser/config/app-config.json
-    elif [[ -f /opt/taji-web/current/dist/taji-web/config/app-config.json ]]; then
-        cat /opt/taji-web/current/dist/taji-web/config/app-config.json
-    else
-        echo -e "${RED}No se encontro app-config.json en /opt/taji-web/current/dist/...${RESET}"
-    fi
+    touch "$BUILD_LOG" /var/log/nginx/error.log 2>/dev/null || true
 
-    echo -e "\n${BRIGHT_YELLOW}=== [3/4] ULTIMOS LOGS DE COMPILACION ANGULAR (/var/log/taji-web-build.log) ===${RESET}"
-    if [[ -f "$BUILD_LOG" ]]; then
-        tail -n 35 "$BUILD_LOG"
-    else
-        echo -e "${GRAY}No hay logs de compilacion acumulados aun.${RESET}"
-    fi
+    trap 'echo -e "\n${BRIGHT_GREEN}[OK] Monitor finalizado. Regresando al menu principal...${RESET}"; return 0' INT
 
-    echo -e "\n${BRIGHT_YELLOW}=== [4/4] ULTIMOS LOGS DE ERROR NGINX (/var/log/nginx/error.log) ===${RESET}"
-    if [[ -f /var/log/nginx/error.log ]]; then
-        tail -n 25 /var/log/nginx/error.log
-    else
-        echo -e "${GRAY}No hay errores recientes en /var/log/nginx/error.log${RESET}"
-    fi
+    echo -e "${BRIGHT_GREEN}--- Transmitiendo eventos en tiempo real (error.log / build.log) ---${RESET}\n"
+    tail -n 10 -f "$BUILD_LOG" /var/log/nginx/error.log || true
 }
 
 do_deploy_frontend() {
@@ -418,7 +402,7 @@ while true; do
     echo -e "|  ${BRIGHT_CYAN}[3]${RESET}  ${WHITE}[#] Sincronizar Cambios de Git (git pull origin main)${RESET}            |"
     echo -e "|  ${BRIGHT_CYAN}[4]${RESET}  ${WHITE}[?] Verificar Estado de Salud Web (Health Check)${RESET}                 |"
     echo -e "|  ${BRIGHT_CYAN}[5]${RESET}  ${WHITE}[!] Reiniciar Servicio Nginx Web${RESET}                                 |"
-    echo -e "|  ${BRIGHT_CYAN}[6]${RESET}  ${WHITE}[~] Ver Logs de Nginx y Compilacion Web${RESET}                          |"
+    echo -e "|  ${BRIGHT_CYAN}[6]${RESET}  ${WHITE}[~] Ver Logs en Tiempo Real (CTRL+C para salir)${RESET}                  |"
     echo -e "|  ${BRIGHT_CYAN}[7]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
     echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}\n"
     

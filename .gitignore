@@ -55,6 +55,9 @@ testem.log
 /typings
 __screenshots__/
 .vitest-cache/
+playwright-report/
+test-results/
+.tools/
 
 # Archivos del sistema operativo
 .DS_Store

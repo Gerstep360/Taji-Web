@@ -1,8 +1,8 @@
 import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { ApiClient } from '../../core/api/api-client.service';
-import { API_ENDPOINTS } from '../../core/api/api-endpoints';
+import { ApiClient } from '../../../core/api/api-client.service';
+import { API_ENDPOINTS } from '../../../core/api/api-endpoints';
 import {
   ResidentListResponse,
   ResidentOptions,

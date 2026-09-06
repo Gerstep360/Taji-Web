@@ -12,7 +12,7 @@ import { FormBuilder } from '@angular/forms';
 import { debounceTime, finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { apiErrorMessage, apiFieldErrors } from '../../core/api-error';
+import { apiErrorMessage, apiFieldErrors } from '../../../core/api-error';
 import { ResidentApi } from './resident.api';
 import { ResidentEditorComponent } from './resident-editor.component';
 import {

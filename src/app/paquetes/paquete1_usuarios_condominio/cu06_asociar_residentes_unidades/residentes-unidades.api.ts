@@ -17,7 +17,7 @@ export class ResidentesUnidadesApi {
 
   residents(search = '') {
     const params = new HttpParams().set('page', '1').set('page_size', '100').set('search', search);
-    return this.api.get<PagedResponse<ResidentOption>>(API_ENDPOINTS.residents.root, { params });
+    return this.api.get<PagedResponse<ResidentOption>>(API_ENDPOINTS.residentDirectory.root, { params });
   }
 
   units(search = '') {

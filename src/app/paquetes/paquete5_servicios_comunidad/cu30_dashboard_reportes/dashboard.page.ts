@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import { AuthService } from '../../core/auth/auth.service';
-import { IconComponent } from '../../shared/ui/icon.component';
+import { AuthService } from '../../../core/auth/auth.service';
+import { IconComponent } from '../../../shared/ui/icon.component';
 
 @Component({
   selector: 'taji-dashboard-page',

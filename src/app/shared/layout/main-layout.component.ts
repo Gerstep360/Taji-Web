@@ -156,6 +156,7 @@ export class MainLayoutComponent {
           label: 'Datos del Condominio',
           icon: 'building',
           route: '/condominium/config',
+          permission: 'manage_settings',
           isAvailable: true,
         },
         {
@@ -168,14 +169,16 @@ export class MainLayoutComponent {
         {
           label: 'Residentes y Copropietarios',
           icon: 'users',
-          route: '/residentes-unidades',
+          route: '/residentes-y-copropietarios',
           permission: 'manage_residents',
           isAvailable: true,
         },
         {
           label: 'Asignación de Unidades',
           icon: 'link',
-          isAvailable: false,
+          route: '/residentes-unidades',
+          permission: 'manage_residents',
+          isAvailable: true,
         },
       ],
     },

@@ -39,7 +39,7 @@ function validateApiBaseUrl(value) {
   } catch {
     throw new Error('TAJI_API_BASE_URL debe ser una URL HTTP o HTTPS absoluta.');
   }
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
     throw new Error('TAJI_API_BASE_URL no debe contener credenciales y debe usar HTTP o HTTPS.');
   }
   if (!url.pathname.replace(/\/+$/, '').endsWith('/api/v1')) {
@@ -54,7 +54,7 @@ async function readEnvironment(path) {
     content = await readFile(path, 'utf8');
   } catch (error) {
     if (error?.code === 'ENOENT') {
-      throw new Error('Falta Frontend/.env. Copia .env.example y configura la IP del backend.');
+      return {};
     }
     throw error;
   }

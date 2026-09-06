@@ -1,50 +1,42 @@
-# ==============================================================================
-# Script de Instalación de Requerimientos - Frontend Taji (Angular)
-# ==============================================================================
-
-$ErrorActionPreference = "Stop"
+param([switch]$Actualizar)
+$ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
-
-Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "   TAJI FRONTEND - Instalación de Node y Deps     " -ForegroundColor Cyan
-Write-Host "==================================================" -ForegroundColor Cyan
-
-# 1. Verificar presencia de Node.js y npm
-$npmCmd = Get-Command npm -ErrorAction SilentlyContinue
-if (-not $npmCmd) {
-    throw "Node.js / npm no está instalado o no se encuentra en el PATH del sistema."
+Write-Host '+-------------------------------------------+' -ForegroundColor Cyan
+Write-Host '| TAJI WEB - Node, Angular y configuracion   |' -ForegroundColor Cyan
+Write-Host '+-------------------------------------------+' -ForegroundColor Cyan
+if ($Actualizar) {
+    & git diff --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Guarda tus cambios antes de actualizar.' }
+    & git diff --cached --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Hay cambios preparados sin commit.' }
+    & git pull --ff-only
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo actualizar la rama actual sin conflictos.' }
 }
-
-$nodeVersion = node -v
-Write-Host "[1/3] Node.js detectado: $nodeVersion" -ForegroundColor Green
-
-# 2. Instalar dependencias con npm
-Write-Host "[2/3] Instalando dependencias de Node.js (npm install)..." -ForegroundColor Yellow
-& npm install
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "      Dependencias de npm instaladas correctamente." -ForegroundColor Green
-} else {
-    throw "Ocurrió un error al ejecutar 'npm install'."
+$version = (Get-Content -LiteralPath '.node-version' -Raw).Trim()
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Version Node invalida.' }
+$architecture = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
+$archiveName = "node-v$version-win-$architecture.zip"
+$toolsDirectory = Join-Path $PSScriptRoot '.tools'
+$runtimeDirectory = Join-Path $toolsDirectory "node-v$version-win-$architecture"
+if (-not (Test-Path -LiteralPath (Join-Path $runtimeDirectory 'node.exe'))) {
+    New-Item -ItemType Directory -Force -Path $toolsDirectory | Out-Null
+    $archivePath = Join-Path $toolsDirectory $archiveName
+    Write-Host "Descargando Node $version con npm desde nodejs.org..."
+    Invoke-WebRequest -Uri "https://nodejs.org/dist/v$version/$archiveName" -OutFile $archivePath
+    $checksumPath = Join-Path $toolsDirectory "node-$version-SHASUMS256.txt"
+    Invoke-WebRequest -Uri "https://nodejs.org/dist/v$version/SHASUMS256.txt" -OutFile $checksumPath
+    $checksumLine = Get-Content -LiteralPath $checksumPath | Where-Object { $_.EndsWith("  $archiveName") }
+    if (-not $checksumLine) { throw 'El archivo no figura en los checksums oficiales.' }
+    $expectedHash = ($checksumLine -split '\s+')[0]
+    if ((Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash -ne $expectedHash) {
+        throw 'La descarga no coincide con el SHA256 oficial.'
+    }
+    Expand-Archive -LiteralPath $archivePath -DestinationPath $toolsDirectory -Force
 }
-
-# 3. Preparar .env local y generar la configuración consumida por Angular
-$envPath = Join-Path $PSScriptRoot ".env"
-$envExamplePath = Join-Path $PSScriptRoot ".env.example"
-if (-not (Test-Path $envPath)) {
-    Write-Host "[3/3] Creando .env desde .env.example..." -ForegroundColor Yellow
-    Copy-Item -LiteralPath $envExamplePath -Destination $envPath
-    Write-Host "      Edita TAJI_API_BASE_URL en .env con la IP real del Backend." -ForegroundColor Yellow
-}
-
-& npm run config
-if ($LASTEXITCODE -ne 0) {
-    throw "La configuración de .env no es válida."
-}
-
-Write-Host "`n==================================================" -ForegroundColor Cyan
-Write-Host "   Instalación completada con éxito." -ForegroundColor Green
-Write-Host "   Configura la IP del Backend en .env." -ForegroundColor Cyan
-Write-Host "   Puedes iniciar la aplicación web ejecutando:" -ForegroundColor Cyan
-Write-Host "   .\iniciar.ps1" -ForegroundColor Yellow
-Write-Host "==================================================" -ForegroundColor Cyan
+$env:PATH = "$runtimeDirectory;$env:PATH"
+if (-not (Test-Path -LiteralPath '.env')) { Copy-Item -LiteralPath '.env.example' -Destination '.env' }
+& (Join-Path $runtimeDirectory 'npm.cmd') ci
+if ($LASTEXITCODE -ne 0) { throw 'Fallo npm ci.' }
+& (Join-Path $runtimeDirectory 'npm.cmd') run build
+if ($LASTEXITCODE -ne 0) { throw 'Fallo la compilacion Angular; revisa .env y el error anterior.' }
+Write-Host 'Instalacion lista. Ejecuta .\iniciar.ps1 para abrir la web local.' -ForegroundColor Green

@@ -42,7 +42,7 @@ export const routes: Routes = [
       {
         path: 'inicio',
         loadComponent: () =>
-          import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
+          import('./paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/dashboard.page').then((m) => m.DashboardPage),
         title: 'Inicio | Taji',
       },
       {
@@ -56,7 +56,7 @@ export const routes: Routes = [
         path: 'residentes-y-copropietarios',
         canActivate: [permissionGuard('manage_residents')],
         loadComponent: () =>
-          import('./features/residents/resident.page').then((m) => m.ResidentPage),
+          import('./paquetes/paquete1_usuarios_condominio/cu05_residentes/resident.page').then((m) => m.ResidentPage),
         title: 'Residentes y copropietarios | Taji',
       },
       {
@@ -68,7 +68,8 @@ export const routes: Routes = [
       },
       {
         path: 'condominium/config',
-        loadComponent: () => import('./features/condominium/condominium-config/condominium-config.page').then((m) => m.CondominiumConfigPage),
+        canActivate: [permissionGuard('manage_settings')],
+        loadComponent: () => import('./paquetes/paquete1_usuarios_condominio/cu03_datos_condominio/condominium-config.page').then((m) => m.CondominiumConfigPage),
         title: 'Configuración del Condominio | Taji',
       },
       {
@@ -84,15 +85,15 @@ export const routes: Routes = [
         path: 'residentes-unidades',
         canActivate: [permissionGuard('manage_residents')],
         loadComponent: () =>
-          import('./paquetes/paquete1_usuarios_condominio/cu06_residentes_unidades').then(
+          import('./paquetes/paquete1_usuarios_condominio/cu06_asociar_residentes_unidades').then(
             (m) => m.ResidentesUnidadesPage,
           ),
-        title: 'Residentes y Copropietarios | Taji',
+        title: 'Asignación de unidades | Taji',
       },
       {
         path: 'acceso-denegado',
         loadComponent: () =>
-          import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),
+          import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),
         data: {
           code: '403',
           title: 'Acceso denegado',
@@ -103,7 +104,7 @@ export const routes: Routes = [
       {
         path: 'error-servidor',
         loadComponent: () =>
-          import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),
+          import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),
         data: {
           code: '500',
           title: 'Algo salió mal',
@@ -117,7 +118,7 @@ export const routes: Routes = [
   {
     path: '**',
     loadComponent: () =>
-      import('./features/errors/system-error.page').then((m) => m.SystemErrorPage),
+      import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),
     data: {
       code: '404',
       title: 'Página no encontrada',

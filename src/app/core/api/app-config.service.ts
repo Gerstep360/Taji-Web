@@ -52,7 +52,7 @@ export class AppConfigService {
     } catch {
       throw new Error('TAJI_API_BASE_URL debe ser una URL HTTP o HTTPS absoluta.');
     }
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
       throw new Error('TAJI_API_BASE_URL no es una URL segura para la API.');
     }
     if (!url.pathname.replace(/\/+$/, '').endsWith('/api/v1')) {
@@ -62,6 +62,6 @@ export class AppConfigService {
   }
 
   private validTimeout(value: number | undefined): number {
-    return typeof value === 'number' && value >= 1000 ? value : INITIAL_CONFIG.requestTimeoutMs;
+    return typeof value === 'number' && Number.isInteger(value) && value >= 1000 ? value : INITIAL_CONFIG.requestTimeoutMs;
   }
 }

@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Condominium } from '../../domain/models/condominium.models';
-import { ApiClient } from '../api/api-client.service';
-import { API_ENDPOINTS } from '../api/api-endpoints';
+import { Condominium } from '../../../domain/models/condominium.models';
+import { ApiClient } from '../../../core/api/api-client.service';
+import { API_ENDPOINTS } from '../../../core/api/api-endpoints';
 
 @Injectable({
   providedIn: 'root'

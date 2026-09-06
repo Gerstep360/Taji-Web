@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiClient } from '../../core/api/api-client.service';
+import { ApiClient } from '../../../core/api/api-client.service';
 import { ResidentApi } from './resident.api';
 import { ResidentListResponse, ResidentPayload } from './resident.models';
 

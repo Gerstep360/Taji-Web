@@ -18,21 +18,21 @@ import { PasswordMeterComponent } from '../../../../shared/ui/password-meter.com
       @if (completed) {
         <div class="success-state">
           <span class="success-icon" aria-hidden="true">?</span>
-          <div class="auth-heading"><h2>ContraseÒa actualizada</h2><p>{{ message }}</p></div>
-          <a class="button-link" routerLink="/iniciar-sesion">Iniciar sesiÛn</a>
+          <div class="auth-heading"><h2>Contrase√±a actualizada</h2><p>{{ message }}</p></div>
+          <a class="button-link" routerLink="/iniciar-sesion">Iniciar sesi√≥n</a>
         </div>
       } @else {
         <div class="auth-heading">
           <span class="kicker">Protege tu cuenta</span>
-          <h2>Crea una nueva contraseÒa</h2>
-          <p>Elige una clave distinta y difÌcil de adivinar.</p>
+          <h2>Crea una nueva contrase√±a</h2>
+          <p>Elige una clave distinta y dif√≠cil de adivinar.</p>
         </div>
         <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <taji-alert [message]="errorMessage" />
-          <taji-field label="Nueva contraseÒa" type="password" icon="lock" autocomplete="new-password" placeholder="MÌnimo 10 caracteres" formControlName="password" [error]="fieldError('password')" />
+          <taji-field label="Nueva contrase√±a" type="password" icon="lock" autocomplete="new-password" placeholder="M√≠nimo 10 caracteres" formControlName="password" [error]="fieldError('password')" />
           <taji-password-meter [password]="form.controls.password.value" />
-          <taji-field label="Repite la contraseÒa" type="password" icon="lock" autocomplete="new-password" placeholder="Repite tu contraseÒa" formControlName="password_confirm" [error]="fieldError('password_confirm')" />
-          <taji-button type="submit" [loading]="loading" [disabled]="!hasValidLink">Guardar contraseÒa</taji-button>
+          <taji-field label="Repite la contrase√±a" type="password" icon="lock" autocomplete="new-password" placeholder="Repite tu contrase√±a" formControlName="password_confirm" [error]="fieldError('password_confirm')" />
+          <taji-button type="submit" [loading]="loading" [disabled]="!hasValidLink">Guardar contrase√±a</taji-button>
         </form>
       }
     </taji-auth-shell>
@@ -54,13 +54,13 @@ export class ResetPasswordPage {
   loading = false;
   completed = false;
   message = '';
-  errorMessage = this.hasValidLink ? '' : 'El enlace est· incompleto. Solicita uno nuevo.';
+  errorMessage = this.hasValidLink ? '' : 'El enlace est√° incompleto. Solicita uno nuevo.';
 
   fieldError(name: 'password' | 'password_confirm'): string {
     const control = this.form.controls[name];
     if (!(control.touched || this.submitted) || !control.errors) return '';
     if (control.errors['minlength']) return 'Usa al menos 10 caracteres.';
-    if (control.errors['mismatch']) return 'Las contraseÒas no coinciden.';
+    if (control.errors['mismatch']) return 'Las contrase√±as no coinciden.';
     return 'Este campo es obligatorio.';
   }
 

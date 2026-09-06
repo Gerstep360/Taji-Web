@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { LogoComponent } from '../../shared/ui/logo.component';
+import { LogoComponent } from '../../ui/logo.component';
 
 type ErrorPageData = {
   code: string;

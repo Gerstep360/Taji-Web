@@ -167,7 +167,9 @@ export class MainLayoutComponent {
         {
           label: 'Residentes y Copropietarios',
           icon: 'users',
-          isAvailable: false,
+          route: '/residentes-unidades',
+          permission: 'manage_residents',
+          isAvailable: true,
         },
         {
           label: 'Asignación de Unidades',

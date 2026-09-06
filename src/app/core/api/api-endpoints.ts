@@ -32,4 +32,12 @@
     options: '/units/options/',
     detail: (id: number) => `/units/${id}/`,
   },
+  residents: {
+    root: '/residents/',
+    detail: (id: number) => `/residents/${id}/`,
+  },
+  residentUnits: {
+    root: '/resident-units/',
+    detail: (id: number) => `/resident-units/${id}/`,
+  },
 } as const;

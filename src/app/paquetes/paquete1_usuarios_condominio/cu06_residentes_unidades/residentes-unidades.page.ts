@@ -95,8 +95,8 @@ const RELATIONS: { value: RelationType; label: string }[] = [
           <header><div><span class="kicker">CU06 · Historial</span><h2 id="dialog-title">Nueva asociación</h2></div><button class="close" type="button" aria-label="Cerrar" (click)="closeEditor()">×</button></header>
           @if (formError()) { <div class="notice error" role="alert">{{ formError() }}</div> }
           <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-            <label><span>Residente</span><select formControlName="resident"><option value="">Selecciona un residente</option>@for (item of residents(); track item.id) { <option [value]="item.id">{{ item.full_name }}{{ item.document_number ? ' · ' + item.document_number : '' }}</option> }</select></label>
-            <label><span>Unidad habitacional</span><select formControlName="unit"><option value="">Selecciona una unidad</option>@for (item of units(); track item.id) { <option [value]="item.id">{{ item.code }} · {{ item.unit_type_display }}</option> }</select></label>
+            <label><span>Residente</span><input type="search" [formControl]="residentSearchControl" placeholder="Buscar por nombre o documento" aria-label="Buscar residente" /><select formControlName="resident"><option value="">Selecciona un residente</option>@for (item of filteredResidents(); track item.id) { <option [value]="item.id">{{ item.full_name }}{{ item.document_number ? ' · ' + item.document_number : '' }}</option> }</select></label>
+            <label><span>Unidad habitacional</span><input type="search" [formControl]="unitSearchControl" placeholder="Buscar por código de unidad" aria-label="Buscar unidad" /><select formControlName="unit"><option value="">Selecciona una unidad</option>@for (item of filteredUnits(); track item.id) { <option [value]="item.id">{{ item.code }} · {{ item.unit_type_display }}</option> }</select></label>
             <label><span>Tipo de relación</span><select formControlName="relation_type">@for (relation of relations; track relation.value) { <option [value]="relation.value">{{ relation.label }}</option> }</select></label>
             <div class="form-grid"><label><span>Fecha de inicio</span><input type="date" formControlName="start_date" /></label><label class="check"><input type="checkbox" formControlName="is_primary" /><span>Unidad principal</span></label></div>
             <footer><button type="button" class="secondary" (click)="closeEditor()">Cancelar</button><button class="primary-action" type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar asociación' }}</button></footer>
@@ -115,7 +115,9 @@ export class ResidentesUnidadesPage implements OnInit {
 
   readonly relations = RELATIONS;
   readonly residents = signal<ResidentOption[]>([]);
+  readonly filteredResidents = signal<ResidentOption[]>([]);
   readonly units = signal<UnitOption[]>([]);
+  readonly filteredUnits = signal<UnitOption[]>([]);
   readonly links = signal<ResidentUnitLink[]>([]);
   readonly visibleLinks = signal<ResidentUnitLink[]>([]);
   readonly loading = signal(true);
@@ -126,6 +128,8 @@ export class ResidentesUnidadesPage implements OnInit {
   readonly formError = signal('');
   readonly successMessage = signal('');
   readonly searchControl = this.fb.nonNullable.control('');
+  readonly residentSearchControl = this.fb.nonNullable.control('');
+  readonly unitSearchControl = this.fb.nonNullable.control('');
   readonly form = this.fb.nonNullable.group({
     resident: ['', Validators.required],
     unit: ['', Validators.required],
@@ -136,6 +140,8 @@ export class ResidentesUnidadesPage implements OnInit {
 
   constructor() {
     this.searchControl.valueChanges.pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef)).subscribe((value) => this.applySearch(value));
+    this.residentSearchControl.valueChanges.pipe(debounceTime(180), takeUntilDestroyed(this.destroyRef)).subscribe((value) => this.applyResidentSearch(value));
+    this.unitSearchControl.valueChanges.pipe(debounceTime(180), takeUntilDestroyed(this.destroyRef)).subscribe((value) => this.applyUnitSearch(value));
   }
 
   ngOnInit(): void {
@@ -143,7 +149,7 @@ export class ResidentesUnidadesPage implements OnInit {
     this.loadLinks();
   }
 
-  openCreate(): void { this.form.reset({ resident: '', unit: '', relation_type: 'OWNER', start_date: new Date().toISOString().slice(0, 10), is_primary: false }); this.formError.set(''); this.editorOpen.set(true); }
+  openCreate(): void { this.form.reset({ resident: '', unit: '', relation_type: 'OWNER', start_date: new Date().toISOString().slice(0, 10), is_primary: false }); this.residentSearchControl.setValue(''); this.unitSearchControl.setValue(''); this.formError.set(''); this.editorOpen.set(true); }
   closeEditor(): void { if (!this.saving()) this.editorOpen.set(false); }
   setFilter(value: 'all' | 'true' | 'false'): void { this.filter.set(value); this.loadLinks(); }
 
@@ -168,8 +174,8 @@ export class ResidentesUnidadesPage implements OnInit {
   }
 
   private loadCatalogs(): void {
-    this.api.residents().subscribe({ next: (response) => this.residents.set(response.results), error: (error) => this.errorMessage.set(apiErrorMessage(error, 'No se pudieron cargar los residentes.')) });
-    this.api.units().subscribe({ next: (response) => this.units.set(response.results), error: (error) => this.errorMessage.set(apiErrorMessage(error, 'No se pudieron cargar las unidades.')) });
+    this.api.residents().subscribe({ next: (response) => { this.residents.set(response.results); this.filteredResidents.set(response.results); }, error: (error) => this.errorMessage.set(apiErrorMessage(error, 'No se pudieron cargar los residentes.')) });
+    this.api.units().subscribe({ next: (response) => { this.units.set(response.results); this.filteredUnits.set(response.results); }, error: (error) => this.errorMessage.set(apiErrorMessage(error, 'No se pudieron cargar las unidades.')) });
   }
 
   private loadLinks(): void {
@@ -183,5 +189,15 @@ export class ResidentesUnidadesPage implements OnInit {
   private applySearch(search: string): void {
     const value = search.trim().toLowerCase();
     this.visibleLinks.set(!value ? this.links() : this.links().filter((link) => `${link.resident_name} ${link.unit_code} ${link.relation_type_display}`.toLowerCase().includes(value)));
+  }
+
+  private applyResidentSearch(search: string): void {
+    const value = search.trim().toLowerCase();
+    this.filteredResidents.set(!value ? this.residents() : this.residents().filter((resident) => `${resident.full_name} ${resident.document_number ?? ''}`.toLowerCase().includes(value)));
+  }
+
+  private applyUnitSearch(search: string): void {
+    const value = search.trim().toLowerCase();
+    this.filteredUnits.set(!value ? this.units() : this.units().filter((unit) => `${unit.code} ${unit.unit_type_display}`.toLowerCase().includes(value)));
   }
 }

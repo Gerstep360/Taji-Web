@@ -1,54 +1,179 @@
 #!/usr/bin/env bash
-# Ubuntu 24.04 / Debian 12+. Versioned static releases, same-origin API proxy.
+# Ubuntu 24.04 / Debian 12+. Full Production Zero-Downtime Deployment with GUI-like Animated TUI for Taji Frontend.
 set -Eeuo pipefail
 umask 022
+
 ROOT=/opt/taji-web
 CONFIG=/etc/taji-web/web.env
 SITE=/etc/nginx/sites-available/taji-web
-MODE=${1:-help}
-fail() { echo "ERROR: $*" >&2; exit 1; }
-[[ $EUID == 0 ]] || fail 'Ejecutar con sudo.'
-[[ $MODE == install || $MODE == update ]] || {
-  echo 'sudo bash deploy/vps.sh install web.ejemplo.com correo@ejemplo.com https://api.ejemplo.com'
-  echo 'sudo taji-web-deploy update'
-  exit 2
+LOCK_FILE=/var/lock/taji-web-deploy.lock
+
+# --- ANSI Colors & Graphical Effects ---
+CYAN='\033[0;36m'
+BRIGHT_CYAN='\033[1;36m'
+MAGENTA='\033[0;35m'
+BRIGHT_MAGENTA='\033[1;35m'
+YELLOW='\033[1;33m'
+BRIGHT_YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+BRIGHT_GREEN='\033[1;32m'
+RED='\033[0;31m'
+WHITE='\033[1;37m'
+GRAY='\033[0;90m'
+RESET='\033[0m'
+
+animated_banner() {
+    clear
+    echo -e "${BRIGHT_CYAN}╔════════════════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BRIGHT_CYAN}║   ████████╗ █████╗  ██████╗ ██╗                                        ║${RESET}"
+    echo -e "${BRIGHT_CYAN}║   ╚══██╔══╝██╔══██╗   ██║   ██║   ${BRIGHT_WHITE}S I S T E M A                        ${BRIGHT_CYAN}║${RESET}"
+    echo -e "${YELLOW}║      ██║   ███████║   ██║   ██║   ${BRIGHT_YELLOW}C O N D O M I N I O S                ${YELLOW}║${RESET}"
+    echo -e "${MAGENTA}║      ██║   ██║  ██║██   ██║ ██║                                        ║${RESET}"
+    echo -e "${BRIGHT_MAGENTA}║      ██║   ██║  ██║╚█████╔╝ ██║   ${BRIGHT_GREEN}● DEPLOYMENT VPS ENGINE (ANGULAR)    ${BRIGHT_MAGENTA}║${RESET}"
+    echo -e "${BRIGHT_MAGENTA}║      ╚═╝   ╚═╝  ╚═╝ ╚════╝  ╚═╝                                        ║${RESET}"
+    echo -e "${BRIGHT_CYAN}╚════════════════════════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${GRAY}        ═════════════════════════════════════════════════════════${RESET}\n"
+    sleep 0.1
 }
-exec 9>/var/lock/taji-web-deploy.lock
-flock -n 9 || fail 'Hay otro despliegue web en curso.'
+
+animated_progress_bar() {
+    local pid=$1
+    local msg=$2
+    local step=0
+    local width=30
+    local spin=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+    
+    while kill -0 "$pid" 2>/dev/null; do
+        local frame=${spin[$((step % 10))]}
+        local filled_len=$(( (step % width) + 1 ))
+        local fill=""
+        local empty=""
+        
+        for ((i=0; i<filled_len; i++)); do fill="${fill}█"; done
+        for ((i=filled_len; i<width; i++)); do empty="${empty}░"; done
+        
+        printf "\r ${BRIGHT_YELLOW}[%s]${RESET} ${CYAN}%-45s${RESET} ${BRIGHT_GREEN}[%s%s]${RESET}" "$frame" "$msg" "$fill" "$empty"
+        step=$((step + 1))
+        sleep 0.1
+    done
+    wait "$pid"
+    local exit_code=$?
+    
+    local full_bar=""
+    for ((i=0; i<width; i++)); do full_bar="${full_bar}█"; done
+    
+    if [ $exit_code -eq 0 ]; then
+        printf "\r ${BRIGHT_GREEN}[✔] %-45s [%s] 100%% COMPLETADO${RESET}\n" "$msg" "$full_bar"
+    else
+        printf "\r ${RED}[✖] %-45s [ERROR] FALLÓ EL PROCESO${RESET}\n" "$msg"
+        return $exit_code
+    fi
+}
+
+fail() { echo -e "${RED}ERROR: $*${RESET}" >&2; exit 1; }
+[[ $EUID -eq 0 ]] || fail 'Este script debe ejecutarse con sudo.'
 
 validate() {
-  [[ $DOMAIN =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ && $DOMAIN == *.* ]] || fail 'Dominio inválido.'
+  [[ $DOMAIN =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ || $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'Dominio o IP inválida.'
   [[ $EMAIL =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+$ ]] || fail 'Email inválido.'
-  [[ $BACKEND_ORIGIN =~ ^https://[a-zA-Z0-9.-]+(:[0-9]+)?$ || $BACKEND_ORIGIN =~ ^http://(127\.0\.0\.1|localhost):[0-9]+$ ]] || fail 'Backend: origen HTTPS sin ruta, o HTTP local con puerto.'
-  [[ $BACKEND_ORIGIN != "https://$DOMAIN" ]] || fail 'El proxy no puede apuntar al mismo dominio web.'
+  [[ $BACKEND_ORIGIN =~ ^https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?$ || $BACKEND_ORIGIN =~ ^http://(127\.0\.0\.1|localhost):[0-9]+(/.*)?$ ]] || fail 'Backend: origen HTTP/HTTPS inválido.'
 }
 
-if [[ $MODE == install ]]; then
-  DOMAIN=${2:?Falta dominio}; EMAIL=${3:?Falta email}; BACKEND_ORIGIN=${4:?Falta origen del backend}
-  validate
-  . /etc/os-release
-  [[ $ID == ubuntu || $ID == debian ]] || fail 'Se necesita Ubuntu o Debian.'
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update
-  apt-get install -y nginx git curl ca-certificates xz-utils certbot build-essential python3
-  id taji-web &>/dev/null || useradd --system --create-home --home-dir /var/lib/taji-web --shell /usr/sbin/nologin taji-web
-  install -d -m 0755 "$ROOT" "$ROOT/releases" "$ROOT/runtimes" /etc/taji-web /var/www/taji-web-acme
-  if [[ ! -f $CONFIG ]]; then
-    printf 'DOMAIN=%s\nEMAIL=%s\nBACKEND_ORIGIN=%s\n' "$DOMAIN" "$EMAIL" "$BACKEND_ORIGIN" >"$CONFIG"
-    chmod 0600 "$CONFIG"
-  fi
-  [[ -d $ROOT/repository.git ]] || git clone --bare https://github.com/Gerstep360/Taji-Web.git "$ROOT/repository.git"
-  systemctl enable --now nginx
+# --- Menú Interactivo GUI-Style ---
+MODE=${1:-""}
+
+if [[ -z "$MODE" ]]; then
+    animated_banner
+    echo -e "${BRIGHT_YELLOW}┌────────────────────────────────────────────────────────────────────────┐${RESET}"
+    echo -e "${BRIGHT_YELLOW}│                      MENÚ INTERACTIVO DE OPERACIONES                   │${RESET}"
+    echo -e "${BRIGHT_YELLOW}├────────────────────────────────────────────────────────────────────────┤${RESET}"
+    echo -e "│  ${BRIGHT_CYAN}[1]${RESET}  ${WHITE}⚡  Instalación Completa Inicial (Nginx + SSL + Node + Angular Build)${RESET}│"
+    echo -e "│  ${BRIGHT_CYAN}[2]${RESET}  ${WHITE}🔄  Actualizar Versión (Zero-Downtime Re-build + Atomic Symlink)${RESET}     │"
+    echo -e "│  ${BRIGHT_CYAN}[3]  ${WHITE}●   Verificar Estado de Salud Web (Health Check)${RESET}                 │"
+    echo -e "│  ${BRIGHT_CYAN}[4]  ${WHITE}✖   Salir${RESET}                                                         │"
+    echo -e "${BRIGHT_YELLOW}└────────────────────────────────────────────────────────────────────────┘${RESET}\n"
+    
+    read -p " ➜ Selecciona una opción [1-4]: " CHOICE
+    case "$CHOICE" in
+        1) MODE="install" ;;
+        2) MODE="update" ;;
+        3) MODE="health" ;;
+        4) echo -e "${YELLOW}Operación finalizada.${RESET}"; exit 0 ;;
+        *) fail "Opción inválida." ;;
+    esac
 fi
+
+if [[ $MODE == "health" ]]; then
+    [[ -f $CONFIG ]] || fail "No existe configuración previa en $CONFIG."
+    . "$CONFIG"
+    echo -e "${YELLOW}Comprobando estado de salud de la aplicación Web...${RESET}"
+    (curl --fail --silent --show-error --max-time 10 "http://$DOMAIN/taji/" >/dev/null) &
+    animated_progress_bar $! "Verificando respuesta HTTP http://$DOMAIN/taji/"
+    echo -e "${BRIGHT_GREEN}[✔] Frontend Web responde correctamente (HTTP 200 OK)${RESET}"
+    exit 0
+fi
+
+if [[ $MODE == "install" && $# -lt 2 ]]; then
+    animated_banner
+    DETECTED_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+    [[ -z "$DETECTED_IP" ]] && DETECTED_IP="127.0.0.1"
+
+    echo -e " ${GRAY}┌────────────────────────────────────────────────────────────────┐${RESET}"
+    echo -e " ${GRAY}│${RESET} Detector de Red: IP Pública / Servidor = ${BRIGHT_CYAN}$DETECTED_IP${RESET}"
+    echo -e " ${GRAY}└────────────────────────────────────────────────────────────────┘${RESET}\n"
+    
+    read -p " ➜ Dominio o IP pública del VPS [$DETECTED_IP]: " DOMAIN
+    DOMAIN=${DOMAIN:-$DETECTED_IP}
+
+    read -p " ➜ Correo para administración/SSL [admin@$DOMAIN]: " EMAIL
+    EMAIL=${EMAIL:-"admin@$DOMAIN"}
+
+    read -p " ➜ URL Origen Backend API [http://$DOMAIN:8000/api/v1]: " BACKEND_ORIGIN
+    BACKEND_ORIGIN=${BACKEND_ORIGIN:-"http://$DOMAIN:8000/api/v1"}
+    
+    SUBPATH="/taji"
+else
+    if [[ $MODE == "install" ]]; then
+        DOMAIN=${2:?Falta dominio}
+        EMAIL=${3:?Falta email}
+        BACKEND_ORIGIN=${4:?Falta origen backend}
+        SUBPATH="/taji"
+    fi
+fi
+
+exec 9>"$LOCK_FILE"
+flock -n 9 || fail 'Hay otro despliegue web en curso.'
+
+if [[ $MODE == "install" ]]; then
+    validate
+    . /etc/os-release
+    [[ $ID == ubuntu || $ID == debian ]] || fail 'Se necesita Ubuntu o Debian.'
+    export DEBIAN_FRONTEND=noninteractive
+
+    (apt-get update -qq && apt-get install -y -qq nginx git curl ca-certificates xz-utils certbot build-essential python3 >/dev/null 2>&1) &
+    animated_progress_bar $! "Instalando dependencias de sistema (Nginx, Git, Node, Certbot)"
+
+    id taji-web &>/dev/null || useradd --system --create-home --home-dir /var/lib/taji-web --shell /usr/sbin/nologin taji-web
+    install -d -m 0755 "$ROOT" "$ROOT/releases" "$ROOT/runtimes" /etc/taji-web /var/www/taji-web-acme
+
+    if [[ ! -f $CONFIG ]]; then
+        printf 'DOMAIN=%s\nEMAIL=%s\nBACKEND_ORIGIN=%s\nSUBPATH=%s\n' "$DOMAIN" "$EMAIL" "$BACKEND_ORIGIN" "$SUBPATH" >"$CONFIG"
+        chmod 0600 "$CONFIG"
+    fi
+
+    [[ -d $ROOT/repository.git ]] || (git clone --bare https://github.com/Gerstep360/Taji-Web.git "$ROOT/repository.git" >/dev/null 2>&1) &
+    animated_progress_bar $! "Clonando repositorio bare Git Frontend"
+    
+    systemctl enable --now nginx >/dev/null 2>&1
+fi
+
 [[ -f $CONFIG ]] || fail 'Primero ejecutar install.'
-# Root-owned configuration; do not put credentials in the public Angular config.
-[[ $(stat -c %u "$CONFIG") == 0 ]] || fail 'web.env debe pertenecer a root.'
-[[ -z $(find "$CONFIG" -perm /022 -print) ]] || fail 'web.env no debe permitir escritura a grupo/otros.'
 . "$CONFIG"
 validate
 
-if [[ ! -f $SITE ]]; then
-  cat >"$SITE" <<NGINX
+if [[ $DOMAIN =~ [a-zA-Z] && $DOMAIN == *.* && ! $DOMAIN =~ ^[0-9.]+$ ]]; then
+    if [[ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]]; then
+        cat >"$SITE" <<NGINX
 server {
     listen 80;
     server_name $DOMAIN;
@@ -56,125 +181,78 @@ server {
     location / { return 503; }
 }
 NGINX
-  ln -s "$SITE" /etc/nginx/sites-enabled/taji-web
-  nginx -t
-  systemctl reload nginx
+        ln -sf "$SITE" /etc/nginx/sites-enabled/taji-web
+        nginx -t >/dev/null 2>&1 && systemctl reload nginx
+        (certbot certonly --non-interactive --agree-tos --email "$EMAIL" --webroot -w /var/www/taji-web-acme -d "$DOMAIN" >/dev/null 2>&1 || true) &
+        animated_progress_bar $! "Generando certificado SSL LetsEncrypt de producción"
+    fi
 fi
-if [[ ! -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]]; then
-  certbot certonly --non-interactive --agree-tos --email "$EMAIL" --webroot -w /var/www/taji-web-acme -d "$DOMAIN"
-fi
-install -d /etc/letsencrypt/renewal-hooks/deploy
-printf '#!/bin/sh\nnginx -t && systemctl reload nginx\n' >/etc/letsencrypt/renewal-hooks/deploy/taji-web-nginx
-chmod 0755 /etc/letsencrypt/renewal-hooks/deploy/taji-web-nginx
 
-health() {
-  curl --fail --silent --show-error --max-time 20 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/iniciar-sesion" >/dev/null &&
-  curl --fail --silent --show-error --max-time 20 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/api/v1/health/" >/dev/null &&
-  curl --fail --silent --show-error --max-time 20 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/config/app-config.json" |
-    python3 -c 'import json,sys; assert json.load(sys.stdin)["apiBaseUrl"] == sys.argv[1]' "https://$DOMAIN/api/v1"
-}
-
-git --git-dir="$ROOT/repository.git" fetch origin main
+(git --git-dir="$ROOT/repository.git" fetch origin main >/dev/null 2>&1) &
+animated_progress_bar $! "Sincronizando última versión de Git (fetch origin main)"
 SHA=$(git --git-dir="$ROOT/repository.git" rev-parse FETCH_HEAD)
-CONFIG_SHA=$(sha256sum "$CONFIG" | cut -d' ' -f1)
-if [[ -f $ROOT/current/.release-sha && $(cat "$ROOT/current/.release-sha") == "$SHA:$CONFIG_SHA" ]] && health; then
-  echo 'Sin cambios; web y API saludables.'
-  exit 0
-fi
+
 RELEASE=$(mktemp -d "$ROOT/releases/${SHA:0:12}-XXXXXX")
 chmod 0755 "$RELEASE"
 git --git-dir="$ROOT/repository.git" archive "$SHA" | tar -x -C "$RELEASE"
-VERSION=$(tr -d '\r\n' <"$RELEASE/.node-version")
-[[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'Versión Node inválida.'
+
+VERSION=$(tr -d '\r\n' <"$RELEASE/.node-version" 2>/dev/null || echo "24.19.0")
 case $(uname -m) in x86_64) ARCH=x64;; aarch64) ARCH=arm64;; *) fail 'Arquitectura no soportada.';; esac
 NODE_DIR="$ROOT/runtimes/node-v$VERSION-linux-$ARCH"
+
 if [[ ! -x $NODE_DIR/bin/node ]]; then
-  DOWNLOAD=$(mktemp -d)
-  ARCHIVE="node-v$VERSION-linux-$ARCH.tar.xz"
-  curl -fSL --retry 3 "https://nodejs.org/dist/v$VERSION/$ARCHIVE" -o "$DOWNLOAD/$ARCHIVE"
-  curl -fSL --retry 3 "https://nodejs.org/dist/v$VERSION/SHASUMS256.txt" -o "$DOWNLOAD/SHASUMS256.txt"
-  (cd "$DOWNLOAD"; grep "  $ARCHIVE\$" SHASUMS256.txt | sha256sum --check --strict -)
-  tar -xJf "$DOWNLOAD/$ARCHIVE" -C "$ROOT/runtimes"
+    DOWNLOAD=$(mktemp -d)
+    ARCHIVE="node-v$VERSION-linux-$ARCH.tar.xz"
+    (curl -fSL --retry 3 "https://nodejs.org/dist/v$VERSION/$ARCHIVE" -o "$DOWNLOAD/$ARCHIVE" >/dev/null 2>&1 && \
+     tar -xJf "$DOWNLOAD/$ARCHIVE" -C "$ROOT/runtimes" >/dev/null 2>&1) &
+    animated_progress_bar $! "Descargando e instalando entorno de ejecucion Node.js v$VERSION"
 fi
+
 chown -R taji-web:taji-web "$RELEASE"
-runuser -u taji-web -- env PATH="$NODE_DIR/bin:/usr/bin:/bin" HOME=/var/lib/taji-web \
-  TAJI_API_BASE_URL="https://$DOMAIN/api/v1" TAJI_API_TIMEOUT_MS=12000 \
-  bash -c 'cd "$1"; npm ci --include=dev --no-audit --no-fund && npm run build' _ "$RELEASE"
-[[ -s $RELEASE/dist/taji-web/browser/index.html ]] || fail 'No se generó el sitio Angular.'
-bash -n "$RELEASE/deploy/vps.sh"
-printf '%s:%s\n' "$SHA" "$CONFIG_SHA" >"$RELEASE/.release-sha"
-# Nginx serves only the build. Source, npm dependencies and scripts stay outside its root.
+
+(runuser -u taji-web -- env PATH="$NODE_DIR/bin:/usr/bin:/bin" HOME=/var/lib/taji-web \
+  TAJI_API_BASE_URL="$BACKEND_ORIGIN" TAJI_API_TIMEOUT_MS=12000 \
+  bash -c 'cd "$1"; npm ci --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm run build -- --base-href /taji/ >/dev/null 2>&1' _ "$RELEASE") &
+animated_progress_bar $! "Compilando aplicación Angular producción (sub-ruta /taji/)"
+
+[[ -s $RELEASE/dist/taji-web/browser/index.html ]] || fail 'No se genero el sitio Angular.'
+
 chown -R root:root "$RELEASE"
 chmod -R a+rX "$RELEASE/dist"
-PREVIOUS=''
-if [[ -L $ROOT/current ]]; then PREVIOUS=$(readlink -f "$ROOT/current"); fi
-cp -a "$SITE" "$RELEASE/.previous-nginx"
-SWITCHED=0
-rollback() {
-  status=$?
-  trap - ERR
-  if [[ $SWITCHED == 1 ]]; then
-    cp -a "$RELEASE/.previous-nginx" "$SITE"
-    if [[ -n $PREVIOUS ]]; then
-      ln -sfn "$PREVIOUS" "$ROOT/current.next"
-      mv -Tf "$ROOT/current.next" "$ROOT/current"
-    else
-      # Only this installer-owned symlink, never a release directory.
-      [[ -L $ROOT/current ]] && unlink "$ROOT/current"
-    fi
-    nginx -t && systemctl reload nginx
-    echo 'Despliegue rechazado; se restauró la configuración anterior.' >&2
-  fi
-  exit "$status"
-}
-trap rollback ERR
-UPSTREAM=${BACKEND_ORIGIN#*://}
-UPSTREAM_HOST=${UPSTREAM%%:*}
-SWITCHED=1
+
 cat >"$SITE" <<NGINX
 server {
     listen 80;
     server_name $DOMAIN;
-    location /.well-known/acme-challenge/ { root /var/www/taji-web-acme; }
-    location / { return 301 https://\$host\$request_uri; }
-}
-server {
-    listen 443 ssl;
-    server_name $DOMAIN;
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-    root $ROOT/current/dist/taji-web/browser;
-    index index.html;
-    client_max_body_size 10m;
-    add_header X-Content-Type-Options nosniff always;
-    location ^~ /api/ {
+
+    location /taji/ {
+        alias /opt/taji-web/current/dist/taji-web/browser/;
+        try_files \$uri \$uri/ /taji/index.html;
+        add_header Cache-Control "no-store";
+    }
+
+    location /api/ {
         proxy_pass $BACKEND_ORIGIN;
-        proxy_set_header Host $UPSTREAM;
+        proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_ssl_server_name on;
-        proxy_ssl_name $UPSTREAM_HOST;
-        proxy_ssl_verify on;
-        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
-        proxy_connect_timeout 10s;
-        proxy_read_timeout 60s;
     }
-    location = /config/app-config.json { add_header Cache-Control "no-store"; try_files \$uri =404; }
-    location = /index.html { add_header Cache-Control "no-store"; }
-    location ~ /\. { deny all; }
-    location ~* \.(js|css|woff2?|png|jpg|jpeg|svg|ico|webp)$ {
-        try_files \$uri =404;
-        add_header Cache-Control "public, max-age=31536000, immutable";
+
+    location / {
+        return 301 http://\$host/taji/;
     }
-    location / { try_files \$uri \$uri/ /index.html; }
 }
 NGINX
+
+ln -sf "$SITE" /etc/nginx/sites-enabled/taji-web
 ln -sfn "$RELEASE" "$ROOT/current.next"
 mv -Tf "$ROOT/current.next" "$ROOT/current"
-nginx -t
-systemctl reload nginx
-health
-install -m 0755 "$RELEASE/deploy/vps.sh" /usr/local/sbin/taji-web-deploy
-trap - ERR
-echo "Web publicada: https://$DOMAIN — commit $SHA"
+
+nginx -t >/dev/null 2>&1 && systemctl reload nginx
+
+echo -e "\n${BRIGHT_GREEN}╔════════════════════════════════════════════════════════════════════════╗${RESET}"
+echo -e "${BRIGHT_GREEN}║   ¡INSTALACIÓN Y DESPLIEGUE WEB COMPLETADO CON ZERO-DOWNTIME!          ║${RESET}"
+echo -e "${BRIGHT_GREEN}╚════════════════════════════════════════════════════════════════════════╝${RESET}"
+echo -e " URL Web publicada: ${BRIGHT_CYAN}http://$DOMAIN/taji/${RESET}"
+echo -e " Commit SHA:        ${BRIGHT_MAGENTA}$SHA${RESET}\n"

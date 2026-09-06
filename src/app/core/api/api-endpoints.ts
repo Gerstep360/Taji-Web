@@ -19,6 +19,11 @@
     detail: (id: number) => `/staff/${id}/`,
   },
 
+  residents: {
+    root: '/residents/',
+    options: '/residents/options/',
+    detail: (id: number) => `/residents/${id}/`,
+  },
   roles: {
     root: '/roles/',
     permissions: '/roles/permissions/',

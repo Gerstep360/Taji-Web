@@ -64,7 +64,7 @@ animated_progress_bar() {
     for ((i=0; i<width; i++)); do full_bar="${full_bar}#"; done
     
     if [ $exit_code -eq 0 ]; then
-        printf "\r ${BRIGHT_GREEN}[OK] %-45s [%s] 100%% COMPLETADO${RESET}\n" "$msg" "$full_bar"
+        printf "\r ${BRIGHT_GREEN}[OK] %-45s [%s] 100%% COMPLETADO${RESET}\n" "$msg" "$fill"
     else
         printf "\r ${RED}[ERROR] %-45s [FALLO EN EL PROCESO]${RESET}\n" "$msg"
         return $exit_code
@@ -102,6 +102,16 @@ do_deploy_frontend() {
 
     [[ -f $CONFIG ]] || fail 'Primero ejecutar opcion [1] install.'
     . "$CONFIG"
+
+    # Sanitizar BACKEND_ORIGIN si apunta al puerto interno 8000 directo en cliente
+    if [[ "$BACKEND_ORIGIN" == *":8000"* ]]; then
+        BACKEND_ORIGIN=$(echo "$BACKEND_ORIGIN" | sed -E 's|:8000/api/v1|/taji/api/v1|g' | sed -E 's|:8000||g')
+        if [[ -f "$CONFIG" ]]; then
+            sed -i -E 's|:8000/api/v1|/taji/api/v1|g' "$CONFIG"
+            sed -i -E 's|:8000||g' "$CONFIG"
+        fi
+    fi
+
     validate
 
     if [[ $DOMAIN =~ [a-zA-Z] && $DOMAIN == *.* && ! $DOMAIN =~ ^[0-9.]+$ ]]; then
@@ -183,7 +193,7 @@ server {
     }
 
     location /taji/api/ {
-        proxy_pass $BACKEND_ORIGIN;
+        proxy_pass http://127.0.0.1:8000/api/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -191,7 +201,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass $BACKEND_ORIGIN;
+        proxy_pass http://127.0.0.1:8000/api/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -230,6 +240,7 @@ NGINX
         echo -e "${BRIGHT_GREEN}|   INSTALACION Y DESPLIEGUE WEB COMPLETADO CON ZERO-DOWNTIME!           |${RESET}"
         echo -e "${BRIGHT_GREEN}+------------------------------------------------------------------------+${RESET}"
         echo -e " URL Web publicada: ${BRIGHT_CYAN}http://$DOMAIN/taji/${RESET}"
+        echo -e " Backend API URL:   ${BRIGHT_CYAN}$BACKEND_ORIGIN${RESET}"
         echo -e " Commit SHA:        ${BRIGHT_MAGENTA}$SHA${RESET}\n"
     else
         echo -e "${RED}[ERROR] La aplicacion Web Nginx no respondio correctamente.${RESET}"
@@ -287,8 +298,8 @@ run_action() {
         read -p " Correo para administracion/SSL [admin@$DOMAIN]: " EMAIL
         EMAIL=${EMAIL:-"admin@$DOMAIN"}
 
-        read -p " URL Origen Backend API [http://$DOMAIN:8000/api/v1]: " BACKEND_ORIGIN
-        BACKEND_ORIGIN=${BACKEND_ORIGIN:-"http://$DOMAIN:8000/api/v1"}
+        read -p " URL Origen Backend API [http://$DOMAIN/taji/api/v1]: " BACKEND_ORIGIN
+        BACKEND_ORIGIN=${BACKEND_ORIGIN:-"http://$DOMAIN/taji/api/v1"}
         
         SUBPATH="/taji"
     elif [[ $MODE == "install" ]]; then

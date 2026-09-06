@@ -18,7 +18,7 @@ import { PasswordMeterComponent } from '../../../../shared/ui/password-meter.com
       <div class="auth-heading">
         <span class="kicker">Empieza en minutos</span>
         <h2>Crea tu cuenta</h2>
-        <p>Tu cuenta se registrará como Copropietario / Residente.</p>
+        <p>Tu cuenta se registrarï¿½ como Copropietario / Residente.</p>
       </div>
       <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <taji-alert [message]="errorMessage" />
@@ -27,17 +27,17 @@ import { PasswordMeterComponent } from '../../../../shared/ui/password-meter.com
           <taji-field label="Apellidos" icon="user" placeholder="Tus apellidos" autocomplete="family-name" formControlName="last_name" [error]="fieldError('last_name')" />
         </div>
         <div class="form-grid">
-          <taji-field label="Correo electrónico" type="email" icon="mail" placeholder="tu@correo.com" autocomplete="email" formControlName="email" [error]="fieldError('email')" />
-          <taji-field label="Teléfono (opcional)" type="tel" icon="phone" placeholder="+591 70000000" autocomplete="tel" formControlName="phone" [error]="fieldError('phone')" />
+          <taji-field label="Correo electrï¿½nico" type="email" icon="mail" placeholder="tu@correo.com" autocomplete="email" formControlName="email" [error]="fieldError('email')" />
+          <taji-field label="Telï¿½fono (opcional)" type="tel" icon="phone" placeholder="+591 70000000" autocomplete="tel" formControlName="phone" [error]="fieldError('phone')" />
         </div>
         <div class="form-grid">
-          <taji-field label="Contraseña" type="password" icon="lock" placeholder="Mínimo 10 caracteres" autocomplete="new-password" formControlName="password" [error]="fieldError('password')" />
-          <taji-field label="Repite la contraseña" type="password" icon="lock" placeholder="Repite tu contraseña" autocomplete="new-password" formControlName="password_confirm" [error]="fieldError('password_confirm')" />
+          <taji-field label="Contraseï¿½a" type="password" icon="lock" placeholder="Mï¿½nimo 10 caracteres" autocomplete="new-password" formControlName="password" [error]="fieldError('password')" />
+          <taji-field label="Repite la contraseï¿½a" type="password" icon="lock" placeholder="Repite tu contraseï¿½a" autocomplete="new-password" formControlName="password_confirm" [error]="fieldError('password_confirm')" />
         </div>
         <taji-password-meter [password]="form.controls.password.value" />
         <taji-button type="submit" [loading]="loading">Crear mi cuenta</taji-button>
       </form>
-      <p class="auth-switch">¿Ya tienes una cuenta? <a routerLink="/iniciar-sesion">Inicia sesión</a></p>
+      <p class="auth-switch">ï¿½Ya tienes una cuenta? <a routerLink="/iniciar-sesion">Inicia sesiï¿½n</a></p>
     </taji-auth-shell>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,15 +61,15 @@ export class RegisterPage {
   fieldError(name: 'first_name' | 'last_name' | 'email' | 'phone' | 'password' | 'password_confirm'): string {
     const control = this.form.controls[name];
     if (!(control.touched || this.submitted) || !control.errors) {
-      if (name === 'password_confirm' && control.value && control.value !== this.form.controls.password.value) return 'Las contraseñas no coinciden.';
+      if (name === 'password_confirm' && control.value && control.value !== this.form.controls.password.value) return 'Las contraseï¿½as no coinciden.';
       return '';
     }
     if (typeof control.errors['server'] === 'string') return control.errors['server'];
-    if (control.errors['email']) return 'Ingresa un correo válido.';
+    if (control.errors['email']) return 'Ingresa un correo vï¿½lido.';
     if (control.errors['minlength']) return name === 'password' ? 'Usa al menos 10 caracteres.' : 'Usa al menos 2 caracteres.';
     if (control.errors['pattern']) {
-      if (name === 'phone') return 'Usa entre 7 y 25 números; puedes incluir +, espacios, guiones o paréntesis.';
-      if (name === 'password') return 'La contraseña no puede contener solamente números.';
+      if (name === 'phone') return 'Usa entre 7 y 25 nï¿½meros; puedes incluir +, espacios, guiones o parï¿½ntesis.';
+      if (name === 'password') return 'La contraseï¿½a no puede contener solamente nï¿½meros.';
     }
     return 'Este campo es obligatorio.';
   }

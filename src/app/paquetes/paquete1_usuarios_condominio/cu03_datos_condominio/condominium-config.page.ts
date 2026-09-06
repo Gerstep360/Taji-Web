@@ -7,7 +7,7 @@ import {
   Validators
 } from '@angular/forms';
 
-import { CondominiumService } from '../../../core/services/condominium';
+import { CondominiumService } from './condominium.service';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
@@ -44,12 +44,11 @@ export class CondominiumConfigPage implements OnInit {
   }
 
   private checkPermissions(): void {
-    const user = this.authService.user() as any;
+    const user = this.authService.user();
 
     this.isAdmin = !!(
-      user?.is_staff ||
       user?.is_superuser ||
-      user?.role === 'ADMIN'
+      user?.role?.permissions.includes('manage_settings')
     );
 
     if (!this.isAdmin) {
@@ -90,11 +89,13 @@ export class CondominiumConfigPage implements OnInit {
       next: () => {
         this.saving = false;
         this.message = 'Configuración actualizada correctamente.';
+        this.cdr.markForCheck();
       },
 
       error: () => {
         this.saving = false;
         this.message = 'No fue posible actualizar la configuración.';
+        this.cdr.markForCheck();
       }
     });
   }

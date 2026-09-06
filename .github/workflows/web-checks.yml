@@ -1,0 +1,68 @@
+name: Web Sprint 1
+on:
+  push:
+    branches: [main, Gerstep]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-ci-only
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:test-ci-only@127.0.0.1:5432/postgres
+      DJANGO_SECRET_KEY: isolated-ci-test-key-not-production
+      TAJI_API_BASE_URL: http://localhost:4201/api/v1
+      TAJI_API_TIMEOUT_MS: '12000'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm test -- --watch=false
+      - run: npm run build
+      - run: bash -n deploy/vps.sh && bash -n deploy/tests/vps_smoke.sh
+      - name: Prepare the actual Sprint 1 backend
+        run: |
+          git clone --depth 1 --branch main https://github.com/Gerstep360/Taji-Backend.git /tmp/taji-backend
+          python -m venv /tmp/taji-backend/.venv
+          /tmp/taji-backend/.venv/bin/pip install -r /tmp/taji-backend/requirements.txt
+          /tmp/taji-backend/.venv/bin/python scripts/e2e/prepare-backend.py --backend /tmp/taji-backend --serve > /tmp/taji-e2e.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8001/api/v1/health/; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/taji-e2e.log
+          exit 1
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Exercise the real VPS installer and updater
+        run: sudo env GITHUB_ACTIONS=true bash deploy/tests/vps_smoke.sh "$GITHUB_WORKSPACE"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failures
+          path: test-results/

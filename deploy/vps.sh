@@ -80,6 +80,16 @@ validate() {
   [[ $BACKEND_ORIGIN =~ ^https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?$ || $BACKEND_ORIGIN =~ ^http://(127\.0\.0\.1|localhost):[0-9]+(/.*)?$ ]] || fail 'Backend: origen HTTP/HTTPS invalido.'
 }
 
+check_web_health() {
+    if curl --fail --silent --connect-timeout 3 "http://127.0.0.1/taji/" >/dev/null 2>&1; then
+        return 0
+    fi
+    if curl --fail --silent --connect-timeout 3 "http://localhost/taji/" >/dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
 # --- Menú Interactivo ---
 MODE=${1:-""}
 
@@ -91,27 +101,42 @@ if [[ -z "$MODE" ]]; then
     echo -e "|  ${BRIGHT_CYAN}[1]${RESET}  ${WHITE}[+] Instalacion Completa Inicial (Nginx + SSL + Node + Build)${RESET}    |"
     echo -e "|  ${BRIGHT_CYAN}[2]${RESET}  ${WHITE}[*] Actualizar Version (Zero-Downtime Re-build + Atomic Symlink)${RESET} |"
     echo -e "|  ${BRIGHT_CYAN}[3]${RESET}  ${WHITE}[?] Verificar Estado de Salud Web (Health Check)${RESET}                 |"
-    echo -e "|  ${BRIGHT_CYAN}[4]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
+    echo -e "|  ${BRIGHT_CYAN}[4]${RESET}  ${WHITE}[!] Reiniciar Servicio Nginx Web${RESET}                                 |"
+    echo -e "|  ${BRIGHT_CYAN}[5]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
     echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}\n"
     
-    read -p " Selecciona una opcion [1-4]: " CHOICE
+    read -p " Selecciona una opcion [1-5]: " CHOICE
     case "$CHOICE" in
         1) MODE="install" ;;
         2) MODE="update" ;;
         3) MODE="health" ;;
-        4) echo -e "${YELLOW}Operacion finalizada.${RESET}"; exit 0 ;;
+        4) MODE="restart" ;;
+        5) echo -e "${YELLOW}Operacion finalizada.${RESET}"; exit 0 ;;
         *) fail "Opcion invalida." ;;
     esac
 fi
 
+if [[ $MODE == "restart" ]]; then
+    echo -e "${YELLOW}Reiniciando Nginx...${RESET}"
+    systemctl restart nginx
+    echo -e "${BRIGHT_GREEN}[OK] Nginx reiniciado correctamente.${RESET}"
+    MODE="health"
+fi
+
 if [[ $MODE == "health" ]]; then
-    [[ -f $CONFIG ]] || fail "No existe configuracion previa en $CONFIG."
+    [[ -f $CONFIG ]] || fail "No existe configuracion previa en $CONFIG. Ejecuta la opcion [1] primero."
     . "$CONFIG"
     echo -e "${YELLOW}Comprobando estado de salud de la aplicacion Web...${RESET}"
-    (curl --fail --silent --show-error --max-time 10 "http://$DOMAIN/taji/" >/dev/null) &
-    animated_progress_bar $! "Verificando respuesta HTTP http://$DOMAIN/taji/"
-    echo -e "${BRIGHT_GREEN}[OK] Frontend Web responde correctamente (HTTP 200 OK)${RESET}"
-    exit 0
+    
+    if check_web_health; then
+        echo -e "${BRIGHT_GREEN}[OK] Frontend Web responde correctamente (HTTP 200 OK)${RESET}"
+        exit 0
+    else
+        echo -e "${RED}[ERROR] La aplicacion Web en http://$DOMAIN/taji/ no responde correctamente.${RESET}"
+        echo -e "${YELLOW}--- Ultimos logs de error de Nginx ---${RESET}"
+        tail -n 25 /var/log/nginx/error.log || true
+        fail "La verificacion Web fallo."
+    fi
 fi
 
 if [[ $MODE == "install" && $# -lt 2 ]]; then
@@ -156,6 +181,7 @@ if [[ $MODE == "install" ]]; then
 
     id taji-web &>/dev/null || useradd --system --create-home --home-dir /var/lib/taji-web --shell /usr/sbin/nologin taji-web
     install -d -m 0755 "$ROOT" "$ROOT/releases" "$ROOT/runtimes" /etc/taji-web /var/www/taji-web-acme
+    chmod 0755 "$ROOT" "$ROOT/releases"
 
     if [[ ! -f $CONFIG ]]; then
         printf 'DOMAIN=%s\nEMAIL=%s\nBACKEND_ORIGIN=%s\nSUBPATH=%s\n' "$DOMAIN" "$EMAIL" "$BACKEND_ORIGIN" "$SUBPATH" >"$CONFIG"
@@ -168,7 +194,7 @@ if [[ $MODE == "install" ]]; then
     systemctl enable --now nginx >/dev/null 2>&1
 fi
 
-[[ -f $CONFIG ]] || fail 'Primero ejecutar install.'
+[[ -f $CONFIG ]] || fail 'Primero ejecutar opción [1] install.'
 . "$CONFIG"
 validate
 
@@ -216,20 +242,40 @@ chown -R taji-web:taji-web "$RELEASE"
   bash -c 'cd "$1"; npm ci --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm run build -- --base-href /taji/ >/dev/null 2>&1' _ "$RELEASE") &
 animated_progress_bar $! "Compilando aplicacion Angular produccion (sub-ruta /taji/)"
 
-[[ -s $RELEASE/dist/taji-web/browser/index.html ]] || fail 'No se genero el sitio Angular.'
+# Determinar ruta exacta del bundle compilado
+if [[ -d "$RELEASE/dist/taji-web/browser" ]]; then
+    TARGET_DIR="$RELEASE/dist/taji-web/browser"
+elif [[ -d "$RELEASE/dist/taji-web" ]]; then
+    TARGET_DIR="$RELEASE/dist/taji-web"
+else
+    TARGET_DIR="$RELEASE/dist"
+fi
 
+[[ -s "$TARGET_DIR/index.html" ]] || fail 'No se genero el archivo index.html del sitio Angular.'
+
+# Crear enlace simbolico interno para mapear /taji/ con el root de Nginx (evita fallo 404 de alias)
+ln -snf . "$TARGET_DIR/taji"
+
+# Permisos globales para Nginx (www-data)
+chmod -R 0755 "$RELEASE"
 chown -R root:root "$RELEASE"
-chmod -R a+rX "$RELEASE/dist"
+chmod -R a+rX "$RELEASE"
 
+# Configuracion Nginx para servir Angular en /taji/ y redirigir /api/ al Backend
 cat >"$SITE" <<NGINX
 server {
     listen 80;
     server_name $DOMAIN;
 
+    root $TARGET_DIR;
+
     location /taji/ {
-        alias /opt/taji-web/current/dist/taji-web/browser/;
         try_files \$uri \$uri/ /taji/index.html;
         add_header Cache-Control "no-store";
+    }
+
+    location = /taji {
+        return 301 http://\$host/taji/;
     }
 
     location /api/ {
@@ -252,8 +298,26 @@ mv -Tf "$ROOT/current.next" "$ROOT/current"
 
 nginx -t >/dev/null 2>&1 && systemctl reload nginx
 
-echo -e "\n${BRIGHT_GREEN}+------------------------------------------------------------------------+${RESET}"
-echo -e "${BRIGHT_GREEN}|   INSTALACION Y DESPLIEGUE WEB COMPLETADO CON ZERO-DOWNTIME!           |${RESET}"
-echo -e "${BRIGHT_GREEN}+------------------------------------------------------------------------+${RESET}"
-echo -e " URL Web publicada: ${BRIGHT_CYAN}http://$DOMAIN/taji/${RESET}"
-echo -e " Commit SHA:        ${BRIGHT_MAGENTA}$SHA${RESET}\n"
+# Verificación de salud de Nginx tras el despliegue
+echo -e "${YELLOW}Verificando servicio Web Nginx...${RESET}"
+healthy=0
+for i in {1..10}; do
+    if check_web_health; then
+        healthy=1
+        break
+    fi
+    sleep 1
+done
+
+if [[ $healthy -eq 1 ]]; then
+    echo -e "\n${BRIGHT_GREEN}+------------------------------------------------------------------------+${RESET}"
+    echo -e "${BRIGHT_GREEN}|   INSTALACION Y DESPLIEGUE WEB COMPLETADO CON ZERO-DOWNTIME!           |${RESET}"
+    echo -e "${BRIGHT_GREEN}+------------------------------------------------------------------------+${RESET}"
+    echo -e " URL Web publicada: ${BRIGHT_CYAN}http://$DOMAIN/taji/${RESET}"
+    echo -e " Commit SHA:        ${BRIGHT_MAGENTA}$SHA${RESET}\n"
+else
+    echo -e "${RED}[ERROR] La aplicacion Web Nginx no respondio correctamente.${RESET}"
+    echo -e "${YELLOW}--- Ultimos logs de error de Nginx ---${RESET}"
+    tail -n 25 /var/log/nginx/error.log || true
+    fail "Fallo la verificacion del servicio Frontend Web."
+fi

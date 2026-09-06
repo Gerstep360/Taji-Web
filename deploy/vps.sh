@@ -242,6 +242,12 @@ NGINX
 run_action() {
     local MODE=$1
 
+    if [[ $MODE == "gitpull" ]]; then
+        do_update_git
+        echo -e "${BRIGHT_GREEN}[OK] Repositorio Git actualizado correctamente.${RESET}"
+        return 0
+    fi
+
     if [[ $MODE == "restart" ]]; then
         do_update_git
         echo -e "${YELLOW}Reiniciando servicio Web Nginx...${RESET}"
@@ -333,19 +339,21 @@ while true; do
     echo -e "${BRIGHT_YELLOW}|                      MENU INTERACTIVO DE OPERACIONES                   |${RESET}"
     echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}"
     echo -e "|  ${BRIGHT_CYAN}[1]${RESET}  ${WHITE}[+] Instalacion Completa Inicial (Nginx + SSL + Node + Build)${RESET}    |"
-    echo -e "|  ${BRIGHT_CYAN}[2]${RESET}  ${WHITE}[*] Actualizar Version (Zero-Downtime Re-build + Atomic Symlink)${RESET} |"
-    echo -e "|  ${BRIGHT_CYAN}[3]${RESET}  ${WHITE}[?] Verificar Estado de Salud Web (Health Check)${RESET}                 |"
-    echo -e "|  ${BRIGHT_CYAN}[4]${RESET}  ${WHITE}[!] Reiniciar Servicio Nginx Web${RESET}                                 |"
-    echo -e "|  ${BRIGHT_CYAN}[5]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
+    echo -e "|  ${BRIGHT_CYAN}[2]${RESET}  ${WHITE}[*] Actualizar Version (git pull + Zero-Downtime Re-build)${RESET}       |"
+    echo -e "|  ${BRIGHT_CYAN}[3]${RESET}  ${WHITE}[#] Sincronizar Cambios de Git (git pull origin main)${RESET}            |"
+    echo -e "|  ${BRIGHT_CYAN}[4]${RESET}  ${WHITE}[?] Verificar Estado de Salud Web (Health Check)${RESET}                 |"
+    echo -e "|  ${BRIGHT_CYAN}[5]${RESET}  ${WHITE}[!] Reiniciar Servicio Nginx Web${RESET}                                 |"
+    echo -e "|  ${BRIGHT_CYAN}[6]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
     echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}\n"
     
-    read -p " Selecciona una opcion [1-5]: " CHOICE
+    read -p " Selecciona una opcion [1-6]: " CHOICE
     case "$CHOICE" in
         1) run_action "install" || true ;;
         2) run_action "update" || true ;;
-        3) run_action "health" || true ;;
-        4) run_action "restart" || true ;;
-        5) echo -e "${YELLOW}Operacion finalizada.${RESET}"; exit 0 ;;
+        3) run_action "gitpull" || true ;;
+        4) run_action "health" || true ;;
+        5) run_action "restart" || true ;;
+        6) echo -e "${YELLOW}Operacion finalizada.${RESET}"; exit 0 ;;
         *) echo -e "${RED}Opcion invalida.${RESET}" ;;
     esac
 

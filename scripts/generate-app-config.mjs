@@ -33,9 +33,16 @@ function positiveInteger(name, fallback) {
 }
 
 function validateApiBaseUrl(value) {
+  let cleanValue = value.trim();
+
+  // Sanitizar puerto 8000 en tiempo de compilacion para entorno VPS produccion
+  if (cleanValue.includes(':8000')) {
+    cleanValue = cleanValue.replace(':8000/api/v1', '/taji/api/v1').replace(':8000', '');
+  }
+
   let url;
   try {
-    url = new URL(value);
+    url = new URL(cleanValue);
   } catch {
     throw new Error('TAJI_API_BASE_URL debe ser una URL HTTP o HTTPS absoluta.');
   }
@@ -45,7 +52,7 @@ function validateApiBaseUrl(value) {
   if (!url.pathname.replace(/\/+$/, '').endsWith('/api/v1')) {
     throw new Error('TAJI_API_BASE_URL debe terminar en /api/v1.');
   }
-  return value.replace(/\/+$/, '');
+  return cleanValue.replace(/\/+$/, '');
 }
 
 async function readEnvironment(path) {

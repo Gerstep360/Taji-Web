@@ -44,6 +44,25 @@ import { IconComponent } from '../../shared/ui/icon.component';
         <dl><div><dt>Nombre</dt><dd>{{ user()?.full_name }}</dd></div><div><dt>Correo</dt><dd>{{ user()?.email }}</dd></div><div><dt>Teléfono</dt><dd>{{ user()?.phone || 'No registrado' }}</dd></div></dl>
       </article>
     </section>
+    @if (user()?.resident_units?.length) {
+      <section class="relationship-grid">
+        <article class="panel">
+          <div class="panel-title"><div><span class="eyebrow">Tu vivienda</span><h3>Unidades asociadas</h3></div></div>
+          <div class="unit-list">
+            @for (unit of user()?.resident_units ?? []; track unit.id) {
+              <div class="unit-row"><div><strong>{{ unit.unit_code }}</strong><span>{{ unit.relation_type_display }}{{ unit.is_primary ? ' · Principal' : '' }}</span></div><small>Desde {{ unit.start_date }}</small></div>
+            }
+          </div>
+          <p class="helper">La unidad principal es la vivienda que el sistema toma como residencia principal del usuario.</p>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><div><span class="eyebrow">Convivencia</span><h3>Personas vinculadas</h3></div></div>
+          @if (user()?.linked_residents?.length) {
+            <div class="unit-list">@for (person of user()?.linked_residents ?? []; track person.resident_id + person.unit_code) { <div class="unit-row"><div><strong>{{ person.full_name }}</strong><span>{{ person.relation_type_display }} · {{ person.unit_code }}</span></div></div> }</div>
+          } @else { <p class="helper">No hay otras personas asociadas a tus unidades.</p> }
+        </article>
+      </section>
+    }
   `,
   styleUrl: './dashboard.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

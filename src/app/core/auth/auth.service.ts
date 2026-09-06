@@ -17,15 +17,26 @@ export class AuthService {
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
 
   async restoreSession(): Promise<void> {
+    console.log('AUTH 1 - iniciando restoreSession');
+
     if (!this.sessionHint.hasSession()) {
+      console.log('AUTH 2 - no hay sessionHint');
       this.currentUser.set(null);
       return;
     }
 
     try {
+      console.log('AUTH 3 - consultando /auth/me');
+
       const response = await firstValueFrom(this.api.me());
+
+      console.log('AUTH 4 - usuario recibido:', response.user);
+
       this.currentUser.set(response.user);
-    } catch {
+
+      console.log('AUTH 5 - usuario establecido');
+    } catch (error) {
+      console.log('AUTH 6 - error restaurando sesión:', error);
       this.clearSession();
     }
   }

@@ -1,56 +1,192 @@
-<div class="container my-4">
-  <h2>Configuración General del Condominio</h2>
+<div class="condominium-page">
+
+  <div class="page-header">
+    <div>
+      <span class="page-label">CONFIGURACIÓN</span>
+      <h1>Datos generales del condominio</h1>
+      <p>
+        Administra la información principal que identifica al condominio.
+      </p>
+    </div>
+  </div>
 
   @if (loading) {
-    <p>Cargando datos...</p>
+
+    <div class="loading-card">
+      <div class="loading-spinner"></div>
+      <span>Cargando información del condominio...</span>
+    </div>
+
   } @else {
+
     @if (message) {
-      <div class="alert alert-info">{{ message }}</div>
+      <div
+        class="message"
+        [class.message-success]="message.includes('correctamente')"
+        [class.message-error]="!message.includes('correctamente')"
+      >
+        {{ message }}
+      </div>
     }
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <div class="mb-3">
-        <label class="form-label">Nombre del Condominio</label>
-        <input type="text" class="form-control" formControlName="name" />
-      </div>
 
-      <div class="mb-3">
-        <label class="form-label">Razón Social</label>
-        <input type="text" class="form-control" formControlName="legal_name" />
-      </div>
+      <section class="config-card">
 
-      <div class="mb-3">
-        <label class="form-label">Dirección</label>
-        <input type="text" class="form-control" formControlName="address" />
-      </div>
+        <div class="card-header">
+          <div class="card-icon">🏢</div>
 
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Teléfono</label>
-          <input type="text" class="form-control" formControlName="phone" />
+          <div>
+            <h2>Información general</h2>
+            <p>Datos básicos del condominio.</p>
+          </div>
         </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Correo Electrónico</label>
-          <input type="email" class="form-control" formControlName="email" />
+
+        <div class="form-grid">
+
+          <div class="form-group full-width">
+            <label for="name">
+              Nombre del Condominio
+              <span class="required">*</span>
+            </label>
+
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              placeholder="Ej. Condominio Taji"
+            />
+
+            @if (
+              form.get('name')?.invalid &&
+              form.get('name')?.touched
+            ) {
+              <small class="field-error">
+                El nombre del condominio es obligatorio.
+              </small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="legal_name">
+              Razón Social
+            </label>
+
+            <input
+              id="legal_name"
+              type="text"
+              formControlName="legal_name"
+              placeholder="Razón social"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">
+              Teléfono
+            </label>
+
+            <input
+              id="phone"
+              type="tel"
+              formControlName="phone"
+              placeholder="Ej. +591 70000000"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="address">
+              Dirección
+            </label>
+
+            <input
+              id="address"
+              type="text"
+              formControlName="address"
+              placeholder="Dirección del condominio"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">
+              Correo Electrónico
+            </label>
+
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="correo@ejemplo.com"
+            />
+
+            @if (
+              form.get('email')?.invalid &&
+              form.get('email')?.touched
+            ) {
+              <small class="field-error">
+                Ingresa un correo electrónico válido.
+              </small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="timezone">
+              Zona Horaria
+            </label>
+
+            <select id="timezone" formControlName="timezone">
+              <option value="America/La_Paz">
+                Bolivia — America/La_Paz
+              </option>
+              <option value="America/Santiago">
+                Chile — America/Santiago
+              </option>
+              <option value="America/Argentina/Buenos_Aires">
+                Argentina — America/Argentina/Buenos_Aires
+              </option>
+              <option value="America/Lima">
+                Perú — America/Lima
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="rules_summary">
+              Resumen del Reglamento
+            </label>
+
+            <textarea
+              id="rules_summary"
+              rows="5"
+              formControlName="rules_summary"
+              placeholder="Escribe un resumen de las principales normas del condominio..."
+            ></textarea>
+          </div>
+
         </div>
-      </div>
 
-      <div class="mb-3">
-        <label class="form-label">Zona Horaria</label>
-        <input type="text" class="form-control" formControlName="timezone" />
-      </div>
+      </section>
 
-      <div class="mb-3">
-        <label class="form-label">Resumen del Reglamento</label>
-        <textarea class="form-control" rows="3" formControlName="rules_summary"></textarea>
-      </div>
-
-      <!-- Solo se muestra al administrador -->
       @if (isAdmin) {
-        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving">
-          {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
-        </button>
+
+        <div class="actions">
+          <button
+            type="submit"
+            class="save-button"
+            [disabled]="form.invalid || saving"
+          >
+            @if (saving) {
+              <span class="button-spinner"></span>
+              Guardando...
+            } @else {
+              Guardar Cambios
+            }
+          </button>
+        </div>
+
       }
+
     </form>
+
   }
+
 </div>

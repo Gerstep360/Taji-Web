@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ubuntu 24.04 / Debian 12+. Full Production Zero-Downtime Deployment with GUI-like Animated TUI for Taji Frontend.
+# Ubuntu 24.04 / Debian 12+. Full Production Zero-Downtime Deployment with Clean TUI for Taji Frontend.
 set -Eeuo pipefail
 umask 022
 
@@ -19,20 +19,21 @@ GREEN='\033[0;32m'
 BRIGHT_GREEN='\033[1;32m'
 RED='\033[0;31m'
 WHITE='\033[1;37m'
+BRIGHT_WHITE='\033[1;37m'
 GRAY='\033[0;90m'
 RESET='\033[0m'
 
 animated_banner() {
     clear
-    echo -e "${BRIGHT_CYAN}╔════════════════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${BRIGHT_CYAN}║   ████████╗ █████╗  ██████╗ ██╗                                        ║${RESET}"
-    echo -e "${BRIGHT_CYAN}║   ╚══██╔══╝██╔══██╗   ██║   ██║   ${BRIGHT_WHITE}S I S T E M A                        ${BRIGHT_CYAN}║${RESET}"
-    echo -e "${YELLOW}║      ██║   ███████║   ██║   ██║   ${BRIGHT_YELLOW}C O N D O M I N I O S                ${YELLOW}║${RESET}"
-    echo -e "${MAGENTA}║      ██║   ██║  ██║██   ██║ ██║                                        ║${RESET}"
-    echo -e "${BRIGHT_MAGENTA}║      ██║   ██║  ██║╚█████╔╝ ██║   ${BRIGHT_GREEN}● DEPLOYMENT VPS ENGINE (ANGULAR)    ${BRIGHT_MAGENTA}║${RESET}"
-    echo -e "${BRIGHT_MAGENTA}║      ╚═╝   ╚═╝  ╚═╝ ╚════╝  ╚═╝                                        ║${RESET}"
-    echo -e "${BRIGHT_CYAN}╚════════════════════════════════════════════════════════════════════════╝${RESET}"
-    echo -e "${GRAY}        ═════════════════════════════════════════════════════════${RESET}\n"
+    echo -e "${BRIGHT_CYAN}+------------------------------------------------------------------------+${RESET}"
+    echo -e "${BRIGHT_CYAN}|   ████████╗ █████╗  ██████╗ ██╗                                        |${RESET}"
+    echo -e "${BRIGHT_CYAN}|   ╚══██╔══╝██╔══██╗   ██║   ██║   ${BRIGHT_WHITE}S I S T E M A                        ${BRIGHT_CYAN}|${RESET}"
+    echo -e "${YELLOW}|      ██║   ███████║   ██║   ██║   ${BRIGHT_YELLOW}C O N D O M I N I O S                ${YELLOW}|${RESET}"
+    echo -e "${MAGENTA}|      ██║   ██║  ██║██   ██║ ██║                                        |${RESET}"
+    echo -e "${BRIGHT_MAGENTA}|      ██║   ██║  ██║╚█████╔╝ ██║   ${BRIGHT_GREEN}[*] DEPLOYMENT VPS ENGINE (ANGULAR)  ${BRIGHT_MAGENTA}|${RESET}"
+    echo -e "${BRIGHT_MAGENTA}|      ╚═╝   ╚═╝  ╚═╝ ╚════╝  ╚═╝                                        |${RESET}"
+    echo -e "${BRIGHT_CYAN}+------------------------------------------------------------------------+${RESET}"
+    echo -e "${GRAY}        =========================================================${RESET}\n"
     sleep 0.1
 }
 
@@ -41,16 +42,16 @@ animated_progress_bar() {
     local msg=$2
     local step=0
     local width=30
-    local spin=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+    local spin=('|' '/' '-' '\')
     
     while kill -0 "$pid" 2>/dev/null; do
-        local frame=${spin[$((step % 10))]}
+        local frame=${spin[$((step % 4))]}
         local filled_len=$(( (step % width) + 1 ))
         local fill=""
         local empty=""
         
-        for ((i=0; i<filled_len; i++)); do fill="${fill}█"; done
-        for ((i=filled_len; i<width; i++)); do empty="${empty}░"; done
+        for ((i=0; i<filled_len; i++)); do fill="${fill}#"; done
+        for ((i=filled_len; i<width; i++)); do empty="${empty}-"; done
         
         printf "\r ${BRIGHT_YELLOW}[%s]${RESET} ${CYAN}%-45s${RESET} ${BRIGHT_GREEN}[%s%s]${RESET}" "$frame" "$msg" "$fill" "$empty"
         step=$((step + 1))
@@ -60,12 +61,12 @@ animated_progress_bar() {
     local exit_code=$?
     
     local full_bar=""
-    for ((i=0; i<width; i++)); do full_bar="${full_bar}█"; done
+    for ((i=0; i<width; i++)); do full_bar="${full_bar}#"; done
     
     if [ $exit_code -eq 0 ]; then
-        printf "\r ${BRIGHT_GREEN}[✔] %-45s [%s] 100%% COMPLETADO${RESET}\n" "$msg" "$full_bar"
+        printf "\r ${BRIGHT_GREEN}[OK] %-45s [%s] 100%% COMPLETADO${RESET}\n" "$msg" "$full_bar"
     else
-        printf "\r ${RED}[✖] %-45s [ERROR] FALLÓ EL PROCESO${RESET}\n" "$msg"
+        printf "\r ${RED}[ERROR] %-45s [FALLO EN EL PROCESO]${RESET}\n" "$msg"
         return $exit_code
     fi
 }
@@ -74,42 +75,42 @@ fail() { echo -e "${RED}ERROR: $*${RESET}" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || fail 'Este script debe ejecutarse con sudo.'
 
 validate() {
-  [[ $DOMAIN =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ || $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'Dominio o IP inválida.'
-  [[ $EMAIL =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+$ ]] || fail 'Email inválido.'
-  [[ $BACKEND_ORIGIN =~ ^https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?$ || $BACKEND_ORIGIN =~ ^http://(127\.0\.0\.1|localhost):[0-9]+(/.*)?$ ]] || fail 'Backend: origen HTTP/HTTPS inválido.'
+  [[ $DOMAIN =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ || $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'Dominio o IP invalida.'
+  [[ $EMAIL =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+$ ]] || fail 'Email invalido.'
+  [[ $BACKEND_ORIGIN =~ ^https?://[a-zA-Z0-9.-]+(:[0-9]+)?(/.*)?$ || $BACKEND_ORIGIN =~ ^http://(127\.0\.0\.1|localhost):[0-9]+(/.*)?$ ]] || fail 'Backend: origen HTTP/HTTPS invalido.'
 }
 
-# --- Menú Interactivo GUI-Style ---
+# --- Menú Interactivo ---
 MODE=${1:-""}
 
 if [[ -z "$MODE" ]]; then
     animated_banner
-    echo -e "${BRIGHT_YELLOW}┌────────────────────────────────────────────────────────────────────────┐${RESET}"
-    echo -e "${BRIGHT_YELLOW}│                      MENÚ INTERACTIVO DE OPERACIONES                   │${RESET}"
-    echo -e "${BRIGHT_YELLOW}├────────────────────────────────────────────────────────────────────────┤${RESET}"
-    echo -e "│  ${BRIGHT_CYAN}[1]${RESET}  ${WHITE}⚡  Instalación Completa Inicial (Nginx + SSL + Node + Angular Build)${RESET}│"
-    echo -e "│  ${BRIGHT_CYAN}[2]${RESET}  ${WHITE}🔄  Actualizar Versión (Zero-Downtime Re-build + Atomic Symlink)${RESET}     │"
-    echo -e "│  ${BRIGHT_CYAN}[3]  ${WHITE}●   Verificar Estado de Salud Web (Health Check)${RESET}                 │"
-    echo -e "│  ${BRIGHT_CYAN}[4]  ${WHITE}✖   Salir${RESET}                                                         │"
-    echo -e "${BRIGHT_YELLOW}└────────────────────────────────────────────────────────────────────────┘${RESET}\n"
+    echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}"
+    echo -e "${BRIGHT_YELLOW}|                      MENU INTERACTIVO DE OPERACIONES                   |${RESET}"
+    echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}"
+    echo -e "|  ${BRIGHT_CYAN}[1]${RESET}  ${WHITE}[+] Instalacion Completa Inicial (Nginx + SSL + Node + Build)${RESET}    |"
+    echo -e "|  ${BRIGHT_CYAN}[2]${RESET}  ${WHITE}[*] Actualizar Version (Zero-Downtime Re-build + Atomic Symlink)${RESET} |"
+    echo -e "|  ${BRIGHT_CYAN}[3]${RESET}  ${WHITE}[?] Verificar Estado de Salud Web (Health Check)${RESET}                 |"
+    echo -e "|  ${BRIGHT_CYAN}[4]${RESET}  ${WHITE}[x] Salir${RESET}                                                         |"
+    echo -e "${BRIGHT_YELLOW}+------------------------------------------------------------------------+${RESET}\n"
     
-    read -p " ➜ Selecciona una opción [1-4]: " CHOICE
+    read -p " Selecciona una opcion [1-4]: " CHOICE
     case "$CHOICE" in
         1) MODE="install" ;;
         2) MODE="update" ;;
         3) MODE="health" ;;
-        4) echo -e "${YELLOW}Operación finalizada.${RESET}"; exit 0 ;;
-        *) fail "Opción inválida." ;;
+        4) echo -e "${YELLOW}Operacion finalizada.${RESET}"; exit 0 ;;
+        *) fail "Opcion invalida." ;;
     esac
 fi
 
 if [[ $MODE == "health" ]]; then
-    [[ -f $CONFIG ]] || fail "No existe configuración previa en $CONFIG."
+    [[ -f $CONFIG ]] || fail "No existe configuracion previa en $CONFIG."
     . "$CONFIG"
-    echo -e "${YELLOW}Comprobando estado de salud de la aplicación Web...${RESET}"
+    echo -e "${YELLOW}Comprobando estado de salud de la aplicacion Web...${RESET}"
     (curl --fail --silent --show-error --max-time 10 "http://$DOMAIN/taji/" >/dev/null) &
     animated_progress_bar $! "Verificando respuesta HTTP http://$DOMAIN/taji/"
-    echo -e "${BRIGHT_GREEN}[✔] Frontend Web responde correctamente (HTTP 200 OK)${RESET}"
+    echo -e "${BRIGHT_GREEN}[OK] Frontend Web responde correctamente (HTTP 200 OK)${RESET}"
     exit 0
 fi
 
@@ -118,17 +119,17 @@ if [[ $MODE == "install" && $# -lt 2 ]]; then
     DETECTED_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
     [[ -z "$DETECTED_IP" ]] && DETECTED_IP="127.0.0.1"
 
-    echo -e " ${GRAY}┌────────────────────────────────────────────────────────────────┐${RESET}"
-    echo -e " ${GRAY}│${RESET} Detector de Red: IP Pública / Servidor = ${BRIGHT_CYAN}$DETECTED_IP${RESET}"
-    echo -e " ${GRAY}└────────────────────────────────────────────────────────────────┘${RESET}\n"
+    echo -e " ${GRAY}+----------------------------------------------------------------+${RESET}"
+    echo -e " ${GRAY}|${RESET} Detector de Red: IP Publica / Servidor = ${BRIGHT_CYAN}$DETECTED_IP${RESET}"
+    echo -e " ${GRAY}+----------------------------------------------------------------+${RESET}\n"
     
-    read -p " ➜ Dominio o IP pública del VPS [$DETECTED_IP]: " DOMAIN
+    read -p " Dominio o IP publica del VPS [$DETECTED_IP]: " DOMAIN
     DOMAIN=${DOMAIN:-$DETECTED_IP}
 
-    read -p " ➜ Correo para administración/SSL [admin@$DOMAIN]: " EMAIL
+    read -p " Correo para administracion/SSL [admin@$DOMAIN]: " EMAIL
     EMAIL=${EMAIL:-"admin@$DOMAIN"}
 
-    read -p " ➜ URL Origen Backend API [http://$DOMAIN:8000/api/v1]: " BACKEND_ORIGIN
+    read -p " URL Origen Backend API [http://$DOMAIN:8000/api/v1]: " BACKEND_ORIGIN
     BACKEND_ORIGIN=${BACKEND_ORIGIN:-"http://$DOMAIN:8000/api/v1"}
     
     SUBPATH="/taji"
@@ -184,12 +185,12 @@ NGINX
         ln -sf "$SITE" /etc/nginx/sites-enabled/taji-web
         nginx -t >/dev/null 2>&1 && systemctl reload nginx
         (certbot certonly --non-interactive --agree-tos --email "$EMAIL" --webroot -w /var/www/taji-web-acme -d "$DOMAIN" >/dev/null 2>&1 || true) &
-        animated_progress_bar $! "Generando certificado SSL LetsEncrypt de producción"
+        animated_progress_bar $! "Generando certificado SSL LetsEncrypt de produccion"
     fi
 fi
 
 (git --git-dir="$ROOT/repository.git" fetch origin main >/dev/null 2>&1) &
-animated_progress_bar $! "Sincronizando última versión de Git (fetch origin main)"
+animated_progress_bar $! "Sincronizando ultima version de Git (fetch origin main)"
 SHA=$(git --git-dir="$ROOT/repository.git" rev-parse FETCH_HEAD)
 
 RELEASE=$(mktemp -d "$ROOT/releases/${SHA:0:12}-XXXXXX")
@@ -213,7 +214,7 @@ chown -R taji-web:taji-web "$RELEASE"
 (runuser -u taji-web -- env PATH="$NODE_DIR/bin:/usr/bin:/bin" HOME=/var/lib/taji-web \
   TAJI_API_BASE_URL="$BACKEND_ORIGIN" TAJI_API_TIMEOUT_MS=12000 \
   bash -c 'cd "$1"; npm ci --include=dev --no-audit --no-fund >/dev/null 2>&1 && npm run build -- --base-href /taji/ >/dev/null 2>&1' _ "$RELEASE") &
-animated_progress_bar $! "Compilando aplicación Angular producción (sub-ruta /taji/)"
+animated_progress_bar $! "Compilando aplicacion Angular produccion (sub-ruta /taji/)"
 
 [[ -s $RELEASE/dist/taji-web/browser/index.html ]] || fail 'No se genero el sitio Angular.'
 
@@ -251,8 +252,8 @@ mv -Tf "$ROOT/current.next" "$ROOT/current"
 
 nginx -t >/dev/null 2>&1 && systemctl reload nginx
 
-echo -e "\n${BRIGHT_GREEN}╔════════════════════════════════════════════════════════════════════════╗${RESET}"
-echo -e "${BRIGHT_GREEN}║   ¡INSTALACIÓN Y DESPLIEGUE WEB COMPLETADO CON ZERO-DOWNTIME!          ║${RESET}"
-echo -e "${BRIGHT_GREEN}╚════════════════════════════════════════════════════════════════════════╝${RESET}"
+echo -e "\n${BRIGHT_GREEN}+------------------------------------------------------------------------+${RESET}"
+echo -e "${BRIGHT_GREEN}|   INSTALACION Y DESPLIEGUE WEB COMPLETADO CON ZERO-DOWNTIME!           |${RESET}"
+echo -e "${BRIGHT_GREEN}+------------------------------------------------------------------------+${RESET}"
 echo -e " URL Web publicada: ${BRIGHT_CYAN}http://$DOMAIN/taji/${RESET}"
 echo -e " Commit SHA:        ${BRIGHT_MAGENTA}$SHA${RESET}\n"

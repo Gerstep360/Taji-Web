@@ -64,7 +64,7 @@ animated_progress_bar() {
     for ((i=0; i<width; i++)); do full_bar="${full_bar}#"; done
     
     if [ $exit_code -eq 0 ]; then
-        printf "\r ${BRIGHT_GREEN}[OK] %-45s [%s] 100%% COMPLETADO${RESET}\n" "$msg" "$fill"
+        printf "\r ${BRIGHT_GREEN}[OK] %-45s [%s] 100%% COMPLETADO${RESET}\n" "$msg" "$full_bar"
     else
         printf "\r ${RED}[ERROR] %-45s [FALLO EN EL PROCESO]${RESET}\n" "$msg"
         return $exit_code
@@ -101,15 +101,15 @@ do_deploy_frontend() {
     do_update_git
 
     [[ -f $CONFIG ]] || fail 'Primero ejecutar opcion [1] install.'
+
+    # Sanitizar archivo de configuracion previo en disco antes de cargarlo
+    sed -i -E 's|:8000/api/v1|/taji/api/v1|g' "$CONFIG" 2>/dev/null || true
+    sed -i -E 's|:8000||g' "$CONFIG" 2>/dev/null || true
+
     . "$CONFIG"
 
-    # Sanitizar BACKEND_ORIGIN si apunta al puerto interno 8000 directo en cliente
     if [[ "$BACKEND_ORIGIN" == *":8000"* ]]; then
         BACKEND_ORIGIN=$(echo "$BACKEND_ORIGIN" | sed -E 's|:8000/api/v1|/taji/api/v1|g' | sed -E 's|:8000||g')
-        if [[ -f "$CONFIG" ]]; then
-            sed -i -E 's|:8000/api/v1|/taji/api/v1|g' "$CONFIG"
-            sed -i -E 's|:8000||g' "$CONFIG"
-        fi
     fi
 
     validate

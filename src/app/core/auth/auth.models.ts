@@ -47,6 +47,10 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface MeResponse {
+  user: User;
+}
+
 export interface ApiError {
   detail?: string;
   [key: string]: unknown;

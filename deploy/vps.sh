@@ -256,6 +256,9 @@ fi
 # Crear enlace simbolico interno para mapear /taji/ con el root de Nginx (evita fallo 404 de alias)
 ln -snf . "$TARGET_DIR/taji"
 
+# Eliminar sitio por defecto de Nginx y sitios conflictivos para evitar el fallo de root por defecto
+rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/taji-backend
+
 # Permisos globales para Nginx (www-data)
 chmod -R 0755 "$RELEASE"
 chown -R root:root "$RELEASE"
@@ -264,8 +267,9 @@ chmod -R a+rX "$RELEASE"
 # Configuracion Nginx para servir Angular en /taji/ y redirigir /api/ al Backend
 cat >"$SITE" <<NGINX
 server {
-    listen 80;
-    server_name $DOMAIN;
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name $DOMAIN _;
 
     root $TARGET_DIR;
 
@@ -278,12 +282,24 @@ server {
         return 301 http://\$host/taji/;
     }
 
+    location /taji/api/ {
+        proxy_pass $BACKEND_ORIGIN;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
     location /api/ {
         proxy_pass $BACKEND_ORIGIN;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /static/ {
+        alias /opt/taji/current/staticfiles/;
     }
 
     location / {

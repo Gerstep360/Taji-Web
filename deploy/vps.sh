@@ -235,7 +235,11 @@ server {
     }
 
     location = /taji {
-        return 301 http://\$host/taji/;
+        return 301 /taji/;
+    }
+
+    location /downloads/ {
+        return 302 https://github.com/Gerstep360/Taji-Movil/releases/download/v1.0/taji-v1.0.apk;
     }
 
     location /taji/api/ {
@@ -259,7 +263,7 @@ server {
     }
 
     location / {
-        return 301 http://\$host/taji/;
+        return 301 /taji/;
     }
 }
 NGINX

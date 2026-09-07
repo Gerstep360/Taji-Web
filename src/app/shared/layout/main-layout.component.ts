@@ -104,7 +104,7 @@ interface PackageDropdown {
         </nav>
 
         <div class="aside-bottom">
-          <a href="/downloads/taji-1.0.apk" download="taji-v1.0.apk" class="apk-aside-link" title="Descargar APK para Android">
+          <a href="https://github.com/Gerstep360/Taji-Movil/releases/download/v1.0/taji-v1.0.apk" target="_blank" rel="noopener noreferrer" class="apk-aside-link" title="Descargar APK para Android">
             <taji-icon name="smartphone" [size]="16" />
             <span>App Móvil (APK v1.0)</span>
           </a>

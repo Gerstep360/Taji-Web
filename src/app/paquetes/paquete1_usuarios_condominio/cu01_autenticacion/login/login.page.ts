@@ -37,7 +37,7 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
       <p class="auth-switch">¿Aún no tienes cuenta? <a routerLink="/crear-cuenta">Crear cuenta</a></p>
 
       <div class="apk-download-box">
-        <a href="/downloads/taji-1.0.apk" download="taji-v1.0.apk" class="apk-download-btn" title="Descargar APK para Android">
+        <a href="https://github.com/Gerstep360/Taji-Movil/releases/download/v1.0/taji-v1.0.apk" target="_blank" rel="noopener noreferrer" class="apk-download-btn" title="Descargar APK para Android">
           <span class="apk-icon" aria-hidden="true">📱</span>
           <div class="apk-text">
             <strong>Descargar App Móvil</strong>

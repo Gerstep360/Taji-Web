@@ -8,15 +8,14 @@
       </span>
       <h2 id="audit-title" class="audit-title">Auditoría y Bitácora del Sistema</h2>
       <p class="audit-subtitle">
-        Registro centralizado de trazabilidad para todas las acciones sensibles del sistema.
-        Garantiza rendición de cuentas, detección de anomalías y cumplimiento normativo.
+        Trazabilidad y registro continuo de acciones sensibles ejecutadas en la plataforma.
       </p>
     </div>
 
     <div class="heading-badges">
-      <span class="immutable-badge" title="Los registros no pueden modificarse ni eliminarse por ningún usuario o API">
-        <span class="dot-pulse"></span>
-        Bitácora Append-Only Inmutable
+      <span class="immutable-badge">
+        <taji-icon name="shield-check" [size]="15" />
+        Registro Oficial de Auditoría
       </span>
 
       <button
@@ -26,8 +25,8 @@
         [disabled]="loading()"
         title="Recargar eventos"
       >
-        <taji-icon name="clock" [size]="14" />
-        <span>{{ loading() ? 'Actualizando...' : 'Actualizar' }}</span>
+        <taji-icon [name]="loading() ? 'loader' : 'clock'" [size]="14" [class.spin]="loading()" />
+        <span>{{ loading() ? 'Cargando...' : 'Actualizar' }}</span>
       </button>
     </div>
   </header>
@@ -37,13 +36,13 @@
     <div class="metric-card metric-shield">
       <span class="metric-label">Eventos Registrados</span>
       <span class="metric-value">{{ totalEvents() }}</span>
-      <span class="metric-meta">En la bitácora criptográfica</span>
+      <span class="metric-meta">Total histórico en sistema</span>
     </div>
 
     <div class="metric-card">
-      <span class="metric-label">Garantía de Integridad</span>
+      <span class="metric-label">Integridad de Registros</span>
       <span class="metric-value">100%</span>
-      <span class="metric-meta">Cero modificaciones permitidas</span>
+      <span class="metric-meta">Protección contra alteraciones</span>
     </div>
 
     <div class="metric-card metric-warning">
@@ -111,6 +110,10 @@
 
   <!-- Table Card -->
   <div class="table-card">
+    @if (loading() && events().length > 0) {
+      <div class="table-loading-bar"></div>
+    }
+
     <div class="table-responsive">
       <table class="audit-table" aria-label="Registros de auditoría">
         <thead>
@@ -129,9 +132,9 @@
             <tr class="audit-tr">
               <td class="audit-td" colspan="7">
                 <div class="state-container">
-                  <div class="state-icon">⏳</div>
-                  <h3>Cargando registros...</h3>
-                  <p>Recuperando bitácora inmutable de auditoría del servidor.</p>
+                  <taji-icon name="loader" [size]="28" class="spin state-icon-svg" />
+                  <h3>Cargando bitácora...</h3>
+                  <p>Consultando eventos de seguridad en el servidor.</p>
                 </div>
               </td>
             </tr>
@@ -139,8 +142,8 @@
             <tr class="audit-tr">
               <td class="audit-td" colspan="7">
                 <div class="state-container">
-                  <div class="state-icon">📄</div>
-                  <h3>No se encontraron registros</h3>
+                  <taji-icon name="inbox" [size]="28" class="state-icon-svg" />
+                  <h3>Sin registros encontrados</h3>
                   <p>No hay eventos registrados que coincidan con los filtros seleccionados.</p>
                 </div>
               </td>
@@ -253,7 +256,7 @@
             <h3 class="modal-title">Evento #{{ event.id }} · {{ event.action_code }}</h3>
           </div>
           <button type="button" class="btn-close" (click)="closeDetails()" aria-label="Cerrar">
-            &times;
+            <taji-icon name="x" [size]="16" />
           </button>
         </header>
 

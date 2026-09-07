@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
   --taji-primary:#0f6fff;
   --taji-primary-strong:#075ad7;
@@ -31,4 +31,20 @@ a { color:var(--taji-primary-strong); font-weight:680; text-underline-offset:.18
 .success-state .auth-heading { margin-bottom:1.5rem; }
 .button-link { min-height:3.25rem; padding:.8rem 1.25rem; display:flex; align-items:center; justify-content:center; border-radius:1rem; color:white; background:linear-gradient(135deg,var(--taji-primary),var(--taji-primary-strong)); box-shadow:0 12px 24px rgba(15,111,255,.2); text-decoration:none; }
 @media(max-width:560px){.form-grid{grid-template-columns:1fr}.auth-heading{margin-bottom:1.3rem}}
+
+/* Utilidades responsive para tablas y contenedores */
+.table-wrap,
+.table-container,
+.table-responsive,
+.residents-panel {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+img, svg, canvas {
+  max-width: 100%;
+}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+

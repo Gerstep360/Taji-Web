@@ -8,8 +8,34 @@
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 18.5rem 1fr;
+  position: relative;
 }
 
+/* ==========================================================================
+   BACKDROP (para mobile drawer)
+   ========================================================================== */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  animation: backdropFade 0.2s ease;
+}
+
+@keyframes backdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   ASIDE (SIDEBAR)
+   ========================================================================== */
 aside {
   position: sticky;
   top: 0;
@@ -18,13 +44,44 @@ aside {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--taji-border);
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(18px);
-  z-index: 10;
+  z-index: 1000;
+  transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.26s ease;
+}
+
+.aside-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.btn-close-drawer {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 nav {
-  margin-top: 1.4rem;
+  margin-top: 1.2rem;
   margin-bottom: 0.8rem;
   display: flex;
   flex-direction: column;
@@ -50,7 +107,7 @@ nav {
 
 /* Enlace directo: Inicio */
 .nav-direct {
-  min-height: 2.5rem;
+  min-height: 2.6rem;
   padding: 0 0.85rem;
   display: flex;
   align-items: center;
@@ -87,14 +144,14 @@ nav {
   transition: background 0.15s ease;
 
   &.is-expanded {
-    background: rgba(248, 250, 252, 0.7);
+    background: rgba(248, 250, 252, 0.8);
   }
 }
 
 /* Botón Trigger del Paquete (Dropdown Header) */
 .package-trigger {
   width: 100%;
-  min-height: 2.6rem;
+  min-height: 2.65rem;
   padding: 0 0.85rem;
   display: flex;
   align-items: center;
@@ -171,7 +228,7 @@ nav {
 }
 
 .sub-item {
-  min-height: 2.25rem;
+  min-height: 2.35rem;
   padding: 0 0.7rem;
   display: flex;
   align-items: center;
@@ -229,7 +286,7 @@ nav {
 }
 
 .apk-aside-link {
-  min-height: 2.3rem;
+  min-height: 2.4rem;
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -321,9 +378,17 @@ nav {
   font-weight: 600;
 }
 
+/* ==========================================================================
+   MAIN & TOPBAR
+   ========================================================================== */
 main {
   min-width: 0;
-  padding: clamp(1.3rem, 3vw, 2.7rem);
+  padding: clamp(1.2rem, 2.5vw, 2.5rem);
+}
+
+.main-content {
+  min-width: 0;
+  width: 100%;
 }
 
 .topbar {
@@ -331,6 +396,44 @@ main {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.8rem;
+  gap: 1rem;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.btn-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--taji-border);
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #f8fafc;
+    color: var(--taji-primary-strong);
+    border-color: #cbd5e1;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.topbar-titles {
+  min-width: 0;
 }
 
 .eyebrow {
@@ -342,88 +445,102 @@ main {
 }
 
 h1 {
-  margin: 0.35rem 0 0;
+  margin: 0.25rem 0 0;
   color: var(--taji-ink);
-  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-size: clamp(1.4rem, 2.6vw, 2.1rem);
   letter-spacing: -0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .avatar {
   width: 2.8rem;
   height: 2.8rem;
+  flex-shrink: 0;
 }
 
+/* ==========================================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   ========================================================================== */
 @media (max-width: 1024px) {
   .app-shell {
-    grid-template-columns: 5.2rem 1fr;
+    display: block;
+    width: 100%;
+    min-height: 100dvh;
   }
+
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  .btn-menu-toggle {
+    display: flex;
+  }
+
+  .btn-close-drawer {
+    display: flex;
+  }
+
   aside {
-    padding: 1.2rem 0.6rem;
-    align-items: center;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 19.5rem;
+    max-width: 86vw;
+    height: 100dvh;
+    padding: 1.25rem 1.1rem 1.25rem;
+    background: #ffffff;
+    box-shadow: 6px 0 28px rgba(15, 23, 42, 0.2);
+    transform: translateX(-100%);
+    z-index: 1000;
+
+    &.is-mobile-open {
+      transform: translateX(0);
+    }
   }
-  aside taji-logo {
-    max-width: 2.5rem;
-    overflow: hidden;
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(244, 247, 251, 0.95);
+    backdrop-filter: blur(14px);
+    padding: 0.85rem 1.25rem;
+    margin: -1.2rem -1.25rem 1.25rem -1.25rem;
+    border-bottom: 1px solid var(--taji-border);
   }
-  .pkg-title,
-  .chevron,
-  .active-badge,
-  .package-content,
-  .nav-direct span {
-    display: none;
-  }
-  .package-trigger,
-  .nav-direct {
-    width: 2.8rem;
-    padding: 0;
-    justify-content: center;
-  }
-  .mini-profile div,
-  .aside-bottom > button span {
-    display: none;
-  }
-  .aside-bottom > button {
-    width: 2.8rem;
-    justify-content: center;
+
+  main {
+    padding: 1.2rem 1.25rem 3rem;
   }
 }
 
-@media (max-width: 620px) {
-  .app-shell {
-    display: block;
-  }
-  aside {
-    height: 4.5rem;
-    position: fixed;
-    inset: auto 0 0;
-    z-index: 20;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    border: 0;
-    border-top: 1px solid var(--taji-border);
-    padding: 0.5rem;
-  }
-  aside taji-logo,
-  .mini-profile,
-  .aside-bottom,
-  .packages-list {
-    display: none;
-  }
-  nav {
-    margin: 0;
-    display: flex;
-    flex-direction: row;
-  }
-  .nav-direct {
-    width: auto;
-    padding: 0 1.2rem;
-    font-size: 0.75rem;
-  }
-  main {
-    padding: 1.2rem 1rem 6rem;
-  }
+@media (max-width: 640px) {
   .topbar {
-    margin-bottom: 1rem;
+    padding: 0.75rem 0.9rem;
+    margin: -0.9rem -0.9rem 1rem -0.9rem;
+  }
+
+  main {
+    padding: 0.9rem 0.9rem 2.5rem;
+  }
+
+  .btn-menu-toggle {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .avatar {
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 0.72rem;
+  }
+
+  h1 {
+    font-size: 1.2rem;
+  }
+
+  .eyebrow {
+    font-size: 0.6rem;
   }
 }

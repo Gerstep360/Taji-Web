@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { IconComponent } from '../ui/icon.component';
@@ -25,11 +26,26 @@ interface PackageDropdown {
   imports: [LogoComponent, IconComponent, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <div class="app-shell">
-      <aside>
-        <taji-logo />
+      @if (isMobileMenuOpen()) {
+        <div class="sidebar-backdrop" (click)="closeMobileMenu()" aria-hidden="true"></div>
+      }
+
+      <aside [class.is-mobile-open]="isMobileMenuOpen()">
+        <div class="aside-header">
+          <taji-logo />
+          <button
+            type="button"
+            class="btn-close-drawer"
+            (click)="closeMobileMenu()"
+            aria-label="Cerrar menú"
+          >
+            <taji-icon name="x" [size]="18" />
+          </button>
+        </div>
+
         <nav aria-label="Navegación principal">
           <!-- Inicio directo -->
-          <a routerLink="/inicio" routerLinkActive="active" class="nav-direct">
+          <a routerLink="/inicio" routerLinkActive="active" class="nav-direct" (click)="closeMobileMenu()">
             <taji-icon name="home" [size]="18" />
             <span>Inicio</span>
           </a>
@@ -66,6 +82,7 @@ interface PackageDropdown {
                             [routerLink]="item.route"
                             routerLinkActive="active"
                             class="sub-item"
+                            (click)="closeMobileMenu()"
                           >
                             <taji-icon [name]="item.icon" [size]="15" />
                             <span>{{ item.label }}</span>
@@ -109,13 +126,28 @@ interface PackageDropdown {
 
       <main>
         <header class="topbar">
-          <div>
-            <span class="eyebrow">Panel personal</span>
-            <h1>Hola, {{ user()?.first_name || 'Admin' }}</h1>
+          <div class="topbar-left">
+            <button
+              type="button"
+              class="btn-menu-toggle"
+              (click)="toggleMobileMenu()"
+              [attr.aria-expanded]="isMobileMenuOpen()"
+              aria-label="Abrir menú de navegación"
+            >
+              <taji-icon name="menu" [size]="20" />
+            </button>
+            <div class="topbar-titles">
+              <span class="eyebrow">Panel personal</span>
+              <h1>Hola, {{ user()?.first_name || 'Admin' }}</h1>
+            </div>
           </div>
-          <span class="avatar" aria-label="Perfil">{{ initials }}</span>
+          <div class="topbar-right">
+            <span class="avatar" aria-label="Perfil">{{ initials }}</span>
+          </div>
         </header>
-        <router-outlet />
+        <div class="main-content">
+          <router-outlet />
+        </div>
       </main>
     </div>
   `,
@@ -126,6 +158,23 @@ export class MainLayoutComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly user = this.auth.user;
+  readonly isMobileMenuOpen = signal<boolean>(false);
+
+  constructor() {
+    this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => {
+        this.closeMobileMenu();
+      });
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen.update((v) => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.isMobileMenuOpen.set(false);
+  }
 
   // Estado de acordeón por paquete: Paquete 1 abierto por defecto
   readonly expandedPackages = signal<Record<string, boolean>>({

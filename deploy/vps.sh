@@ -229,6 +229,34 @@ server {
 
     root $TARGET_DIR;
 
+    location /assets/ {
+        alias $TARGET_DIR/assets/;
+        access_log off;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000, immutable";
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    location /taji/assets/ {
+        alias $TARGET_DIR/assets/;
+        access_log off;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000, immutable";
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    location = /favicon.ico {
+        alias $TARGET_DIR/favicon.ico;
+        access_log off;
+        expires 30d;
+    }
+
+    location = /taji/favicon.ico {
+        alias $TARGET_DIR/favicon.ico;
+        access_log off;
+        expires 30d;
+    }
+
     location /taji/ {
         try_files \$uri \$uri/ /taji/index.html;
         add_header Cache-Control "no-store";

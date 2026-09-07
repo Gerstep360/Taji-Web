@@ -263,7 +263,9 @@ export class MainLayoutComponent {
         {
           label: 'Auditoría y Bitácora',
           icon: 'file-text',
-          isAvailable: false,
+          route: '/auditoria',
+          permission: 'manage_roles',
+          isAvailable: true,
         },
         {
           label: 'Verificación Facial',

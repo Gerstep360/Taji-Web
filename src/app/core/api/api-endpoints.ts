@@ -1,4 +1,4 @@
-﻿export const API_ENDPOINTS = {
+export const API_ENDPOINTS = {
   auth: {
     login: '/auth/login/',
     register: '/auth/register/',
@@ -50,5 +50,8 @@
   residentUnits: {
     root: '/resident-units/',
     detail: (id: number) => `/resident-units/${id}/`,
+  },
+  audit: {
+    root: '/audit/',
   },
 } as const;

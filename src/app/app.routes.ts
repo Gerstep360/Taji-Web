@@ -91,6 +91,15 @@ export const routes: Routes = [
         title: 'Asignación de unidades | Taji',
       },
       {
+        path: 'auditoria',
+        canActivate: [permissionGuard('manage_roles')],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu16_auditoria_bitacora').then(
+            (m) => m.AuditoriaPage,
+          ),
+        title: 'Auditoría y Bitácora | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),

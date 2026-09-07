@@ -1,0 +1,319 @@
+<section class="audit-page" aria-labelledby="audit-title">
+  <!-- Page Header -->
+  <header class="page-heading">
+    <div class="heading-content">
+      <span class="kicker">
+        <taji-icon name="shield" [size]="14" />
+        Seguridad y Accesos · CU16
+      </span>
+      <h2 id="audit-title" class="audit-title">Auditoría y Bitácora del Sistema</h2>
+      <p class="audit-subtitle">
+        Registro centralizado de trazabilidad para todas las acciones sensibles del sistema.
+        Garantiza rendición de cuentas, detección de anomalías y cumplimiento normativo.
+      </p>
+    </div>
+
+    <div class="heading-badges">
+      <span class="immutable-badge" title="Los registros no pueden modificarse ni eliminarse por ningún usuario o API">
+        <span class="dot-pulse"></span>
+        Bitácora Append-Only Inmutable
+      </span>
+
+      <button
+        type="button"
+        class="btn-refresh"
+        (click)="loadEvents(pagination().page)"
+        [disabled]="loading()"
+        title="Recargar eventos"
+      >
+        <taji-icon name="clock" [size]="14" />
+        <span>{{ loading() ? 'Actualizando...' : 'Actualizar' }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Metrics Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card metric-shield">
+      <span class="metric-label">Eventos Registrados</span>
+      <span class="metric-value">{{ totalEvents() }}</span>
+      <span class="metric-meta">En la bitácora criptográfica</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-label">Garantía de Integridad</span>
+      <span class="metric-value">100%</span>
+      <span class="metric-meta">Cero modificaciones permitidas</span>
+    </div>
+
+    <div class="metric-card metric-warning">
+      <span class="metric-label">Última Actividad</span>
+      @if (lastEvent(); as evt) {
+        <span class="metric-value" style="font-size: 1.15rem; font-weight: 700; margin-top: 0.3rem;">
+          {{ formatDatePart(evt.occurred_at) }}
+        </span>
+        <span class="metric-meta">
+          {{ formatTimePart(evt.occurred_at) }} · {{ evt.actor_name || evt.actor_email || 'Sistema' }}
+        </span>
+      } @else {
+        <span class="metric-value" style="font-size: 1.15rem; font-weight: 600; color: #94a3b8;">
+          Sin actividad
+        </span>
+        <span class="metric-meta">No se registran eventos aún</span>
+      }
+    </div>
+  </div>
+
+  <!-- Error notice -->
+  @if (error()) {
+    <div class="notice error" role="alert">
+      <taji-icon name="alert-triangle" [size]="18" />
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <!-- Toolbar & Filters -->
+  <div class="toolbar-section">
+    <!-- Category Rail -->
+    <div class="category-rail" role="group" aria-label="Categorías de eventos">
+      @for (cat of categories; track cat.value) {
+        <button
+          type="button"
+          class="cat-btn"
+          [class.active]="selectedCategory() === cat.value"
+          (click)="selectCategory(cat.value)"
+        >
+          {{ cat.label }}
+        </button>
+      }
+    </div>
+
+    <!-- Search and Reset -->
+    <div class="filters-row">
+      <div class="search-box">
+        <taji-icon name="search" [size]="16" class="search-icon" />
+        <input
+          type="search"
+          class="search-input"
+          [formControl]="searchControl"
+          placeholder="Buscar por usuario, correo, IP, acción o descripción..."
+          aria-label="Buscar en la bitácora"
+        />
+      </div>
+
+      @if (searchControl.value || selectedCategory()) {
+        <button type="button" class="clear-filter-btn" (click)="clearSearch()">
+          Limpiar filtros
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="audit-table" aria-label="Registros de auditoría">
+        <thead>
+          <tr>
+            <th class="audit-th" scope="col" style="width: 140px;">Fecha / Hora</th>
+            <th class="audit-th" scope="col" style="width: 180px;">Acción Sensible</th>
+            <th class="audit-th" scope="col">Usuario / Actor</th>
+            <th class="audit-th" scope="col">Recurso</th>
+            <th class="audit-th" scope="col">IP de Origen</th>
+            <th class="audit-th" scope="col">Descripción</th>
+            <th class="audit-th" scope="col" style="text-align: right; width: 100px;">Detalles</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading() && events().length === 0) {
+            <tr class="audit-tr">
+              <td class="audit-td" colspan="7">
+                <div class="state-container">
+                  <div class="state-icon">⏳</div>
+                  <h3>Cargando registros...</h3>
+                  <p>Recuperando bitácora inmutable de auditoría del servidor.</p>
+                </div>
+              </td>
+            </tr>
+          } @else if (events().length === 0) {
+            <tr class="audit-tr">
+              <td class="audit-td" colspan="7">
+                <div class="state-container">
+                  <div class="state-icon">📄</div>
+                  <h3>No se encontraron registros</h3>
+                  <p>No hay eventos registrados que coincidan con los filtros seleccionados.</p>
+                </div>
+              </td>
+            </tr>
+          } @else {
+            @for (evt of events(); track evt.id) {
+              <tr class="audit-tr">
+                <!-- Fecha y Hora -->
+                <td class="audit-td">
+                  <div class="timestamp-cell">
+                    <span class="date-part">{{ formatDatePart(evt.occurred_at) }}</span>
+                    <span class="time-part">{{ formatTimePart(evt.occurred_at) }}</span>
+                  </div>
+                </td>
+
+                <!-- Acción -->
+                <td class="audit-td">
+                  @let badge = getActionBadge(evt.action_code);
+                  <span class="action-pill {{ badge.class }}" [title]="evt.action_code">
+                    {{ badge.label }}
+                  </span>
+                </td>
+
+                <!-- Actor -->
+                <td class="audit-td">
+                  <div class="actor-cell">
+                    @if (evt.actor_email) {
+                      <span class="actor-name">{{ evt.actor_name || evt.actor_email }}</span>
+                      <span class="actor-email">{{ evt.actor_email }}</span>
+                    } @else {
+                      <span class="actor-system">Sistema / Anónimo</span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Recurso -->
+                <td class="audit-td">
+                  <span class="res-badge">
+                    {{ evt.resource_type }} #{{ evt.resource_id }}
+                  </span>
+                </td>
+
+                <!-- IP -->
+                <td class="audit-td">
+                  <span class="ip-cell">{{ evt.ip_address || '—' }}</span>
+                </td>
+
+                <!-- Descripción -->
+                <td class="audit-td">
+                  <div class="desc-cell" [title]="evt.description">
+                    {{ evt.description }}
+                  </div>
+                </td>
+
+                <!-- Botón Detalles -->
+                <td class="audit-td" style="text-align: right;">
+                  <button
+                    type="button"
+                    class="btn-inspect"
+                    (click)="openDetails(evt)"
+                    title="Ver datos detallados del evento"
+                  >
+                    Examinar
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (pagination().total_pages > 1) {
+      <div class="pagination-bar">
+        <span class="page-info">
+          Página {{ pagination().page }} de {{ pagination().total_pages }} ·
+          Total: {{ pagination().total_items }} eventos
+        </span>
+
+        <div class="page-controls">
+          <button
+            type="button"
+            class="page-btn"
+            (click)="prevPage()"
+            [disabled]="!pagination().previous || loading()"
+          >
+            ← Anterior
+          </button>
+          <button
+            type="button"
+            class="page-btn"
+            (click)="nextPage()"
+            [disabled]="!pagination().next || loading()"
+          >
+            Siguiente →
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Detail Modal -->
+  @if (selectedEvent(); as event) {
+    <div class="modal-backdrop" (click)="closeDetails()" role="dialog" aria-modal="true">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div>
+            <span class="modal-kicker">Detalle del Registro de Auditoría</span>
+            <h3 class="modal-title">Evento #{{ event.id }} · {{ event.action_code }}</h3>
+          </div>
+          <button type="button" class="btn-close" (click)="closeDetails()" aria-label="Cerrar">
+            &times;
+          </button>
+        </header>
+
+        <div class="modal-body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Fecha y Hora</span>
+              <span class="detail-value">{{ formatDatePart(event.occurred_at) }} {{ formatTimePart(event.occurred_at) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">IP de Origen</span>
+              <span class="detail-value">{{ event.ip_address || 'No registrada' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Actor / Usuario</span>
+              <span class="detail-value">{{ event.actor_name || 'N/A' }} ({{ event.actor_email || 'Sistema' }})</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Recurso Afectado</span>
+              <span class="detail-value">{{ event.resource_type }} (ID: {{ event.resource_id }})</span>
+            </div>
+            <div class="detail-item" style="grid-column: 1 / -1;">
+              <span class="detail-label">Descripción</span>
+              <span class="detail-value">{{ event.description }}</span>
+            </div>
+            @if (event.request_id) {
+              <div class="detail-item" style="grid-column: 1 / -1;">
+                <span class="detail-label">Request ID</span>
+                <span class="detail-value" style="font-family: monospace;">{{ event.request_id }}</span>
+              </div>
+            }
+            @if (event.user_agent) {
+              <div class="detail-item" style="grid-column: 1 / -1;">
+                <span class="detail-label">User-Agent</span>
+                <span class="detail-value" style="font-size: 0.78rem; font-family: monospace;">{{ event.user_agent }}</span>
+              </div>
+            }
+          </div>
+
+          @if (event.before_data) {
+            <div class="json-section">
+              <span class="json-title">Estado Previo (before_data)</span>
+              <pre class="json-pre"><code>{{ toJsonString(event.before_data) }}</code></pre>
+            </div>
+          }
+
+          @if (event.after_data) {
+            <div class="json-section">
+              <span class="json-title">Estado Posterior (after_data)</span>
+              <pre class="json-pre"><code>{{ toJsonString(event.after_data) }}</code></pre>
+            </div>
+          }
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeDetails()">
+            Cerrar
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</section>

@@ -63,3 +63,7 @@ test-results/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+*.apk
+public/downloads/
+

@@ -35,6 +35,17 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
         <taji-button type="submit" [loading]="loading">Ingresar a Taji</taji-button>
       </form>
       <p class="auth-switch">¿Aún no tienes cuenta? <a routerLink="/crear-cuenta">Crear cuenta</a></p>
+
+      <div class="apk-download-box">
+        <a href="/downloads/taji-1.0.apk" download="taji-v1.0.apk" class="apk-download-btn" title="Descargar APK para Android">
+          <span class="apk-icon" aria-hidden="true">📱</span>
+          <div class="apk-text">
+            <strong>Descargar App Móvil</strong>
+            <small>Android APK v1.0 • Servidor Taji Conectado</small>
+          </div>
+          <span class="apk-arrow" aria-hidden="true">⬇</span>
+        </a>
+      </div>
     </taji-auth-shell>
   `,
   styles: [`
@@ -51,6 +62,51 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
       font-weight: 600;
       line-height: 1.5;
       border: 1px solid #f5e0a0;
+    }
+    .apk-download-box {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+    .apk-download-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.9rem;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 0.75rem;
+      text-decoration: none;
+      color: #166534;
+      transition: all 0.2s ease;
+    }
+    .apk-download-btn:hover {
+      background: #dcfce7;
+      border-color: #4ade80;
+      transform: translateY(-1px);
+    }
+    .apk-icon {
+      font-size: 1.3rem;
+    }
+    .apk-text {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      text-align: left;
+    }
+    .apk-text strong {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #14532d;
+    }
+    .apk-text small {
+      font-size: 0.70rem;
+      color: #15803d;
+    }
+    .apk-arrow {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #15803d;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,

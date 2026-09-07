@@ -87,6 +87,10 @@ interface PackageDropdown {
         </nav>
 
         <div class="aside-bottom">
+          <a href="/downloads/taji-1.0.apk" download="taji-v1.0.apk" class="apk-aside-link" title="Descargar APK para Android">
+            <taji-icon name="smartphone" [size]="16" />
+            <span>App Móvil (APK v1.0)</span>
+          </a>
           <button type="button" (click)="logout()">
             <taji-icon name="log-out" [size]="16" />
             <span>Cerrar sesión</span>

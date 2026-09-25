@@ -35,14 +35,9 @@ function positiveInteger(name, fallback) {
 function validateApiBaseUrl(value) {
   let cleanValue = value.trim();
 
-  // Sanitizar puerto 8000 en tiempo de compilacion para entorno VPS produccion
-  if (cleanValue.includes(':8000')) {
-    cleanValue = cleanValue.replace(':8000/api/v1', '/taji/api/v1').replace(':8000', '');
-  }
-
-  // Convertir https a http para direcciones IP puras
-  cleanValue = cleanValue.replace(/^https:\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, 'http://$1');
-
+  // Conservar exactamente la URL configurada: en desarrollo el backend puede
+  // estar disponible directamente en localhost:8000. Las rutas públicas deben
+  // indicarse explícitamente en .env (por ejemplo /api/v1 o /taji/api/v1).
   let url;
   try {
     url = new URL(cleanValue);

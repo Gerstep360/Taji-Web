@@ -54,4 +54,10 @@ export const API_ENDPOINTS = {
   audit: {
     root: '/audit/',
   },
+  visitAuthorizations: {
+    root: '/visit-authorizations/',
+    options: '/visit-authorizations/options/',
+    detail: (id: number) => `/visit-authorizations/${id}/`,
+    cancel: (id: number) => `/visit-authorizations/${id}/cancel/`,
+  },
 } as const;

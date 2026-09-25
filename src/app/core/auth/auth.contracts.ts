@@ -8,7 +8,7 @@ export interface RegisterRequest {
   email: string;
   first_name: string;
   last_name: string;
-  phone: string;
+  phone?: string;
   password: string;
   password_confirm: string;
 }

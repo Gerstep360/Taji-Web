@@ -253,7 +253,9 @@ export class MainLayoutComponent {
         {
           label: 'Control de Accesos',
           icon: 'door-open',
-          isAvailable: false,
+          route: '/control-accesos',
+          permission: 'register_entry_exit',
+          isAvailable: true,
         },
         {
           label: 'Turnos y Novedades',

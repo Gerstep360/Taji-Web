@@ -54,4 +54,7 @@ export const API_ENDPOINTS = {
   audit: {
     root: '/audit/',
   },
+  security: {
+    root: '/security/access-events/',
+  },
 } as const;

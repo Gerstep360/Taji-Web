@@ -100,6 +100,15 @@ export const routes: Routes = [
         title: 'Auditoría y Bitácora | Taji',
       },
       {
+        path: 'control-accesos',
+        canActivate: [permissionGuard('register_entry_exit')],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu11_control_accesos').then(
+            (m) => m.ControlAccesosPage,
+          ),
+        title: 'Control de Accesos | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),

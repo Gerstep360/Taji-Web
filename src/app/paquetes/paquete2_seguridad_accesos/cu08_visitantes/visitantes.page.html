@@ -113,7 +113,7 @@
         </select>
       </div>
 
-      @if (!isResidentActor() && units().length > 0) {
+      @if (units().length > 0) {
         <div class="filter-select-wrap">
           <label for="filter-unit" class="sr-only">Unidad</label>
           <select id="filter-unit" formControlName="unit">

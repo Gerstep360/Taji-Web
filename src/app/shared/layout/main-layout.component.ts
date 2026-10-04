@@ -143,6 +143,15 @@ interface PackageDropdown {
             </div>
           </div>
           <div class="topbar-right">
+            <div class="tenant-pill" title="Instancia de Condominio Activa (Multi-Tenant SaaS)">
+              <div class="tenant-icon-wrap">
+                <taji-icon name="building" [size]="15" />
+              </div>
+              <div class="tenant-text">
+                <span class="tenant-eyebrow">Condominio</span>
+                <strong class="tenant-name">{{ activeTenant()?.name || 'Condominio Taji' }}</strong>
+              </div>
+            </div>
             <span class="avatar" aria-label="Perfil">{{ initials }}</span>
           </div>
         </header>
@@ -159,6 +168,7 @@ export class MainLayoutComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly user = this.auth.user;
+  readonly activeTenant = computed(() => this.user()?.active_tenant ?? null);
   readonly isMobileMenuOpen = signal<boolean>(false);
 
   constructor() {
@@ -207,9 +217,9 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
-          label: 'Datos del Condominio',
+          label: 'Mi Condominio & SaaS',
           icon: 'building',
-          route: '/condominium/config',
+          route: '/mi-condominio',
           permission: 'manage_settings',
           isAvailable: true,
         },
@@ -251,13 +261,13 @@ export class MainLayoutComponent {
         {
           label: 'Pases QR de Visita',
           icon: 'qr-code',
-          route: '/visitantes',
+          route: '/pases-qr',
           isAvailable: true,
         },
         {
           label: 'Control de Accesos',
           icon: 'door-open',
-          route: '/visitantes',
+          route: '/control-accesos',
           isAvailable: true,
         },
         {

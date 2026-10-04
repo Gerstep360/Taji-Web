@@ -154,20 +154,20 @@ export class VisitantesPage implements OnInit {
         error: () => {},
       });
 
-    if (!this.isResidentActor()) {
-      this.api
-        .units()
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (res) => {
-            this.unitsError.set('');
-            this.units.set(Array.isArray(res) ? res : res.results || []);
-          },
-          error: () => {
-            this.unitsError.set('No fue posible cargar las unidades del condominio.');
-          },
-        });
+    this.api
+      .units()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.unitsError.set('');
+          this.units.set(Array.isArray(res) ? res : res.results || []);
+        },
+        error: () => {
+          this.unitsError.set('No fue posible cargar las unidades del condominio.');
+        },
+      });
 
+    if (!this.isResidentActor()) {
       this.api
         .residents()
         .pipe(takeUntilDestroyed(this.destroyRef))

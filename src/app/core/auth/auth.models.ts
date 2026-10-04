@@ -1,4 +1,4 @@
-﻿export interface Permission {
+export interface Permission {
   code: string;
 }
 
@@ -7,6 +7,15 @@ export interface Role {
   name: string;
   description: string;
   permissions: string[];
+}
+
+export interface TenantInfo {
+  id: number;
+  name: string;
+  slug: string;
+  address?: string;
+  role_name?: string;
+  is_default?: boolean;
 }
 
 export interface User {
@@ -22,6 +31,8 @@ export interface User {
   date_joined: string;
   resident_units?: ResidentUnitSummary[];
   linked_residents?: LinkedResident[];
+  active_tenant?: TenantInfo | null;
+  available_tenants?: TenantInfo[];
 }
 
 export interface ResidentUnitSummary {

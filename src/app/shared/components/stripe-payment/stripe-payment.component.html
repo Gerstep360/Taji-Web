@@ -1,0 +1,231 @@
+<section class="taji-stripe-card" aria-label="Pasarela de pago seguro Stripe">
+  <!-- HEADER -->
+  <div class="stripe-header">
+    <div class="stripe-brand">
+      <div class="stripe-badge-icon">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="5" width="20" height="14" rx="2"/>
+          <line x1="2" y1="10" x2="22" y2="10"/>
+        </svg>
+      </div>
+      <div class="stripe-details">
+        <span class="plan-label">Plan {{ planName() }}</span>
+        <span class="amount-label">{{ amount() }} Bs <small>/ mes</small></span>
+      </div>
+    </div>
+
+    <div class="stripe-badges">
+      @if (isSandbox()) {
+        <span class="pill-sandbox">
+          <span class="dot-sandbox"></span> Modo Pruebas (Sandbox)
+        </span>
+      } @else {
+        <span class="pill-live">
+          <span class="dot-live"></span> Pago Seguro SSL
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- ACCEPTED CARDS ROW -->
+  @if (!approved()) {
+    <div class="accepted-cards">
+      <span class="accepted-title">Tarjetas procesadas vía Stripe:</span>
+      <span class="card-chip">Visa</span>
+      <span class="card-chip">Mastercard</span>
+      <span class="card-chip">American Express</span>
+      <span class="security-chip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Cifrado 256-bit
+      </span>
+    </div>
+  }
+
+  <!-- ERROR ALERT -->
+  @if (error()) {
+    <div class="stripe-alert error" role="alert">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <!-- APPROVED SUCCESS VIEW -->
+  @if (approved()) {
+    <div class="approved-box">
+      <div class="success-ring">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="approved-text">
+        <h4>¡Suscripción Activada Exitosamente!</h4>
+        <p>Tu pago ha sido procesado y acreditado a tu condominio. Los límites de unidades y módulos correspondientes ya están habilitados.</p>
+      </div>
+    </div>
+  }
+
+  <!-- SANDBOX INTERACTIVE VIRTUAL CREDIT CARD -->
+  @if (!approved() && isSandbox()) {
+    <div class="card-preview-wrapper">
+      <div class="executive-credit-card">
+        <div class="card-top">
+          <div class="card-chip-visual">
+            <div class="chip-inner"></div>
+          </div>
+          <div class="contactless-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8.5 16.5a5 5 0 0 1 0-9"/>
+              <path d="M12 19a8.5 8.5 0 0 0 0-14"/>
+              <path d="M15.5 21.5a12 12 0 0 0 0-19"/>
+            </svg>
+          </div>
+          <div class="card-network-badge">
+            {{ selectedBrand() }}
+          </div>
+        </div>
+
+        <div class="card-digits">{{ cardNumber() }}</div>
+
+        <div class="card-bottom">
+          <div class="holder-meta">
+            <span class="label">TITULAR AUTORIZADO</span>
+            <span class="value">{{ cardHolder().toUpperCase() }}</span>
+          </div>
+          <div class="expiry-meta">
+            <span class="label">VENCE</span>
+            <span class="value">{{ cardExpiry() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SANDBOX FORM CONTROLS -->
+    <div class="payment-form">
+      <div class="form-group">
+        <label for="cardHolderName" class="form-label">Nombre del Titular de la Tarjeta</label>
+        <input
+          id="cardHolderName"
+          type="text"
+          class="form-control"
+          [ngModel]="cardHolder()"
+          (ngModelChange)="cardHolder.set($event)"
+          placeholder="Ej. Juan Pérez"
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-grow">
+          <label for="cardSelect" class="form-label">Tarjeta de Simulación Stripe</label>
+          <select
+            id="cardSelect"
+            class="form-control form-select"
+            [ngModel]="selectedCardType()"
+            (ngModelChange)="changeTestCard($event)"
+          >
+            <option value="visa_ok">Visa Test (4242 •••• •••• 4242) — Aprobación exitosa</option>
+            <option value="mc_ok">Mastercard Test (5555 •••• •••• 4444) — Aprobación exitosa</option>
+          </select>
+        </div>
+
+        <div class="form-group col-cvc">
+          <label class="form-label">CVC</label>
+          <input type="text" class="form-control text-center" value="888" readonly />
+        </div>
+      </div>
+
+      <div class="sandbox-note">
+        <div class="note-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </div>
+        <div class="note-text">
+          <strong>Entorno de Pruebas Taji SaaS:</strong> Simulación de pasarela Stripe activa. El pago se registra de inmediato en la base de datos sin debitar dinero real.
+        </div>
+      </div>
+
+      <div class="actions-group">
+        <button
+          type="button"
+          class="btn-pay-primary"
+          (click)="paySandbox()"
+          [disabled]="busy() || !ready()"
+        >
+          @if (busy()) {
+            <span class="btn-spinner"></span>
+            <span>Procesando pago...</span>
+          } @else {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect width="20" height="14" x="2" y="5" rx="2"/>
+              <line x1="2" x2="22" y1="10" stroke="currentColor" stroke-width="2.5"/>
+            </svg>
+            <span>Confirmar Pago de Bs. {{ amount() }} BOB</span>
+          }
+        </button>
+
+        <button type="button" class="btn-cancel" (click)="cancel()" [disabled]="busy()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- REAL STRIPE ELEMENTS (WHEN LIVE STRIPE KEYS ARE CONFIGURED) -->
+  @if (!approved() && !isSandbox()) {
+    <div class="real-stripe-container">
+      @if (!ready() && busy()) {
+        <div class="loading-stripe">
+          <span class="btn-spinner lg"></span>
+          <p>Conectando con servidores seguros de Stripe...</p>
+        </div>
+      }
+
+      <div #elementHost class="stripe-mount-slot"></div>
+
+      @if (ready()) {
+        <div class="actions-group">
+          <button
+            type="button"
+            class="btn-pay-primary"
+            (click)="payRealStripe()"
+            [disabled]="busy()"
+          >
+            @if (busy()) {
+              <span class="btn-spinner"></span>
+              <span>Procesando pago...</span>
+            } @else {
+              <span>Pagar Bs. {{ amount() }} BOB con Stripe</span>
+            }
+          </button>
+          <button type="button" class="btn-cancel" (click)="cancel()" [disabled]="busy()">
+            Cancelar
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- FOOTER -->
+  @if (!approved()) {
+    <div class="stripe-footer">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <span>Transacción respaldada por la infraestructura oficial de pagos Stripe</span>
+    </div>
+  }
+
+  @if (status()) {
+    <p class="status-caption">{{ status() }}</p>
+  }
+</section>

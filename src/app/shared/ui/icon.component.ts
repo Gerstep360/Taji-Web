@@ -57,6 +57,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
           <line x1="9" y1="18" x2="9.01" y2="18"></line>
           <line x1="15" y1="18" x2="15.01" y2="18"></line>
         }
+        @case ('credit-card') {
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        }
         @case ('layout-grid') {
           <rect x="3" y="3" width="7" height="7"></rect>
           <rect x="14" y="3" width="7" height="7"></rect>

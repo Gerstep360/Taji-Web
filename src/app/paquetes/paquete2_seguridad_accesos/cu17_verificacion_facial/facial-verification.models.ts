@@ -23,7 +23,8 @@ export interface BiometricReferenceItem {
 
 export interface EnrollBiometricPayload {
   resident_id: number;
-  reference_image: string;
+  reference_image?: string;
+  images?: string[];
 }
 
 export interface FaceMatchRequest {
@@ -38,6 +39,8 @@ export interface FaceMatchResult {
   similarity_score: number;
   threshold: number;
   result: 'MATCH' | 'NO_MATCH' | 'REVIEW';
+  error_code?: string;
+  message?: string;
   model_name: string;
   model_version: string;
 }

@@ -72,4 +72,18 @@ export const API_ENDPOINTS = {
     detail: (id: number) => `/visit-authorizations/${id}/`,
     cancel: (id: number) => `/visit-authorizations/${id}/cancel/`,
   },
+  saas: {
+    plans: '/saas/plans/',
+    paymentConfig: '/saas/payment-config/',
+    subscription: '/saas/subscription/',
+    createIntent: '/saas/checkout/create-intent/',
+    confirmSandbox: '/saas/checkout/confirm-sandbox/',
+    webhook: '/saas/checkout/webhook/',
+    payments: '/saas/payments/',
+    myCondominium: '/saas/my-condominium/',
+    myTenants: '/saas/my-tenants/',
+    switchTenant: '/saas/switch-tenant/',
+    onboardingRegister: '/saas/onboarding/register/',
+    publicCondominiums: '/saas/condominiums/public/',
+  },
 } as const;

@@ -184,9 +184,20 @@
               <label for="unit_id">Unidad de Destino <span class="required">*</span></label>
               <select id="unit_id" formControlName="unit_id">
                 <option value="">Selecciona la unidad</option>
-                @if (isResidentActor && residentUnitOptions.length > 0) {
-                  @for (ru of residentUnitOptions; track ru.unit_id) {
-                    <option [value]="ru.unit_id">Unidad {{ ru.unit_code }}</option>
+                @if (residentUnitOptions.length > 0) {
+                  <optgroup label="Tus Unidades Asignadas">
+                    @for (ru of residentUnitOptions; track ru.unit_id) {
+                      <option [value]="ru.unit_id">Unidad {{ ru.unit_code }} (Mi Unidad)</option>
+                    }
+                  </optgroup>
+                  @if (units.length > 0) {
+                    <optgroup label="Todas las Unidades del Condominio">
+                      @for (u of units; track u.id) {
+                        <option [value]="u.id">
+                          Unidad {{ u.code }} {{ u.sector_name ? '· ' + u.sector_name : '' }}
+                        </option>
+                      }
+                    </optgroup>
                   }
                 } @else {
                   @for (u of units; track u.id) {
@@ -196,7 +207,7 @@
                   }
                 }
               </select>
-              @if (units.length === 0 && !isResidentActor) {
+              @if (units.length === 0 && residentUnitOptions.length === 0) {
                  <span class="field-hint">
                    No hay unidades registradas. Debes crear al menos una unidad en Sectores y Unidades.
                  </span>

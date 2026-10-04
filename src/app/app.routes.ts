@@ -4,6 +4,17 @@ import { anyPermissionGuard, authGuard, guestGuard, permissionGuard } from './co
 
 export const routes: Routes = [
   {
+    path: 'welcome',
+    loadComponent: () =>
+      import('./pages/welcome/welcome.page').then((m) => m.WelcomePage),
+    title: 'Taji SaaS | Planes, Precios y Seguridad Inteligente',
+  },
+  {
+    path: 'bienvenida',
+    redirectTo: 'welcome',
+    pathMatch: 'full',
+  },
+  {
     path: 'iniciar-sesion',
     canActivate: [guestGuard],
     loadComponent: () =>
@@ -67,10 +78,18 @@ export const routes: Routes = [
         title: 'Roles y Permisos | Taji',
       },
       {
-        path: 'condominium/config',
+        path: 'mi-condominio',
         canActivate: [permissionGuard('manage_settings')],
-        loadComponent: () => import('./paquetes/paquete1_usuarios_condominio/cu03_datos_condominio/condominium-config.page').then((m) => m.CondominiumConfigPage),
-        title: 'Configuración del Condominio | Taji',
+        loadComponent: () =>
+          import('./paquetes/paquete1_usuarios_condominio/cu03_datos_condominio/tenant-admin.page').then(
+            (m) => m.TenantAdminPage,
+          ),
+        title: 'Mi Condominio & Suscripción SaaS | Taji',
+      },
+      {
+        path: 'condominium/config',
+        redirectTo: 'mi-condominio',
+        pathMatch: 'full',
       },
       {
         path: 'sectores-unidades',
@@ -115,6 +134,22 @@ export const routes: Routes = [
             (m) => m.VisitantesPage,
           ),
         title: 'Visitantes y Autorizaciones | Taji',
+      },
+      {
+        path: 'pases-qr',
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu09_qr_visita').then(
+            (m) => m.PasesQrPage,
+          ),
+        title: 'Pases QR de Visita | Taji',
+      },
+      {
+        path: 'control-accesos',
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu10_validar_qr').then(
+            (m) => m.ControlAccesosPage,
+          ),
+        title: 'Control de Accesos QR | Taji',
       },
       {
         path: 'acceso-denegado',

@@ -57,4 +57,8 @@ export class FacialVerificationApi {
     if (search) params = params.set('search', search);
     return this.api.get<FaceVerificationLog[]>(API_ENDPOINTS.security.faceVerification.root, { params });
   }
+
+  deleteBiometricReference(id: number): Observable<void> {
+    return this.api.delete<void>(`${API_ENDPOINTS.security.biometrics.root}${id}/`);
+  }
 }

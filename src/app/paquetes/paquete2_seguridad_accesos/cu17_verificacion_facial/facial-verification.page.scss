@@ -379,6 +379,9 @@
   align-items: center;
 
   .result-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     padding: 0.45rem 1rem;
     border-radius: 9999px;
     font-size: 0.88rem;

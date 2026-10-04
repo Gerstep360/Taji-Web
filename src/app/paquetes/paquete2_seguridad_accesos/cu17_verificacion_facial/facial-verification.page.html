@@ -141,7 +141,7 @@
             <option [value]="null">🔍 Búsqueda Automática 1:N (Todos los residentes)</option>
             @for (r of residents(); track r.id) {
               <option [value]="r.id">
-                {{ r.person.first_name }} {{ r.person.last_name }} ({{ r.person.document_number }})
+                {{ r.full_name }} ({{ r.document_number }})
               </option>
             }
           </select>
@@ -339,7 +339,7 @@
             <option [value]="null">-- Seleccione un residente --</option>
             @for (r of residents(); track r.id) {
               <option [value]="r.id">
-                {{ r.person.first_name }} {{ r.person.last_name }} — Doc: {{ r.person.document_number }}
+                {{ r.full_name }} — Doc: {{ r.document_number }}
               </option>
             }
           </select>

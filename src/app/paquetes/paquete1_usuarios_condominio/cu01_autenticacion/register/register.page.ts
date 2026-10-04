@@ -80,7 +80,10 @@ export class RegisterPage {
     if (this.form.controls.password.value !== this.form.controls.password_confirm.value) { this.form.controls.password_confirm.setErrors({ mismatch: true }); }
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
-    this.auth.register(this.form.getRawValue()).subscribe({
+    const { phone, ...request } = this.form.getRawValue();
+    // El backend puede rechazar strings vacíos para campos opcionales.
+    // En ese caso no enviamos el campo phone en absoluto.
+    this.auth.register(phone.trim() ? { ...request, phone: phone.trim() } : request).subscribe({
       next: () => void this.router.navigate(['/iniciar-sesion'], { state: { pendingApproval: true } }),
       error: (error: unknown) => {
         this.applyServerErrors(error);

@@ -1,0 +1,198 @@
+<div class="modal-backdrop" (click)="onBackdropClick($event)" role="presentation">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <header class="card-header">
+      <div class="header-main">
+        <span class="header-kicker">CU08 · Detalle de Autorización</span>
+        <h2 id="detail-title">Pase de Visita #{{ visit.id }}</h2>
+      </div>
+      <button type="button" class="btn-close" (click)="close.emit()" aria-label="Cerrar modal">
+        <taji-icon name="x" [size]="20" />
+      </button>
+    </header>
+
+    @if (actionError()) {
+      <div class="alert-box error" role="alert">
+        <taji-icon name="alert-triangle" [size]="18" />
+        <span>{{ actionError() }}</span>
+      </div>
+    }
+
+    <div class="card-body">
+      <!-- Estado de la Autorización -->
+      <section class="status-banner" [attr.data-status]="visit.status">
+        <div class="status-indicator">
+          <taji-icon [name]="getStatusIcon(visit.status)" [size]="20" />
+          <div class="status-text">
+            <span class="status-title">{{ visit.status_display }}</span>
+            <small>{{ getStatusDescription(visit.status) }}</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Grid de Información -->
+      <div class="info-grid">
+        <!-- Visitante -->
+        <article class="info-box">
+          <div class="box-icon visitor">
+            <taji-icon name="user-check" [size]="20" />
+          </div>
+          <div class="box-content">
+            <span class="box-label">Visitante</span>
+            <strong class="box-value">{{ visit.visitor.full_name }}</strong>
+            <span class="box-sub">
+              {{ visit.visitor.document_type }}: {{ visit.visitor.document_number || 'Sin documento' }}
+              @if (visit.visitor.document_complement) {
+                - {{ visit.visitor.document_complement }}
+              }
+            </span>
+            @if (visit.visitor.phone) {
+              <span class="box-meta">
+                <taji-icon name="smartphone" [size]="13" /> {{ visit.visitor.phone }}
+              </span>
+            }
+            @if (visit.visitor.contact_email) {
+              <span class="box-meta">
+                <taji-icon name="inbox" [size]="13" /> {{ visit.visitor.contact_email }}
+              </span>
+            }
+          </div>
+        </article>
+
+        <!-- Destino -->
+        <article class="info-box">
+          <div class="box-icon unit">
+            <taji-icon name="building" [size]="20" />
+          </div>
+          <div class="box-content">
+            <span class="box-label">Destino</span>
+            <strong class="box-value">Unidad {{ visit.unit_detail?.code || visit.unit }}</strong>
+            <span class="box-sub">{{ visit.unit_detail?.sector_name || 'Condominio Central' }}</span>
+            @if (visit.unit_detail?.floor_label) {
+              <span class="box-meta">Piso / Nivel: {{ visit.unit_detail?.floor_label }}</span>
+            }
+          </div>
+        </article>
+
+        <!-- Autorizado Por -->
+        <article class="info-box">
+          <div class="box-icon resident">
+            <taji-icon name="shield-check" [size]="20" />
+          </div>
+          <div class="box-content">
+            <span class="box-label">Autorizado Por</span>
+            <strong class="box-value">{{ visit.resident?.full_name || 'Administración' }}</strong>
+            @if (visit.resident?.document_number) {
+              <span class="box-sub">CI: {{ visit.resident?.document_number }}</span>
+            }
+          </div>
+        </article>
+
+        <!-- Motivo -->
+        <article class="info-box">
+          <div class="box-icon purpose">
+            <taji-icon name="file-text" [size]="20" />
+          </div>
+          <div class="box-content">
+            <span class="box-label">Motivo de la Visita</span>
+            <strong class="box-value">{{ visit.purpose }}</strong>
+          </div>
+        </article>
+      </div>
+
+      <!-- Vigencia -->
+      <section class="validity-box">
+        <div class="validity-header">
+          <taji-icon name="calendar" [size]="16" />
+          <span>Periodo de Validez y Horarios</span>
+        </div>
+        <div class="validity-dates">
+          <div class="date-item">
+            <span class="date-label">Válido desde</span>
+            <strong class="date-value">{{ formatDate(visit.valid_from) }}</strong>
+          </div>
+          <div class="date-separator">
+            <taji-icon name="clock" [size]="16" />
+          </div>
+          <div class="date-item">
+            <span class="date-label">Válido hasta</span>
+            <strong class="date-value">{{ formatDate(visit.valid_until) }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Token / Código de Pase QR -->
+      @if (visit.qr_uuid) {
+        <section class="token-box">
+          <div class="token-header">
+            <div class="token-title">
+              <taji-icon name="qr-code" [size]="18" />
+              <span>Código Seguro de Pase QR</span>
+            </div>
+            <button
+              type="button"
+              class="btn-copy"
+              (click)="copyQrCode()"
+              [title]="copied() ? 'Copiado' : 'Copiar código'"
+            >
+              <taji-icon [name]="copied() ? 'check' : 'copy'" [size]="15" />
+              <span>{{ copied() ? '¡Copiado!' : 'Copiar código' }}</span>
+            </button>
+          </div>
+          <code class="token-code">{{ visit.qr_uuid }}</code>
+          @if (visit.qr_expires_at) {
+            <small class="token-expiry">
+              Expira: {{ formatDate(visit.qr_expires_at) }}
+            </small>
+          }
+        </section>
+      }
+
+      @if (visit.notes) {
+        <section class="notes-box">
+          <span class="notes-label">Notas Adicionales:</span>
+          <p class="notes-text">{{ visit.notes }}</p>
+        </section>
+      }
+
+      @if (visit.cancelled_at) {
+        <div class="cancel-notice">
+          <taji-icon name="ban" [size]="16" />
+          <span>Cancelada el {{ formatDate(visit.cancelled_at) }}</span>
+        </div>
+      }
+    </div>
+
+    <footer class="card-footer">
+      <div class="footer-left">
+        @if (canCancel) {
+          <button
+            type="button"
+            class="btn-danger"
+            (click)="onCancel()"
+            [disabled]="cancelling()"
+          >
+            @if (cancelling()) {
+              <taji-icon name="loader" [size]="16" class="spinning" />
+              <span>Cancelando...</span>
+            } @else {
+              <taji-icon name="ban" [size]="16" />
+              <span>Cancelar Autorización</span>
+            }
+          </button>
+        }
+      </div>
+
+      <div class="footer-right">
+        @if (canEdit) {
+          <button type="button" class="btn-secondary" (click)="edit.emit(visit)">
+            <taji-icon name="edit-2" [size]="15" />
+            <span>Editar</span>
+          </button>
+        }
+        <button type="button" class="btn-primary" (click)="close.emit()">
+          Entendido
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>

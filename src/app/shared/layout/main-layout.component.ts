@@ -11,6 +11,7 @@ interface SubNavItem {
   icon: string;
   route?: string;
   permission?: string;
+  permissions?: string[];
   isAvailable: boolean;
 }
 
@@ -241,9 +242,11 @@ export class MainLayoutComponent {
       icon: 'shield',
       items: [
         {
-          label: 'Registro de Visitantes',
+          label: 'Visitantes y Autorizaciones',
           icon: 'user-check',
-          isAvailable: false,
+          route: '/visitantes',
+          permissions: ['manage_visits', 'register_visits'],
+          isAvailable: true,
         },
         {
           label: 'Pases QR de Visita',
@@ -365,11 +368,17 @@ export class MainLayoutComponent {
 
   canAccess(item: SubNavItem): boolean {
     if (!item.isAvailable) return false;
-    if (!item.permission) return true;
+    if (!item.permission && !item.permissions?.length) return true;
     const current = this.user();
-    return Boolean(
-      current?.is_superuser || current?.role?.permissions.includes(item.permission),
-    );
+    if (current?.is_superuser) return true;
+    if (item.permission && current?.role?.permissions.includes(item.permission)) return true;
+    if (
+      item.permissions &&
+      item.permissions.some((p) => current?.role?.permissions.includes(p))
+    ) {
+      return true;
+    }
+    return false;
   }
 
   get initials(): string {

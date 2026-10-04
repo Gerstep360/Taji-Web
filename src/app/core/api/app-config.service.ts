@@ -47,14 +47,8 @@ export class AppConfigService {
   private normalizeBaseUrl(value: string | undefined): string {
     let trimmed = value?.trim().replace(/\/+$/, '') ?? '';
 
-    // Sanitizar automáticamente el puerto interno :8000 si está configurado en producción
-    if (trimmed.includes(':8000')) {
-      trimmed = trimmed.replace(':8000/api/v1', '/taji/api/v1').replace(':8000', '');
-    }
-
-    // Convertir https a http para direcciones IP puras (los certificados SSL no aplican a IPs)
-    trimmed = trimmed.replace(/^https:\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/, 'http://$1');
-
+    // La URL debe respetarse tal como aparece en la configuración. En
+    // desarrollo, por ejemplo, `http://localhost:8000/api/v1` es válida.
     let url: URL;
     try {
       url = new URL(trimmed);

@@ -66,4 +66,10 @@ export const API_ENDPOINTS = {
       confirm: '/security/cu17/face-verification/confirm/',
     },
   },
+  visitAuthorizations: {
+    root: '/visit-authorizations/',
+    options: '/visit-authorizations/options/',
+    detail: (id: number) => `/visit-authorizations/${id}/`,
+    cancel: (id: number) => `/visit-authorizations/${id}/cancel/`,
+  },
 } as const;

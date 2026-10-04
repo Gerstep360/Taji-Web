@@ -1,4 +1,4 @@
-﻿import { inject } from '@angular/core';
+import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
@@ -19,5 +19,15 @@ export const permissionGuard =
     const auth = inject(AuthService);
     const user = auth.user();
     const allowed = user?.is_superuser || user?.role?.permissions.includes(permission);
+    return allowed ? true : inject(Router).createUrlTree(['/acceso-denegado']);
+  };
+
+export const anyPermissionGuard =
+  (permissions: string[]): CanActivateFn =>
+  () => {
+    const auth = inject(AuthService);
+    const user = auth.user();
+    const allowed =
+      user?.is_superuser || permissions.some((p) => user?.role?.permissions.includes(p));
     return allowed ? true : inject(Router).createUrlTree(['/acceso-denegado']);
   };

@@ -4,7 +4,15 @@ import { Observable } from 'rxjs';
 
 import { ApiClient } from '../../../core/api/api-client.service';
 import { API_ENDPOINTS } from '../../../core/api/api-endpoints';
-import { AccessEventItem, AccessEventListResponse, AccessEventPayload, AccessEventQuery } from './access-control.models';
+import {
+  AccessEventItem,
+  AccessEventListResponse,
+  AccessEventPayload,
+  AccessEventQuery,
+  AccessLookupResponse,
+  AccessPersonOption,
+  AccessUnitOption,
+} from './access-control.models';
 
 @Injectable({ providedIn: 'root' })
 export class AccessControlApi {
@@ -21,6 +29,16 @@ export class AccessControlApi {
   }
 
   create(payload: AccessEventPayload): Observable<AccessEventItem> {
-    return this.api.post<AccessEventItem>(API_ENDPOINTS.security.root, payload);
+    return this.api.post<AccessEventPayload, AccessEventItem>(API_ENDPOINTS.security.root, payload);
+  }
+
+  searchPeople(search: string): Observable<AccessLookupResponse<AccessPersonOption>> {
+    const params = new HttpParams().set('search', search);
+    return this.api.get<AccessLookupResponse<AccessPersonOption>>(API_ENDPOINTS.security.people, { params });
+  }
+
+  searchUnits(search: string): Observable<AccessLookupResponse<AccessUnitOption>> {
+    const params = new HttpParams().set('search', search);
+    return this.api.get<AccessLookupResponse<AccessUnitOption>>(API_ENDPOINTS.security.units, { params });
   }
 }

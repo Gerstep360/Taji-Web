@@ -23,6 +23,8 @@ export interface StaffMember {
   birth_date: string | null;
   profile_photo: string;
   employee_code: string | null;
+  has_user_account: boolean;
+  user_email: string;
   staff_type: string;
   staff_type_display: string;
   hire_date: string | null;
@@ -46,6 +48,8 @@ export interface StaffPayload {
   end_date: string | null;
   status: string;
   notes: string;
+  create_user_account: boolean;
+  account_password?: string;
 }
 
 export interface StaffQuery {

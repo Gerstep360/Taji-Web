@@ -56,5 +56,7 @@ export const API_ENDPOINTS = {
   },
   security: {
     root: '/security/access-events/',
+    people: '/security/access-events/people/',
+    units: '/security/access-events/units/',
   },
 } as const;

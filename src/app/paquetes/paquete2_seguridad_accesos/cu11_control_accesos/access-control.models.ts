@@ -25,9 +25,13 @@ export interface AccessEventItem {
   id: number;
   person_id: number | null;
   person: PersonSummary | null;
+  visitor_name: string;
+  visitor_document_number: string;
   guard_staff_id: number | null;
   guard_staff: GuardSummary | null;
   authorization_id: number | null;
+  unit_id: number | null;
+  unit: AccessUnitSummary | null;
   event_type: AccessEventType;
   event_type_display: string;
   validation_method: AccessEventMethod;
@@ -38,10 +42,40 @@ export interface AccessEventItem {
   notes: string;
 }
 
+export interface AccessPersonOption {
+  id: number;
+  full_name: string;
+  document_number: string | null;
+  units: Array<{ id: number; code: string }>;
+}
+
+export interface AccessUnitOption {
+  id: number;
+  code: string;
+  unit_type: string;
+  sector: string;
+}
+
+export interface AccessUnitSummary {
+  id: number;
+  code: string;
+  unit_type: string;
+  sector_name: string | null;
+}
+
+export interface AccessLookupResponse<T> {
+  results: T[];
+}
+
 export interface AccessEventListResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
+  pagination: {
+    page: number;
+    page_size: number;
+    total_items: number;
+    total_pages: number;
+    next: string | null;
+    previous: string | null;
+  };
   results: AccessEventItem[];
 }
 
@@ -53,7 +87,10 @@ export interface AccessEventQuery {
 }
 
 export interface AccessEventPayload {
-  person_id: number;
+  person_id?: number;
+  visitor_name?: string;
+  visitor_document_number?: string;
+  unit_id: number;
   guard_staff_id?: number | null;
   event_type: AccessEventType;
   validation_method?: AccessEventMethod;

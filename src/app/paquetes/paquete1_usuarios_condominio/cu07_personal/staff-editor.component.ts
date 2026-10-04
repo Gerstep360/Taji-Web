@@ -80,6 +80,35 @@ import { StaffMember, StaffOptions, StaffPayload } from './staff.models';
         </fieldset>
 
         <fieldset>
+          <legend>Acceso al sistema</legend>
+          @if (member()?.has_user_account) {
+            <div class="account-state">
+              <strong>Cuenta de acceso creada</strong>
+              <span>{{ member()?.user_email }}</span>
+            </div>
+          } @else {
+            <label class="account-toggle">
+              <input type="checkbox" formControlName="create_user_account" />
+              <span>Crear cuenta para que pueda iniciar sesión</span>
+            </label>
+            @if (createUserAccount()) {
+              <div class="account-fields">
+                <p>Usará el correo de contacto para iniciar sesión.</p>
+                <label>
+                  <span>Contraseña inicial *</span>
+                  <input
+                    type="password"
+                    formControlName="account_password"
+                    autocomplete="new-password"
+                  />
+                  <small>{{ accountPasswordError() }}</small>
+                </label>
+              </div>
+            }
+          }
+        </fieldset>
+
+        <fieldset>
           <legend>Información laboral</legend>
           <div class="system-code" aria-live="polite">
             <span>Código del sistema</span>
@@ -160,6 +189,8 @@ export class StaffEditorComponent {
     phone: [''],
     contact_email: ['', Validators.email],
     birth_date: [''],
+    create_user_account: [false],
+    account_password: [''],
     staff_type: ['', Validators.required],
     hire_date: [''],
     end_date: [''],
@@ -169,6 +200,9 @@ export class StaffEditorComponent {
 
   readonly selectedStatus = toSignal(this.form.controls.status.valueChanges, {
     initialValue: 'ACTIVE',
+  });
+  readonly createUserAccount = toSignal(this.form.controls.create_user_account.valueChanges, {
+    initialValue: false,
   });
 
   constructor() {
@@ -185,13 +219,26 @@ export class StaffEditorComponent {
       return;
     }
     const raw = this.form.getRawValue();
+    if (raw.create_user_account && raw.account_password.length < 10) {
+      this.form.controls.account_password.markAsTouched();
+      return;
+    }
     this.submitted.emit({
       ...raw,
       document_number: raw.document_number.trim() || null,
       birth_date: raw.birth_date || null,
       hire_date: raw.hire_date || null,
       end_date: raw.status === 'INACTIVE' ? raw.end_date || null : null,
+      account_password: raw.create_user_account ? raw.account_password : undefined,
     });
+  }
+
+  accountPasswordError(): string {
+    const control = this.form.controls.account_password;
+    if (!this.createUserAccount() || !control.touched) return '';
+    if (!control.value) return 'Ingresa una contraseña inicial.';
+    if (control.value.length < 10) return 'Usa al menos 10 caracteres.';
+    return '';
   }
 
   fieldError(field: string): string {
@@ -213,6 +260,8 @@ export class StaffEditorComponent {
       phone: member?.phone ?? '',
       contact_email: member?.contact_email ?? '',
       birth_date: member?.birth_date ?? '',
+      create_user_account: false,
+      account_password: '',
       staff_type: member?.staff_type ?? options.staff_types[0]?.value ?? '',
       hire_date: member?.hire_date ?? '',
       end_date: member?.end_date ?? '',

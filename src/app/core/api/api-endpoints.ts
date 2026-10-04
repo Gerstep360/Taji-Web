@@ -17,7 +17,9 @@ export const API_ENDPOINTS = {
     root: '/staff/',
     options: '/staff/options/',
     detail: (id: number) => `/staff/${id}/`,
+    resetPassword: (id: number) => `/staff/${id}/reset-password/`,
   },
+
 
   residents: {
     root: '/residents/',
@@ -72,4 +74,16 @@ export const API_ENDPOINTS = {
     detail: (id: number) => `/visit-authorizations/${id}/`,
     cancel: (id: number) => `/visit-authorizations/${id}/cancel/`,
   },
+  securityShifts: {
+    root: '/paquete2/turnos/',
+    options: '/paquete2/turnos/options/',
+    detail: (id: number) => `/paquete2/turnos/${id}/`,
+    iniciar: (id: number) => `/paquete2/turnos/${id}/iniciar/`,
+    cerrar: (id: number) => `/paquete2/turnos/${id}/cerrar/`,
+    cancelar: (id: number) => `/paquete2/turnos/${id}/cancelar/`,
+    actual: '/paquete2/turnos/actual/',
+    proximos: '/paquete2/turnos/proximos/',
+    historial: '/paquete2/turnos/historial/',
+  },
 } as const;
+

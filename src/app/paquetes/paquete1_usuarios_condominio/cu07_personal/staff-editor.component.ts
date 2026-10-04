@@ -14,7 +14,7 @@ import { StaffMember, StaffOptions, StaffPayload } from './staff.models';
         <div>
           <span class="kicker">{{ member() ? 'Editar registro' : 'Nuevo registro' }}</span>
           <h2 id="editor-title">{{ member()?.full_name || 'Agregar personal' }}</h2>
-          <p>Los datos personales y laborales se guardan juntos.</p>
+          <p>Los datos personales, laborales y de acceso se guardan juntos.</p>
         </div>
         <button type="button" class="close" (click)="cancel()" aria-label="Cerrar formulario">
           ×
@@ -129,6 +129,68 @@ import { StaffMember, StaffOptions, StaffPayload } from './staff.models';
           </div>
         </fieldset>
 
+        <fieldset class="access-fieldset">
+          <legend>Acceso al sistema</legend>
+
+          @if (member()?.has_system_access) {
+            <div class="access-active-card">
+              <div class="badge-status-row">
+                <span class="access-badge active">CUENTA ACTIVA DE USUARIO</span>
+                <span class="role-chip">{{ member()?.role_name || member()?.role_slug || 'Seguridad' }}</span>
+              </div>
+              <p class="access-email-text">
+                <strong>Email de inicio de sesión:</strong> {{ member()?.access_email }}
+              </p>
+              <label class="toggle-checkbox-label">
+                <input type="checkbox" formControlName="toggle_access" />
+                <span>Permitir acceso al sistema (Cuenta activa)</span>
+              </label>
+            </div>
+          } @else {
+            <div class="access-toggle-box">
+              <label class="checkbox-container">
+                <input type="checkbox" formControlName="create_system_access" />
+                <span class="checkbox-title">Crear / habilitar acceso al sistema</span>
+              </label>
+              <p class="access-hint">
+                Requerido para el personal de <strong>SEGURIDAD</strong> para poder iniciar sesión y utilizar el módulo CU13 (Turnos de Seguridad).
+              </p>
+            </div>
+
+            @if (selectedCreateAccess()) {
+              <div class="form-grid access-form-grid">
+                <label class="wide">
+                  <span>Correo de acceso *</span>
+                  <input formControlName="access_email" type="email" autocomplete="email" placeholder="pepe@taji.com" />
+                  <small>{{ fieldError('access_email') }}</small>
+                </label>
+
+                <label>
+                  <span>Rol de acceso</span>
+                  <select formControlName="access_role">
+                    <option value="seguridad">Seguridad / Guardia</option>
+                    <option value="administrador">Administración</option>
+                    <option value="residente">Residente</option>
+                  </select>
+                  <small class="hint">Rol asignado al usuario en el sistema.</small>
+                </label>
+
+                <label>
+                  <span>Contraseña *</span>
+                  <input formControlName="password" type="password" autocomplete="new-password" placeholder="••••••••" />
+                  <small>{{ fieldError('password') }}</small>
+                </label>
+
+                <label>
+                  <span>Confirmar contraseña *</span>
+                  <input formControlName="password_confirm" type="password" autocomplete="new-password" placeholder="••••••••" />
+                  <small>{{ fieldError('password_confirm') }}</small>
+                </label>
+              </div>
+            }
+          }
+        </fieldset>
+
         <footer>
           <button type="button" class="secondary" (click)="cancel()">Cancelar</button>
           <button type="submit" class="primary" [disabled]="saving()">
@@ -165,14 +227,47 @@ export class StaffEditorComponent {
     end_date: [''],
     status: ['ACTIVE', Validators.required],
     notes: [''],
+
+    // Campos de Acceso al Sistema
+    create_system_access: [false],
+    access_email: ['', [Validators.email]],
+    access_role: ['seguridad'],
+    password: [''],
+    password_confirm: [''],
+    toggle_access: [true],
   });
 
   readonly selectedStatus = toSignal(this.form.controls.status.valueChanges, {
     initialValue: 'ACTIVE',
   });
 
+  readonly selectedCreateAccess = toSignal(this.form.controls.create_system_access.valueChanges, {
+    initialValue: false,
+  });
+
+  readonly selectedStaffType = toSignal(this.form.controls.staff_type.valueChanges, {
+    initialValue: '',
+  });
+
   constructor() {
     effect(() => this.populate(this.member(), this.options()));
+
+    effect(() => {
+      const area = this.selectedStaffType();
+      if (area === 'SECURITY') {
+        this.form.controls.access_role.setValue('seguridad');
+      }
+    });
+
+    effect(() => {
+      const createAccess = this.selectedCreateAccess();
+      if (createAccess && !this.form.controls.access_email.value) {
+        const contactEmail = this.form.controls.contact_email.value;
+        if (contactEmail) {
+          this.form.controls.access_email.setValue(contactEmail);
+        }
+      }
+    });
   }
 
   cancel(): void {
@@ -185,12 +280,40 @@ export class StaffEditorComponent {
       return;
     }
     const raw = this.form.getRawValue();
+
+    if (!this.member()?.has_system_access && raw.create_system_access) {
+      if (!raw.password) {
+        this.form.controls.password.setErrors({ required: true });
+        this.form.markAllAsTouched();
+        return;
+      }
+      if (raw.password !== raw.password_confirm) {
+        this.form.controls.password_confirm.setErrors({ mismatch: true });
+        this.form.markAllAsTouched();
+        return;
+      }
+    }
+
     this.submitted.emit({
-      ...raw,
+      first_name: raw.first_name,
+      last_name: raw.last_name,
+      document_type: raw.document_type,
       document_number: raw.document_number.trim() || null,
+      document_complement: raw.document_complement,
+      phone: raw.phone,
+      contact_email: raw.contact_email,
       birth_date: raw.birth_date || null,
+      staff_type: raw.staff_type,
       hire_date: raw.hire_date || null,
       end_date: raw.status === 'INACTIVE' ? raw.end_date || null : null,
+      status: raw.status,
+      notes: raw.notes,
+      create_system_access: raw.create_system_access,
+      access_email: raw.create_system_access ? raw.access_email : (raw.access_email || undefined),
+      access_role: raw.create_system_access ? raw.access_role : undefined,
+      password: raw.create_system_access ? raw.password : undefined,
+      password_confirm: raw.create_system_access ? raw.password_confirm : undefined,
+      toggle_access: this.member()?.has_system_access ? raw.toggle_access : undefined,
     });
   }
 
@@ -200,10 +323,14 @@ export class StaffEditorComponent {
     if (!control?.touched) return '';
     if (control.hasError('required')) return 'Este dato es obligatorio.';
     if (control.hasError('email')) return 'Ingresa un correo válido.';
+    if (control.hasError('mismatch')) return 'Las contraseñas no coinciden.';
     return '';
   }
 
   private populate(member: StaffMember | null, options: StaffOptions): void {
+    const defaultStaffType = member?.staff_type ?? options.staff_types[0]?.value ?? '';
+    const defaultRole = member?.role_slug ?? (defaultStaffType === 'SECURITY' ? 'seguridad' : 'seguridad');
+
     this.form.reset({
       first_name: member?.first_name ?? '',
       last_name: member?.last_name ?? '',
@@ -213,11 +340,18 @@ export class StaffEditorComponent {
       phone: member?.phone ?? '',
       contact_email: member?.contact_email ?? '',
       birth_date: member?.birth_date ?? '',
-      staff_type: member?.staff_type ?? options.staff_types[0]?.value ?? '',
+      staff_type: defaultStaffType,
       hire_date: member?.hire_date ?? '',
       end_date: member?.end_date ?? '',
       status: member?.status ?? options.statuses[0]?.value ?? 'ACTIVE',
       notes: member?.notes ?? '',
+      create_system_access: false,
+      access_email: member?.access_email ?? member?.contact_email ?? '',
+      access_role: defaultRole,
+      password: '',
+      password_confirm: '',
+      toggle_access: member?.user_is_active ?? true,
     });
   }
 }
+

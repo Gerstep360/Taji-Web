@@ -1,0 +1,478 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-titles">
+      <span class="eyebrow">Seguridad y Accesos</span>
+      <h1>Turnos de Seguridad</h1>
+      <p>Gestión del ciclo de vida y horario laboral del personal de guardia.</p>
+    </div>
+    @if (isAdmin()) {
+      <div class="header-actions">
+        <button type="button" class="btn-primary" (click)="openCreateModal()">
+          <taji-icon name="plus" [size]="18" />
+          <span>Nuevo turno</span>
+        </button>
+      </div>
+    }
+  </header>
+
+  <!-- Mensajes Globales de Alerta / Éxito -->
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      <taji-icon name="alert-circle" [size]="18" />
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert-success" role="status">
+      <taji-icon name="check-circle" [size]="18" />
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  <!-- Navegación por Pestañas -->
+  <nav class="tabs-nav" aria-label="Secciones de turnos">
+    @if (isAdmin()) {
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'gestion'"
+        (click)="setTab('gestion')"
+      >
+        <taji-icon name="layout-grid" [size]="16" />
+        <span>Gestión de Turnos</span>
+      </button>
+    }
+    @if (isSecurity() || !isAdmin()) {
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'miturno'"
+        (click)="setTab('miturno')"
+      >
+        <taji-icon name="clock" [size]="16" />
+        <span>Mi Turno Actual</span>
+      </button>
+    }
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'proximos'"
+      (click)="setTab('proximos')"
+    >
+      <taji-icon name="calendar" [size]="16" />
+      <span>Próximos Turnos</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'historial'"
+      (click)="setTab('historial')"
+    >
+      <taji-icon name="file-text" [size]="16" />
+      <span>Historial</span>
+    </button>
+  </nav>
+
+  <!-- CONTENIDO 1: GESTIÓN DE TURNOS (ADMINISTRADOR) -->
+  @if (activeTab() === 'gestion') {
+    <section class="tab-content">
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label>Guardia</label>
+          <select [ngModel]="filterGuard()" (ngModelChange)="filterGuard.set($event); loadManagementShifts()">
+            <option [ngValue]="undefined">Todos los guardias</option>
+            @for (guard of securityStaff(); track guard.id) {
+              <option [ngValue]="guard.id">{{ guard.full_name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Estado</label>
+          <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); loadManagementShifts()">
+            <option value="">Todos los estados</option>
+            <option value="SCHEDULED">PROGRAMADO</option>
+            <option value="OPEN">EN CURSO</option>
+            <option value="CLOSED">FINALIZADO</option>
+            <option value="CANCELLED">CANCELADO</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Desde</label>
+          <input type="date" [ngModel]="filterDateFrom()" (ngModelChange)="filterDateFrom.set($event); loadManagementShifts()" />
+        </div>
+
+        <div class="filter-group">
+          <label>Hasta</label>
+          <input type="date" [ngModel]="filterDateTo()" (ngModelChange)="filterDateTo.set($event); loadManagementShifts()" />
+        </div>
+
+        <div class="filter-group search-group">
+          <label>Buscar</label>
+          <input
+            type="search"
+            placeholder="Guardia o código…"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event); loadManagementShifts()"
+          />
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <span class="spinner"></span>
+          <span>Cargando turnos de seguridad…</span>
+        </div>
+      } @else if (shiftsList().length === 0) {
+        <div class="empty-state">
+          <taji-icon name="clock" [size]="48" class="empty-icon" />
+          <h3>No se encontraron turnos de seguridad</h3>
+          <p>Utiliza el botón "+ Nuevo turno" para programar el primer turno.</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Guardia</th>
+                <th>Fecha / Planificado</th>
+                <th>Apertura Real</th>
+                <th>Cierre Real</th>
+                <th>Estado</th>
+                <th class="actions-col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (shift of shiftsList(); track shift.id) {
+                <tr>
+                  <td>
+                    <div class="guard-cell">
+                      <strong>{{ shift.guard_name || 'Guardia #' + shift.guard_staff }}</strong>
+                      <small>Código: {{ shift.guard_employee_code || 'Sin código' }}</small>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="schedule-cell">
+                      <span>{{ shift.scheduled_start | date:'dd/MM/yyyy' }}</span>
+                      <small>{{ shift.scheduled_start | date:'HH:mm' }} - {{ shift.scheduled_end | date:'HH:mm' }}</small>
+                    </div>
+                  </td>
+                  <td>
+                    @if (shift.opened_at) {
+                      <span class="text-success">{{ shift.opened_at | date:'HH:mm' }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    @if (shift.closed_at) {
+                      <span class="text-info">{{ shift.closed_at | date:'HH:mm' }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    <span class="badge" [class]="statusBadgeClass(shift.status)">
+                      {{ statusLabel(shift.status) }}
+                    </span>
+                  </td>
+                  <td class="actions-col">
+                    <button type="button" class="btn-icon" (click)="openDetail(shift)" title="Ver detalle">
+                      <taji-icon name="eye" [size]="16" />
+                    </button>
+                    @if (shift.status === 'SCHEDULED' && isAdmin()) {
+                      <button type="button" class="btn-icon" (click)="openEditModal(shift)" title="Editar turno">
+                        <taji-icon name="edit" [size]="16" />
+                      </button>
+                      <button type="button" class="btn-icon danger" (click)="openConfirm('cancelar', shift)" title="Cancelar turno">
+                        <taji-icon name="x-circle" [size]="16" />
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- CONTENIDO 2: MI TURNO ACTUAL (SEGURIDAD) -->
+  @if (activeTab() === 'miturno') {
+    <section class="tab-content">
+      @if (loading()) {
+        <div class="loading-state">
+          <span class="spinner"></span>
+          <span>Consultando tu turno actual…</span>
+        </div>
+      } @else {
+        <div class="current-shift-card" [class.has-shift]="currentShift()">
+          <div class="card-header">
+            <span class="kicker">Turno Asignado</span>
+            <h2>Mi Turno Actual</h2>
+            @if (currentShift()) {
+              <span class="badge" [class]="statusBadgeClass(currentShift()!.status)">
+                {{ statusLabel(currentShift()!.status) }}
+              </span>
+            }
+          </div>
+
+          @if (currentShift()) {
+            <div class="card-body">
+              <div class="detail-grid">
+                <div class="item">
+                  <label>Fecha del turno</label>
+                  <span>{{ currentShift()!.scheduled_start | date:'fullDate' }}</span>
+                </div>
+                <div class="item">
+                  <label>Horario planificado</label>
+                  <span>{{ currentShift()!.scheduled_start | date:'HH:mm' }} - {{ currentShift()!.scheduled_end | date:'HH:mm' }}</span>
+                </div>
+                <div class="item">
+                  <label>Apertura Real</label>
+                  <span>{{ currentShift()!.opened_at ? (currentShift()!.opened_at | date:'HH:mm') : 'Pendiente' }}</span>
+                </div>
+                <div class="item">
+                  <label>Cierre Real</label>
+                  <span>{{ currentShift()!.closed_at ? (currentShift()!.closed_at | date:'HH:mm') : 'Pendiente' }}</span>
+                </div>
+              </div>
+
+              <!-- BOTONES DE ACCIÓN PRINCIPAL -->
+              <div class="shift-action-box">
+                @if (currentShift()!.status === 'SCHEDULED') {
+                  <button
+                    type="button"
+                    class="btn-action start"
+                    (click)="openConfirm('iniciar', currentShift()!)"
+                    [disabled]="actionLoading()"
+                  >
+                    <taji-icon name="play" [size]="20" />
+                    <span>INICIAR TURNO</span>
+                  </button>
+                } @else if (currentShift()!.status === 'OPEN') {
+                  <div class="ongoing-banner">
+                    <taji-icon name="radio" [size]="20" class="pulse-icon" />
+                    <span>TURNO EN CURSO</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-action close"
+                    (click)="openConfirm('cerrar', currentShift()!)"
+                    [disabled]="actionLoading()"
+                  >
+                    <taji-icon name="square" [size]="20" />
+                    <span>CERRAR TURNO</span>
+                  </button>
+                } @else if (currentShift()!.status === 'CLOSED') {
+                  <div class="finished-banner">
+                    <taji-icon name="check-circle" [size]="20" />
+                    <span>Turno finalizado exitosamente.</span>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="no-active-shift">
+              <taji-icon name="clock" [size]="40" />
+              <p>{{ currentShiftMessage() || 'No tienes un turno activo en este momento.' }}</p>
+            </div>
+          }
+        </div>
+
+        <!-- SECCIÓN DE PRÓXIMOS TURNOS ASOCIADOS -->
+        <div class="upcoming-section">
+          <h3>Próximos Turnos Programados</h3>
+          @if (upcomingShifts().length === 0) {
+            <p class="text-muted">No hay próximos turnos programados.</p>
+          } @else {
+            <div class="cards-grid">
+              @for (shift of upcomingShifts(); track shift.id) {
+                <div class="shift-mini-card">
+                  <div class="mini-header">
+                    <span class="date">{{ shift.scheduled_start | date:'dd/MM/yyyy' }}</span>
+                    <span class="time">{{ shift.scheduled_start | date:'HH:mm' }} - {{ shift.scheduled_end | date:'HH:mm' }}</span>
+                  </div>
+                  <div class="mini-body">
+                    <strong>{{ shift.guard_name }}</strong>
+                    <span class="badge badge-scheduled">PROGRAMADO</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- CONTENIDO 3: PRÓXIMOS TURNOS -->
+  @if (activeTab() === 'proximos') {
+    <section class="tab-content">
+      <div class="section-title">
+        <h2>Próximos Turnos Programados</h2>
+        <p>Listado de turnos agendados para fechas y horas futuras.</p>
+      </div>
+
+      @if (upcomingShifts().length === 0) {
+        <div class="empty-state">
+          <taji-icon name="calendar" [size]="48" class="empty-icon" />
+          <h3>No hay próximos turnos programados</h3>
+        </div>
+      } @else {
+        <div class="cards-grid">
+          @for (shift of upcomingShifts(); track shift.id) {
+            <div class="shift-card">
+              <div class="card-top">
+                <span class="date">{{ shift.scheduled_start | date:'EEEE, dd MMMM yyyy' }}</span>
+                <span class="badge badge-scheduled">PROGRAMADO</span>
+              </div>
+              <div class="card-main">
+                <h4>{{ shift.guard_name }}</h4>
+                <p class="hours">
+                  <taji-icon name="clock" [size]="16" />
+                  <span>{{ shift.scheduled_start | date:'HH:mm' }} - {{ shift.scheduled_end | date:'HH:mm' }}</span>
+                </p>
+              </div>
+              <div class="card-bottom">
+                <button type="button" class="btn-link" (click)="openDetail(shift)">Ver detalle</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- CONTENIDO 4: HISTORIAL DE TURNOS -->
+  @if (activeTab() === 'historial') {
+    <section class="tab-content">
+      <div class="section-title">
+        <h2>Historial de Turnos</h2>
+        <p>Registro de turnos finalizados y cancelados para trazabilidad.</p>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <span class="spinner"></span>
+          <span>Cargando historial…</span>
+        </div>
+      } @else if (historyShifts().length === 0) {
+        <div class="empty-state">
+          <taji-icon name="file-text" [size]="48" class="empty-icon" />
+          <h3>No hay turnos en el historial</h3>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Guardia</th>
+                <th>Fecha</th>
+                <th>Horario Planificado</th>
+                <th>Apertura Real</th>
+                <th>Cierre Real</th>
+                <th>Estado</th>
+                <th class="actions-col">Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (shift of historyShifts(); track shift.id) {
+                <tr>
+                  <td><strong>{{ shift.guard_name }}</strong></td>
+                  <td>{{ shift.scheduled_start | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ shift.scheduled_start | date:'HH:mm' }} - {{ shift.scheduled_end | date:'HH:mm' }}</td>
+                  <td>{{ shift.opened_at ? (shift.opened_at | date:'HH:mm') : '—' }}</td>
+                  <td>{{ shift.closed_at ? (shift.closed_at | date:'HH:mm') : '—' }}</td>
+                  <td>
+                    <span class="badge" [class]="statusBadgeClass(shift.status)">
+                      {{ statusLabel(shift.status) }}
+                    </span>
+                  </td>
+                  <td class="actions-col">
+                    <button type="button" class="btn-icon" (click)="openDetail(shift)">
+                      <taji-icon name="eye" [size]="16" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN DE ACCIÓN (INICIAR / CERRAR / CANCELAR) -->
+@if (confirmModal().open) {
+  <div class="modal-backdrop" (click)="closeConfirm()"></div>
+  <div class="modal-dialog" role="dialog" aria-modal="true">
+    <header class="dialog-header">
+      @if (confirmModal().type === 'iniciar') {
+        <h3>Confirmar Inicio de Turno</h3>
+      } @else if (confirmModal().type === 'cerrar') {
+        <h3>Confirmar Cierre de Turno</h3>
+      } @else {
+        <h3>Confirmar Cancelación de Turno</h3>
+      }
+      <button type="button" class="close" (click)="closeConfirm()">×</button>
+    </header>
+
+    <div class="dialog-body">
+      @if (confirmModal().type === 'iniciar') {
+        <p>¿Deseas registrar la apertura oficial e iniciar tu turno de seguridad?</p>
+      } @else if (confirmModal().type === 'cerrar') {
+        <p>¿Deseas cerrar tu turno actual de seguridad?</p>
+      } @else {
+        <p>¿Estás seguro de cancelar este turno programado?</p>
+      }
+
+      <label class="notes-input">
+        <span>Notas / Observaciones (opcional):</span>
+        <textarea
+          rows="2"
+          [ngModel]="confirmModal().notes"
+          (ngModelChange)="confirmModal.set({ open: true, type: confirmModal().type, shift: confirmModal().shift, notes: $event })"
+          placeholder="Comentario o reporte..."
+        ></textarea>
+      </label>
+    </div>
+
+    <footer class="dialog-footer">
+      <button type="button" class="btn-secondary" (click)="closeConfirm()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-primary"
+        [class.btn-danger]="confirmModal().type === 'cancelar'"
+        [disabled]="actionLoading()"
+        (click)="executeConfirmAction()"
+      >
+        {{ actionLoading() ? 'Procesando…' : 'Confirmar' }}
+      </button>
+    </footer>
+  </div>
+}
+
+<!-- MODAL EDITOR / CREAR TURNO -->
+@if (showEditor()) {
+  <taji-turno-editor
+    [shift]="editingShift()"
+    [securityStaff]="securityStaff()"
+    [saving]="actionLoading()"
+    [formError]="editorFormError()"
+    [fieldErrors]="editorFieldErrors()"
+    (cancelled)="closeEditor()"
+    (submitted)="onSaveShift($event)"
+  />
+}
+
+<!-- MODAL DETALLE DE TURNO -->
+@if (showDetail() && selectedShift()) {
+  <taji-turno-detail
+    [shift]="selectedShift()!"
+    (closed)="closeDetail()"
+  />
+}

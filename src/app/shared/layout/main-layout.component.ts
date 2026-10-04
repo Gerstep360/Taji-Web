@@ -12,8 +12,10 @@ interface SubNavItem {
   route?: string;
   permission?: string;
   permissions?: string[];
+  roles?: string[];
   isAvailable: boolean;
 }
+
 
 interface PackageDropdown {
   id: string;
@@ -261,10 +263,15 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
-          label: 'Turnos y Novedades',
+          label: 'Turnos de seguridad',
           icon: 'clock',
-          isAvailable: false,
+          route: '/turnos-seguridad',
+          roles: ['seguridad', 'guardia', 'security'],
+          permissions: ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'],
+          isAvailable: true,
         },
+
+
         {
           label: 'Auditoría y Bitácora',
           icon: 'file-text',
@@ -370,9 +377,13 @@ export class MainLayoutComponent {
 
   canAccess(item: SubNavItem): boolean {
     if (!item.isAvailable) return false;
-    if (!item.permission && !item.permissions?.length) return true;
     const current = this.user();
     if (current?.is_superuser) return true;
+
+    const userRoleSlug = current?.role?.slug?.toLowerCase() ?? '';
+    if (item.roles && item.roles.some((r) => r.toLowerCase() === userRoleSlug)) return true;
+
+    if (!item.permission && !item.permissions?.length && !item.roles?.length) return true;
     if (item.permission && current?.role?.permissions.includes(item.permission)) return true;
     if (
       item.permissions &&
@@ -382,6 +393,7 @@ export class MainLayoutComponent {
     }
     return false;
   }
+
 
   get initials(): string {
     const current = this.user();

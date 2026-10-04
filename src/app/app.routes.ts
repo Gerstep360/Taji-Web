@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
-import { anyPermissionGuard, authGuard, guestGuard, permissionGuard } from './core/auth/auth.guard';
+import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard } from './core/auth/auth.guard';
+
 
 export const routes: Routes = [
   {
@@ -116,6 +117,17 @@ export const routes: Routes = [
           ),
         title: 'Visitantes y Autorizaciones | Taji',
       },
+      {
+        path: 'turnos-seguridad',
+        canActivate: [roleOrPermissionGuard(['seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu13_turnos_seguridad').then(
+            (m) => m.TurnosPage,
+          ),
+        title: 'Turnos de Seguridad | Taji',
+      },
+
+
       {
         path: 'acceso-denegado',
         loadComponent: () =>

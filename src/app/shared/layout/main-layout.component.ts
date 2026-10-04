@@ -251,12 +251,14 @@ export class MainLayoutComponent {
         {
           label: 'Pases QR de Visita',
           icon: 'qr-code',
-          isAvailable: false,
+          route: '/visitantes',
+          isAvailable: true,
         },
         {
           label: 'Control de Accesos',
           icon: 'door-open',
-          isAvailable: false,
+          route: '/visitantes',
+          isAvailable: true,
         },
         {
           label: 'Turnos y Novedades',

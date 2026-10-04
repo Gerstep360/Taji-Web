@@ -100,6 +100,11 @@ export class VisitDetailComponent {
     }
   }
 
+  getQrImageUrl(qrUuid: string): string {
+    if (!qrUuid) return '';
+    return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUuid)}`;
+  }
+
   copyQrCode(): void {
     if (!this.visit.qr_uuid) return;
     if (navigator.clipboard) {

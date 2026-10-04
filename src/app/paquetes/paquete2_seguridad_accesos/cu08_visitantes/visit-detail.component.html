@@ -126,7 +126,7 @@
           <div class="token-header">
             <div class="token-title">
               <taji-icon name="qr-code" [size]="18" />
-              <span>Código Seguro de Pase QR</span>
+              <span>Código Seguro de Pase QR (CU09)</span>
             </div>
             <button
               type="button"
@@ -137,6 +137,9 @@
               <taji-icon [name]="copied() ? 'check' : 'copy'" [size]="15" />
               <span>{{ copied() ? '¡Copiado!' : 'Copiar código' }}</span>
             </button>
+          </div>
+          <div class="qr-image-container" style="text-align: center; margin: 12px 0;">
+            <img [src]="getQrImageUrl(visit.qr_uuid)" alt="Pase QR Visita" style="width: 180px; height: 180px; border-radius: 12px; border: 1px solid #e2e8f0; padding: 8px; background: #fff;" />
           </div>
           <code class="token-code">{{ visit.qr_uuid }}</code>
           @if (visit.qr_expires_at) {

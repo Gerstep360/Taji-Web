@@ -221,6 +221,14 @@ NGINX
     chown -R root:root "$RELEASE"
     chmod -R a+rX "$RELEASE"
 
+    EXTRA_INCLUDES=""
+    if [[ -f /etc/nginx/snippets/codelingo.conf ]]; then
+        EXTRA_INCLUDES="${EXTRA_INCLUDES}    include /etc/nginx/snippets/codelingo.conf;\n"
+    fi
+    if [[ -f /etc/nginx/snippets/drapemind-subpath.conf ]]; then
+        EXTRA_INCLUDES="${EXTRA_INCLUDES}    include /etc/nginx/snippets/drapemind-subpath.conf;\n"
+    fi
+
     cat >"$SITE" <<NGINX
 server {
     listen 80;
@@ -266,6 +274,13 @@ server {
 
     location /taji/static/ {
         alias /opt/taji/current/staticfiles/;
+    }
+
+$(echo -e "$EXTRA_INCLUDES")
+    location / {
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+        try_files \$uri \$uri/ =404;
     }
 }
 NGINX

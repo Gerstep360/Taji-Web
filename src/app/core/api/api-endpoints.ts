@@ -54,4 +54,16 @@ export const API_ENDPOINTS = {
   audit: {
     root: '/audit/',
   },
+  security: {
+    biometrics: {
+      root: '/security/cu17/biometrics/',
+      enroll: '/security/cu17/biometrics/enroll/',
+      history: (residentId: number) => `/security/cu17/biometrics/resident/${residentId}/history/`,
+    },
+    faceVerification: {
+      root: '/security/cu17/face-verification/',
+      match: '/security/cu17/face-verification/match/',
+      confirm: '/security/cu17/face-verification/confirm/',
+    },
+  },
 } as const;

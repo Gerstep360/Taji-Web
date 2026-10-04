@@ -270,7 +270,8 @@ export class MainLayoutComponent {
         {
           label: 'Verificación Facial',
           icon: 'scan-face',
-          isAvailable: false,
+          route: '/verificacion-facial',
+          isAvailable: true,
         },
       ],
     },

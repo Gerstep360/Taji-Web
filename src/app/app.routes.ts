@@ -100,6 +100,14 @@ export const routes: Routes = [
         title: 'Auditoría y Bitácora | Taji',
       },
       {
+        path: 'verificacion-facial',
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu17_verificacion_facial').then(
+            (m) => m.FacialVerificationPage,
+          ),
+        title: 'Verificación Facial de Residentes | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),

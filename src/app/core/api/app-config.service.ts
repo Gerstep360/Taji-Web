@@ -61,6 +61,14 @@ export class AppConfigService {
     if (!url.pathname.replace(/\/+$/, '').endsWith('/api/v1')) {
       throw new Error('TAJI_API_BASE_URL debe terminar en /api/v1.');
     }
+
+    // Si la aplicación se cargó sobre HTTPS, el navegador bloquearía cualquier llamada HTTP por Mixed Content.
+    // En tal caso, ascendemos automáticamente la URL a HTTPS.
+    if (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:' && url.protocol === 'http:') {
+      url.protocol = 'https:';
+      trimmed = url.toString().replace(/\/+$/, '');
+    }
+
     return trimmed;
   }
 

@@ -46,6 +46,13 @@ export const routes: Routes = [
     title: 'Nueva contraseña | Taji',
   },
   {
+    path: 'activar-cuenta',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import('./paquetes/paquete1_usuarios_condominio/cu01_autenticacion').then((m) => m.ResetPasswordPage),
+    title: 'Activar cuenta | Taji',
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>

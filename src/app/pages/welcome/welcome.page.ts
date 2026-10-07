@@ -309,7 +309,7 @@ export class WelcomePage implements OnInit {
       admin_password: formVal.admin_password,
       plan_code: plan ? plan.code : 'profesional',
       payment_method: formVal.payment_method as 'TRIAL' | 'STRIPE',
-      payment_id: payment ? payment.id : null,
+      payment_id: payment && payment.id > 0 ? payment.id : null,
     };
 
     this.saasService.registerCondominium(payload).subscribe({

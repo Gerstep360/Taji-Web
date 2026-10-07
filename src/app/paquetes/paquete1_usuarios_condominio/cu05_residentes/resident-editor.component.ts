@@ -71,11 +71,14 @@ import { ResidentOptions, ResidentPayload, ResidentPerson } from './resident.mod
             /></label>
             <label
               ><span>Correo</span
-              ><input formControlName="contact_email" type="email" autocomplete="email" /><small>{{
+              ><input formControlName="contact_email" type="email" autocomplete="email" placeholder="residente@correo.com" /><small>{{
                 fieldError('contact_email')
               }}</small></label
             >
           </div>
+          <p class="invite-notice" style="font-size: 0.8rem; color: #475569; margin: 0.5rem 0 0; background: #f8fafc; padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 1px dashed #cbd5e1;">
+            ✉ Al registrar con correo, se enviará una invitación automática para que el residente confirme sus datos y cree su contraseña de acceso.
+          </p>
         </fieldset>
 
         <fieldset>

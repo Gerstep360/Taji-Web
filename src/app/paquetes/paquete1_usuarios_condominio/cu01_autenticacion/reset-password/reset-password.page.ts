@@ -17,22 +17,25 @@ import { PasswordMeterComponent } from '../../../../shared/ui/password-meter.com
     <taji-auth-shell>
       @if (completed) {
         <div class="success-state">
-          <span class="success-icon" aria-hidden="true">?</span>
-          <div class="auth-heading"><h2>Contraseña actualizada</h2><p>{{ message }}</p></div>
+          <span class="success-icon" aria-hidden="true">✔</span>
+          <div class="auth-heading">
+            <h2>{{ isInvite ? '¡Cuenta activada exitosamente!' : 'Contraseña actualizada' }}</h2>
+            <p>{{ isInvite ? 'Tu cuenta ha sido activada y tu contraseña configurada. Ya puedes iniciar sesión con tu correo.' : message }}</p>
+          </div>
           <a class="button-link" routerLink="/iniciar-sesion">Iniciar sesión</a>
         </div>
       } @else {
         <div class="auth-heading">
-          <span class="kicker">Protege tu cuenta</span>
-          <h2>Crea una nueva contraseña</h2>
-          <p>Elige una clave distinta y difícil de adivinar.</p>
+          <span class="kicker">{{ isInvite ? 'Bienvenido a tu comunidad' : 'Protege tu cuenta' }}</span>
+          <h2>{{ isInvite ? 'Activa tu cuenta de residente' : 'Crea una nueva contraseña' }}</h2>
+          <p>{{ isInvite ? 'Crea tu clave de acceso personal para ingresar a Taji (Web y App Móvil).' : 'Elige una clave distinta y difícil de adivinar.' }}</p>
         </div>
         <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <taji-alert [message]="errorMessage" />
           <taji-field label="Nueva contraseña" type="password" icon="lock" autocomplete="new-password" placeholder="Mínimo 10 caracteres" formControlName="password" [error]="fieldError('password')" />
           <taji-password-meter [password]="form.controls.password.value" />
           <taji-field label="Repite la contraseña" type="password" icon="lock" autocomplete="new-password" placeholder="Repite tu contraseña" formControlName="password_confirm" [error]="fieldError('password_confirm')" />
-          <taji-button type="submit" [loading]="loading" [disabled]="!hasValidLink">Guardar contraseña</taji-button>
+          <taji-button type="submit" [loading]="loading" [disabled]="!hasValidLink">{{ isInvite ? 'Activar cuenta y guardar contraseña' : 'Guardar contraseña' }}</taji-button>
         </form>
       }
     </taji-auth-shell>
@@ -45,6 +48,7 @@ export class ResetPasswordPage {
   private readonly route = inject(ActivatedRoute);
   readonly uid = this.route.snapshot.queryParamMap.get('uid') ?? '';
   readonly token = this.route.snapshot.queryParamMap.get('token') ?? '';
+  readonly isInvite = this.route.snapshot.queryParamMap.get('invite') === '1' || this.route.snapshot.queryParamMap.get('activar') === '1';
   readonly hasValidLink = Boolean(this.uid && this.token);
   readonly form = this.fb.nonNullable.group({
     password: ['', [Validators.required, Validators.minLength(10)]],
@@ -54,7 +58,7 @@ export class ResetPasswordPage {
   loading = false;
   completed = false;
   message = '';
-  errorMessage = this.hasValidLink ? '' : 'El enlace está incompleto. Solicita uno nuevo.';
+  errorMessage = this.hasValidLink ? '' : 'El enlace está incompleto. Solicita uno nuevo a tu administrador.';
 
   fieldError(name: 'password' | 'password_confirm'): string {
     const control = this.form.controls[name];

@@ -37,7 +37,7 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
         </div>
         <taji-button type="submit" [loading]="loading">Ingresar a Taji</taji-button>
       </form>
-      <p class="auth-switch">¿Eres residente y aún no tienes cuenta? <a routerLink="/crear-cuenta">Crear cuenta de residente</a></p>
+      <p class="auth-switch">¿Eres residente y aún no tienes acceso? Solicita el registro al administrador de tu condominio para recibir tu invitación por correo.</p>
 
       <div class="saas-prompt-box">
         <span>¿Eres Administrador o deseas registrar tu Condominio?</span>

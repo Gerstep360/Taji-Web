@@ -221,21 +221,21 @@ NGINX
     chown -R root:root "$RELEASE"
     chmod -R a+rX "$RELEASE"
 
+    EXTRA_INCLUDES=""
+    if [[ -f /etc/nginx/snippets/codelingo.conf ]]; then
+        EXTRA_INCLUDES="${EXTRA_INCLUDES}    include /etc/nginx/snippets/codelingo.conf;\n"
+    fi
+    if [[ -f /etc/nginx/snippets/drapemind-subpath.conf ]]; then
+        EXTRA_INCLUDES="${EXTRA_INCLUDES}    include /etc/nginx/snippets/drapemind-subpath.conf;\n"
+    fi
+
     cat >"$SITE" <<NGINX
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name $DOMAIN _;
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN;
 
     root $TARGET_DIR;
-
-    location /assets/ {
-        alias $TARGET_DIR/assets/;
-        access_log off;
-        expires 30d;
-        add_header Cache-Control "public, max-age=2592000, immutable";
-        add_header Access-Control-Allow-Origin *;
-    }
 
     location /taji/assets/ {
         alias $TARGET_DIR/assets/;
@@ -243,12 +243,6 @@ server {
         expires 30d;
         add_header Cache-Control "public, max-age=2592000, immutable";
         add_header Access-Control-Allow-Origin *;
-    }
-
-    location = /favicon.ico {
-        alias $TARGET_DIR/favicon.ico;
-        access_log off;
-        expires 30d;
     }
 
     location = /taji/favicon.ico {
@@ -266,7 +260,7 @@ server {
         return 301 /taji/;
     }
 
-    location /downloads/ {
+    location /taji/downloads/ {
         return 302 https://github.com/Gerstep360/Taji-Movil/releases/download/v1.0/taji-v1.0.apk;
     }
 
@@ -278,20 +272,15 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
-    location /api/ {
-        proxy_pass http://127.0.0.1:8000/api/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    location /static/ {
+    location /taji/static/ {
         alias /opt/taji/current/staticfiles/;
     }
 
+$(echo -e "$EXTRA_INCLUDES")
     location / {
-        return 301 /taji/;
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
+        try_files \$uri \$uri/ =404;
     }
 }
 NGINX

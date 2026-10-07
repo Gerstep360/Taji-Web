@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guard';
+import { anyPermissionGuard, authGuard, guestGuard, permissionGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
@@ -98,6 +98,32 @@ export const routes: Routes = [
             (m) => m.AuditoriaPage,
           ),
         title: 'Auditoría y Bitácora | Taji',
+      },
+      {
+        path: 'verificacion-facial',
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu17_verificacion_facial').then(
+            (m) => m.FacialVerificationPage,
+          ),
+        title: 'Verificación Facial de Residentes | Taji',
+      },
+      {
+        path: 'visitantes',
+        canActivate: [anyPermissionGuard(['manage_visits', 'register_visits', 'validate_visits'])],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu08_visitantes').then(
+            (m) => m.VisitantesPage,
+          ),
+        title: 'Visitantes y Autorizaciones | Taji',
+      },
+      {
+        path: 'control-accesos',
+        canActivate: [permissionGuard('register_entry_exit')],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu11_control_accesos').then(
+            (m) => m.ControlAccesosPage,
+          ),
+        title: 'Control de Accesos | Taji',
       },
       {
         path: 'acceso-denegado',

@@ -11,6 +11,7 @@ interface SubNavItem {
   icon: string;
   route?: string;
   permission?: string;
+  permissions?: string[];
   isAvailable: boolean;
 }
 
@@ -241,19 +242,24 @@ export class MainLayoutComponent {
       icon: 'shield',
       items: [
         {
-          label: 'Registro de Visitantes',
+          label: 'Visitantes y Autorizaciones',
           icon: 'user-check',
-          isAvailable: false,
+          route: '/visitantes',
+          permissions: ['manage_visits', 'register_visits'],
+          isAvailable: true,
         },
         {
           label: 'Pases QR de Visita',
           icon: 'qr-code',
-          isAvailable: false,
+          route: '/visitantes',
+          isAvailable: true,
         },
         {
           label: 'Control de Accesos',
           icon: 'door-open',
-          isAvailable: false,
+          route: '/control-accesos',
+          permission: 'register_entry_exit',
+          isAvailable: true,
         },
         {
           label: 'Turnos y Novedades',
@@ -270,7 +276,8 @@ export class MainLayoutComponent {
         {
           label: 'Verificación Facial',
           icon: 'scan-face',
-          isAvailable: false,
+          route: '/verificacion-facial',
+          isAvailable: true,
         },
       ],
     },
@@ -364,11 +371,17 @@ export class MainLayoutComponent {
 
   canAccess(item: SubNavItem): boolean {
     if (!item.isAvailable) return false;
-    if (!item.permission) return true;
+    if (!item.permission && !item.permissions?.length) return true;
     const current = this.user();
-    return Boolean(
-      current?.is_superuser || current?.role?.permissions.includes(item.permission),
-    );
+    if (current?.is_superuser) return true;
+    if (item.permission && current?.role?.permissions.includes(item.permission)) return true;
+    if (
+      item.permissions &&
+      item.permissions.some((p) => current?.role?.permissions.includes(p))
+    ) {
+      return true;
+    }
+    return false;
   }
 
   get initials(): string {

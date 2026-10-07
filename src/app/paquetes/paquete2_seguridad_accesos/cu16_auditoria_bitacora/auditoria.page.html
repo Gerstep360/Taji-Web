@@ -1,69 +1,15 @@
 <section class="audit-page" aria-labelledby="audit-title">
-  <!-- Page Header -->
   <header class="page-heading">
     <div class="heading-content">
-      <span class="kicker">
-        <taji-icon name="shield" [size]="14" />
-        Seguridad y Accesos · CU16
-      </span>
-      <h2 id="audit-title" class="audit-title">Auditoría y Bitácora del Sistema</h2>
-      <p class="audit-subtitle">
-        Trazabilidad y registro continuo de acciones sensibles ejecutadas en la plataforma.
-      </p>
+      <h2 id="audit-title" class="audit-title">Auditoría y Bitácora</h2>
+      <p class="audit-subtitle">Consulta y seguimiento de las acciones registradas en el sistema.</p>
     </div>
-
-    <div class="heading-badges">
-      <span class="immutable-badge">
-        <taji-icon name="shield-check" [size]="15" />
-        Registro Oficial de Auditoría
-      </span>
-
-      <button
-        type="button"
-        class="btn-refresh"
-        (click)="loadEvents(pagination().page)"
-        [disabled]="loading()"
-        title="Recargar eventos"
-      >
-        <taji-icon [name]="loading() ? 'loader' : 'clock'" [size]="14" [class.spin]="loading()" />
-        <span>{{ loading() ? 'Cargando...' : 'Actualizar' }}</span>
-      </button>
-    </div>
+    <button type="button" class="btn-refresh" (click)="loadEvents(pagination().page)" [disabled]="loading()">
+      <taji-icon [name]="loading() ? 'loader' : 'clock'" [size]="14" [class.spin]="loading()" />
+      {{ loading() ? 'Cargando...' : 'Actualizar' }}
+    </button>
   </header>
 
-  <!-- Metrics Grid -->
-  <div class="metrics-grid">
-    <div class="metric-card metric-shield">
-      <span class="metric-label">Eventos Registrados</span>
-      <span class="metric-value">{{ totalEvents() }}</span>
-      <span class="metric-meta">Total histórico en sistema</span>
-    </div>
-
-    <div class="metric-card">
-      <span class="metric-label">Integridad de Registros</span>
-      <span class="metric-value">100%</span>
-      <span class="metric-meta">Protección contra alteraciones</span>
-    </div>
-
-    <div class="metric-card metric-warning">
-      <span class="metric-label">Última Actividad</span>
-      @if (lastEvent(); as evt) {
-        <span class="metric-value" style="font-size: 1.15rem; font-weight: 700; margin-top: 0.3rem;">
-          {{ formatDatePart(evt.occurred_at) }}
-        </span>
-        <span class="metric-meta">
-          {{ formatTimePart(evt.occurred_at) }} · {{ evt.actor_name || evt.actor_email || 'Sistema' }}
-        </span>
-      } @else {
-        <span class="metric-value" style="font-size: 1.15rem; font-weight: 600; color: #94a3b8;">
-          Sin actividad
-        </span>
-        <span class="metric-meta">No se registran eventos aún</span>
-      }
-    </div>
-  </div>
-
-  <!-- Error notice -->
   @if (error()) {
     <div class="notice error" role="alert">
       <taji-icon name="alert-triangle" [size]="18" />
@@ -71,42 +17,54 @@
     </div>
   }
 
-  <!-- Toolbar & Filters -->
-  <div class="toolbar-section">
-    <!-- Category Rail -->
-    <div class="category-rail" role="group" aria-label="Categorías de eventos">
-      @for (cat of categories; track cat.value) {
-        <button
-          type="button"
-          class="cat-btn"
-          [class.active]="selectedCategory() === cat.value"
-          (click)="selectCategory(cat.value)"
-        >
-          {{ cat.label }}
-        </button>
-      }
+  <form class="toolbar-section" aria-labelledby="audit-filters-title" (submit)="$event.preventDefault(); loadEvents(1)">
+    <h3 id="audit-filters-title" class="filters-title">Filtros</h3>
+    <div class="filter-grid">
+      <label class="cu16-filter" for="audit-user">
+        Usuario
+        <input id="audit-user" type="text" class="search-input" [formControl]="userControl" placeholder="ID, nombre o correo" />
+      </label>
+      <label class="cu16-filter" for="audit-action">
+        Acción
+        <input id="audit-action" type="text" class="search-input" [formControl]="actionControl" placeholder="Código de acción" />
+      </label>
+      <fieldset class="resource-filter">
+        <legend>Recurso</legend>
+        <div class="resource-inputs">
+          <input type="text" class="search-input" [formControl]="resourceTypeControl" placeholder="Tipo de recurso" aria-label="Tipo de recurso" />
+          <input type="text" class="search-input" [formControl]="resourceIdControl" placeholder="ID" aria-label="ID del recurso" />
+        </div>
+      </fieldset>
     </div>
-
-    <!-- Search and Reset -->
-    <div class="filters-row">
-      <div class="search-box">
-        <taji-icon name="search" [size]="16" class="search-icon" />
-        <input
-          type="search"
-          class="search-input"
-          [formControl]="searchControl"
-          placeholder="Buscar por usuario, correo, IP, acción o descripción..."
-          aria-label="Buscar en la bitácora"
-        />
+    <div class="filter-grid">
+      <label class="cu16-filter" for="audit-date-from">
+        Fecha desde
+        <input id="audit-date-from" type="date" class="search-input" [formControl]="dateFromControl" [attr.max]="dateToControl.value || null" />
+      </label>
+      <label class="cu16-filter" for="audit-date-to">
+        Fecha hasta
+        <input id="audit-date-to" type="date" class="search-input" [formControl]="dateToControl" [attr.min]="dateFromControl.value || null" />
+      </label>
+      <div class="filter-actions">
+        <button type="submit" class="filter-submit" [disabled]="loading()">Filtrar</button>
+        <button type="button" class="clear-filter-btn" (click)="clearSearch()" [disabled]="loading()">Limpiar</button>
       </div>
-
-      @if (searchControl.value || selectedCategory()) {
-        <button type="button" class="clear-filter-btn" (click)="clearSearch()">
-          Limpiar filtros
-        </button>
-      }
     </div>
-  </div>
+    <div class="filter-secondary">
+      <label class="cu16-filter" for="audit-search">
+        Buscar en la bitácora
+        <input id="audit-search" type="search" class="search-input" [formControl]="searchControl" placeholder="Descripción, IP u otros datos" />
+      </label>
+      <label class="cu16-filter" for="audit-category">
+        Categoría
+        <select id="audit-category" class="search-input" [formControl]="categoryControl">
+          @for (cat of categories; track cat.value) {
+            <option [value]="cat.value">{{ cat.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </form>
 
   <!-- Table Card -->
   <div class="table-card">
@@ -118,19 +76,17 @@
       <table class="audit-table" aria-label="Registros de auditoría">
         <thead>
           <tr>
-            <th class="audit-th" scope="col" style="width: 140px;">Fecha / Hora</th>
-            <th class="audit-th" scope="col" style="width: 180px;">Acción Sensible</th>
-            <th class="audit-th" scope="col">Usuario / Actor</th>
+            <th class="audit-th date-column" scope="col">Fecha y hora</th>
+            <th class="audit-th" scope="col">Usuario</th>
+            <th class="audit-th action-column" scope="col">Acción</th>
             <th class="audit-th" scope="col">Recurso</th>
-            <th class="audit-th" scope="col">IP de Origen</th>
-            <th class="audit-th" scope="col">Descripción</th>
-            <th class="audit-th" scope="col" style="text-align: right; width: 100px;">Detalles</th>
+            <th class="audit-th detail-column" scope="col">Ver detalle</th>
           </tr>
         </thead>
         <tbody>
           @if (loading() && events().length === 0) {
             <tr class="audit-tr">
-              <td class="audit-td" colspan="7">
+              <td class="audit-td" colspan="5">
                 <div class="state-container">
                   <taji-icon name="loader" [size]="28" class="spin state-icon-svg" />
                   <h3>Cargando bitácora...</h3>
@@ -140,7 +96,7 @@
             </tr>
           } @else if (events().length === 0) {
             <tr class="audit-tr">
-              <td class="audit-td" colspan="7">
+              <td class="audit-td" colspan="5">
                 <div class="state-container">
                   <taji-icon name="inbox" [size]="28" class="state-icon-svg" />
                   <h3>Sin registros encontrados</h3>
@@ -152,61 +108,51 @@
             @for (evt of events(); track evt.id) {
               <tr class="audit-tr">
                 <!-- Fecha y Hora -->
-                <td class="audit-td">
+                <td class="audit-td" data-label="Fecha y hora">
                   <div class="timestamp-cell">
                     <span class="date-part">{{ formatDatePart(evt.occurred_at) }}</span>
                     <span class="time-part">{{ formatTimePart(evt.occurred_at) }}</span>
                   </div>
                 </td>
 
-                <!-- Acción -->
-                <td class="audit-td">
-                  @let badge = getActionBadge(evt.action_code);
-                  <span class="action-pill {{ badge.class }}" [title]="evt.action_code">
-                    {{ badge.label }}
-                  </span>
-                </td>
-
                 <!-- Actor -->
-                <td class="audit-td">
+                <td class="audit-td" data-label="Usuario">
                   <div class="actor-cell">
                     @if (evt.actor_email) {
                       <span class="actor-name">{{ evt.actor_name || evt.actor_email }}</span>
-                      <span class="actor-email">{{ evt.actor_email }}</span>
+                      @if (evt.actor_name) {
+                        <span class="actor-email">{{ evt.actor_email }}</span>
+                      }
                     } @else {
                       <span class="actor-system">Sistema / Anónimo</span>
                     }
                   </div>
                 </td>
 
-                <!-- Recurso -->
-                <td class="audit-td">
-                  <span class="res-badge">
-                    {{ evt.resource_type }} #{{ evt.resource_id }}
+                <!-- Acción -->
+                <td class="audit-td" data-label="Acción">
+                  @let badge = getActionBadge(evt.action_code);
+                  <span class="action-pill {{ badge.class }}" [title]="evt.action_code">
+                    {{ badge.label }}
                   </span>
                 </td>
 
-                <!-- IP -->
-                <td class="audit-td">
-                  <span class="ip-cell">{{ evt.ip_address || '—' }}</span>
-                </td>
-
-                <!-- Descripción -->
-                <td class="audit-td">
-                  <div class="desc-cell" [title]="evt.description">
-                    {{ evt.description }}
-                  </div>
+                <!-- Recurso -->
+                <td class="audit-td" data-label="Recurso">
+                  <span class="res-badge">
+                    {{ evt.resource_type }}@if (evt.resource_id) { #{{ evt.resource_id }} }
+                  </span>
                 </td>
 
                 <!-- Botón Detalles -->
-                <td class="audit-td" style="text-align: right;">
+                <td class="audit-td detail-cell">
                   <button
                     type="button"
                     class="btn-inspect"
                     (click)="openDetails(evt)"
                     title="Ver datos detallados del evento"
                   >
-                    Examinar
+                    Ver detalle
                   </button>
                 </td>
               </tr>
@@ -248,12 +194,12 @@
 
   <!-- Detail Modal -->
   @if (selectedEvent(); as event) {
-    <div class="modal-backdrop" (click)="closeDetails()" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" (click)="closeDetails()" role="dialog" aria-modal="true" aria-labelledby="audit-detail-title">
       <div class="modal-dialog" (click)="$event.stopPropagation()">
         <header class="modal-header">
           <div>
-            <span class="modal-kicker">Detalle del Registro de Auditoría</span>
-            <h3 class="modal-title">Evento #{{ event.id }} · {{ event.action_code }}</h3>
+            <h3 class="modal-title" id="audit-detail-title">Detalle del registro</h3>
+            <p class="modal-reference">Registro #{{ event.id }}</p>
           </div>
           <button type="button" class="btn-close" (click)="closeDetails()" aria-label="Cerrar">
             <taji-icon name="x" [size]="16" />
@@ -267,47 +213,66 @@
               <span class="detail-value">{{ formatDatePart(event.occurred_at) }} {{ formatTimePart(event.occurred_at) }}</span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">IP de Origen</span>
-              <span class="detail-value">{{ event.ip_address || 'No registrada' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Actor / Usuario</span>
+              <span class="detail-label">Usuario</span>
               <span class="detail-value">{{ event.actor_name || 'N/A' }} ({{ event.actor_email || 'Sistema' }})</span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Recurso Afectado</span>
-              <span class="detail-value">{{ event.resource_type }} (ID: {{ event.resource_id }})</span>
+              <span class="detail-label">Acción</span>
+              <span class="detail-value">{{ event.action_code }}</span>
             </div>
+            <div class="detail-item">
+              <span class="detail-label">Recurso Afectado</span>
+              <span class="detail-value">{{ event.resource_type }}@if (event.resource_id) { (ID: {{ event.resource_id }}) }</span>
+            </div>
+            @if (event.description) {
             <div class="detail-item" style="grid-column: 1 / -1;">
               <span class="detail-label">Descripción</span>
               <span class="detail-value">{{ event.description }}</span>
             </div>
-            @if (event.request_id) {
-              <div class="detail-item" style="grid-column: 1 / -1;">
-                <span class="detail-label">Request ID</span>
-                <span class="detail-value" style="font-family: monospace;">{{ event.request_id }}</span>
-              </div>
             }
-            @if (event.user_agent) {
-              <div class="detail-item" style="grid-column: 1 / -1;">
-                <span class="detail-label">User-Agent</span>
-                <span class="detail-value" style="font-size: 0.78rem; font-family: monospace;">{{ event.user_agent }}</span>
-              </div>
-            }
+            <div class="detail-item">
+              <span class="detail-label">IP de origen</span>
+              <span class="detail-value">{{ event.ip_address || 'No registrada' }}</span>
+            </div>
           </div>
 
-          @if (event.before_data) {
-            <div class="json-section">
-              <span class="json-title">Estado Previo (before_data)</span>
-              <pre class="json-pre"><code>{{ toJsonString(event.before_data) }}</code></pre>
-            </div>
+          @if (event.request_id || event.user_agent) {
+            <details class="technical-details">
+              <summary>Información técnica</summary>
+              <div class="technical-content">
+                @if (event.request_id) {
+                  <div class="detail-item">
+                    <span class="detail-label">Request-ID</span>
+                    <span class="detail-value technical-value">{{ event.request_id }}</span>
+                  </div>
+                }
+                @if (event.user_agent) {
+                  <div class="detail-item">
+                    <span class="detail-label">User-Agent</span>
+                    <span class="detail-value technical-value">{{ event.user_agent }}</span>
+                  </div>
+                }
+              </div>
+            </details>
           }
-
-          @if (event.after_data) {
-            <div class="json-section">
-              <span class="json-title">Estado Posterior (after_data)</span>
-              <pre class="json-pre"><code>{{ toJsonString(event.after_data) }}</code></pre>
-            </div>
+          @if (hasDetailData(event.before_data) || hasDetailData(event.after_data)) {
+            <details class="technical-details">
+              <summary>Datos de cambio</summary>
+              <div class="technical-content">
+                @if (hasDetailData(event.before_data)) {
+                  <div class="json-section">
+                    <span class="json-title">Datos anteriores</span>
+                    <pre class="json-pre"><code>{{ toJsonString(event.before_data) }}</code></pre>
+                  </div>
+                }
+                @if (hasDetailData(event.after_data)) {
+                  <div class="json-section">
+                    <span class="json-title">Datos posteriores</span>
+                    <pre class="json-pre"><code>{{ toJsonString(event.after_data) }}</code></pre>
+                  </div>
+                }
+              </div>
+            </details>
           }
         </div>
 

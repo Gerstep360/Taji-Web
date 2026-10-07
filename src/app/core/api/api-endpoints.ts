@@ -1,4 +1,5 @@
 export const API_ENDPOINTS = {
+  visitConsultation: '/security/cu12/visits/',
   auth: {
     login: '/auth/login/',
     register: '/auth/register/',
@@ -55,6 +56,9 @@ export const API_ENDPOINTS = {
     root: '/audit/',
   },
   security: {
+    root: '/security/access-events/',
+    people: '/security/access-events/people/',
+    units: '/security/access-events/units/',
     biometrics: {
       root: '/security/cu17/biometrics/',
       enroll: '/security/cu17/biometrics/enroll/',

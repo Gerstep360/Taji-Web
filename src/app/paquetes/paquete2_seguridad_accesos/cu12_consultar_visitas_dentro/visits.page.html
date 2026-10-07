@@ -1,0 +1,33 @@
+<section class="visits-page">
+  <header><div><h2>Visitas y personas dentro</h2><p>Consulta las visitas esperadas, personas actualmente dentro y el historial de movimientos.</p></div><button (click)="load()" [disabled]="loading()">Actualizar</button></header>
+  <nav aria-label="Consulta de visitas">
+    @for (tab of tabs; track tab.key) { <button [class.active]="section === tab.key" [attr.aria-pressed]="section === tab.key" (click)="select(tab.key)">{{ tab.label }}</button> }
+  </nav>
+  <form (ngSubmit)="load(1)"><label>Buscar visitante, documento o unidad<input name="search" [(ngModel)]="search" type="search" /></label><button type="submit" [disabled]="loading()">Buscar</button></form>
+  @if (error()) { <p role="alert">{{ error() }}</p> }
+  @if (loading()) { <p role="status">Consultando visitas…</p> }
+  <div class="table-wrap"><table aria-label="Consulta de visitas">
+    <thead><tr><th>Visitante</th><th>Unidad</th><th>{{ section === 'expected' ? 'Vigencia' : 'Fecha y hora' }}</th><th>{{ section === 'inside' ? 'Origen' : 'Estado / movimiento' }}</th><th>Detalle</th></tr></thead>
+    <tbody>@for (row of rows(); track row.id) {
+      <tr><td data-label="Visitante"><strong>{{ row.visitor_name || 'Sin nombre registrado' }}</strong><span>{{ row.visitor_document_number || 'Documento no registrado' }}</span></td>
+      <td data-label="Unidad">{{ row.unit_code || 'No registrada' }}</td>
+      <td data-label="Fecha / vigencia">@if (section === 'expected') { {{ row.valid_from | date:'dd/MM/yyyy HH:mm' }}<span>hasta {{ row.valid_until | date:'dd/MM/yyyy HH:mm' }}</span> } @else { {{ (row.entered_at || row.occurred_at) | date:'dd/MM/yyyy HH:mm' }} }</td>
+      <td data-label="Estado">{{ section === 'inside' ? row.validation_method_display : (row.status_display || row.event_type_display) }}@if (section === 'history') { <span>{{ row.validation_result_display }}</span> }</td>
+      <td><button (click)="selected.set(row)">Ver detalle</button></td></tr>
+    } @empty { @if (!loading() && !error()) { <tr><td colspan="5">No hay registros para esta consulta.</td></tr> } }</tbody>
+  </table></div>
+  <footer><button (click)="load(page - 1)" [disabled]="page <= 1 || loading()">Anterior</button><span>Página {{ page }} de {{ pages || 1 }}</span><button (click)="load(page + 1)" [disabled]="page >= pages || loading()">Siguiente</button></footer>
+  @if (selected(); as row) {
+    <div class="backdrop" (click)="selected.set(null)"><section class="detail" role="dialog" aria-modal="true" aria-labelledby="visit-detail" (click)="$event.stopPropagation()">
+      <h3 id="visit-detail">Detalle de visita</h3><dl>
+      <dt>Visitante</dt><dd>{{ row.visitor_name }}</dd><dt>Documento</dt><dd>{{ row.visitor_document_number || 'No registrado' }}</dd><dt>Unidad</dt><dd>{{ row.unit_code || 'No registrada' }}</dd>
+      @if (row.resident_name) { <dt>Residente autorizador</dt><dd>{{ row.resident_name }}</dd> }
+      @if (row.valid_from) { <dt>Vigencia</dt><dd>{{ row.valid_from | date:'dd/MM/yyyy HH:mm' }} — {{ row.valid_until | date:'dd/MM/yyyy HH:mm' }}</dd> }
+      @if (row.occurred_at) { <dt>Movimiento</dt><dd>{{ row.occurred_at | date:'dd/MM/yyyy HH:mm:ss' }} · {{ row.event_type_display }} · {{ row.validation_result_display }}</dd> }
+      @if (row.status_display) { <dt>Estado de autorización</dt><dd>{{ row.status_display }}</dd> }
+      @if (row.validation_method_display) { <dt>Origen</dt><dd>{{ row.validation_method_display }}</dd> }
+      @if (row.purpose || row.notes) { <dt>Información adicional</dt><dd>{{ row.purpose }} {{ row.notes }}</dd> }
+      </dl><button (click)="selected.set(null)">Cerrar</button>
+    </section></div>
+  }
+</section>

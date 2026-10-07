@@ -144,12 +144,27 @@ export const routes: Routes = [
         title: 'Pases QR de Visita | Taji',
       },
       {
-        path: 'control-accesos',
+        path: 'validar-qr',
         loadComponent: () =>
           import('./paquetes/paquete2_seguridad_accesos/cu10_validar_qr').then(
             (m) => m.ControlAccesosPage,
           ),
-        title: 'Control de Accesos QR | Taji',
+        title: 'Validación de Accesos QR | Taji',
+      },
+      {
+        path: 'visitas-dentro',
+        canActivate: [anyPermissionGuard(['manage_visits', 'register_visits', 'validate_visits', 'register_entry_exit'])],
+        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu12_consultar_visitas_dentro/visits.page').then(m => m.VisitConsultationPage),
+        title: 'Visitas y personas dentro | Taji',
+      },
+      {
+        path: 'control-accesos',
+        canActivate: [permissionGuard('register_entry_exit')],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu11_control_accesos').then(
+            (m) => m.ControlAccesosPage,
+          ),
+        title: 'Control de Accesos | Taji',
       },
       {
         path: 'acceso-denegado',

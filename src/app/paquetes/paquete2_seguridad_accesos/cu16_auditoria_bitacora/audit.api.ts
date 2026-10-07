@@ -17,6 +17,10 @@ export class AuditApi {
     if (query.search) params = params.set('search', query.search.trim());
     if (query.category) params = params.set('category', query.category.trim());
     if (query.action_code) params = params.set('action_code', query.action_code.trim());
+    for (const key of ['user_id', 'user', 'resource_type', 'resource_id', 'date', 'date_from', 'date_to'] as const) {
+      const value = query[key]?.trim();
+      if (value) params = params.set(key, value);
+    }
 
     return this.api.get<AuditListResponse>(API_ENDPOINTS.audit.root, { params });
   }

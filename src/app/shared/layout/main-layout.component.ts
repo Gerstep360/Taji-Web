@@ -268,12 +268,20 @@ export class MainLayoutComponent {
           label: 'Control de Accesos',
           icon: 'door-open',
           route: '/control-accesos',
+          permission: 'register_entry_exit',
           isAvailable: true,
         },
         {
           label: 'Turnos y Novedades',
           icon: 'clock',
           isAvailable: false,
+        },
+        {
+          label: 'Visitas y personas dentro',
+          route: '/visitas-dentro',
+          permissions: ['manage_visits', 'register_visits', 'validate_visits', 'register_entry_exit'],
+          icon: 'clock',
+          isAvailable: true,
         },
         {
           label: 'Auditoría y Bitácora',

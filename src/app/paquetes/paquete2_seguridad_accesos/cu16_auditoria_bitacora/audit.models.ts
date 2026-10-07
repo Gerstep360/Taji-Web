@@ -34,4 +34,11 @@ export interface AuditQuery {
   search?: string;
   category?: string;
   action_code?: string;
+  user_id?: string;
+  user?: string;
+  resource_type?: string;
+  resource_id?: string;
+  date?: string;
+  date_from?: string;
+  date_to?: string;
 }

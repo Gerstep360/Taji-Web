@@ -3,12 +3,11 @@ import {
   Component,
   DestroyRef,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, finalize } from 'rxjs';
+import { finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { IconComponent } from '../../../shared/ui/icon.component';
@@ -51,40 +50,51 @@ export class AuditoriaPage implements OnInit {
 
   readonly categories = CATEGORIES;
   readonly searchControl = new FormControl('', { nonNullable: true });
+  readonly userControl = new FormControl('', { nonNullable: true });
+  readonly actionControl = new FormControl('', { nonNullable: true });
+  readonly resourceTypeControl = new FormControl('', { nonNullable: true });
+  readonly resourceIdControl = new FormControl('', { nonNullable: true });
+  readonly dateFromControl = new FormControl('', { nonNullable: true });
+  readonly dateToControl = new FormControl('', { nonNullable: true });
+  readonly categoryControl = new FormControl('', { nonNullable: true });
+  private readonly filterControls = [
+    this.searchControl, this.userControl, this.actionControl,
+    this.resourceTypeControl, this.resourceIdControl, this.dateFromControl, this.dateToControl, this.categoryControl,
+  ];
 
   readonly events = signal<AuditEventItem[]>([]);
   readonly pagination = signal<AuditPagination>(DEFAULT_PAGINATION);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly selectedCategory = signal('');
   readonly selectedEvent = signal<AuditEventItem | null>(null);
-
-  readonly totalEvents = computed(() => this.pagination().total_items);
-
-  readonly lastEvent = computed(() => {
-    const list = this.events();
-    return list.length > 0 ? list[0] : null;
-  });
 
   ngOnInit(): void {
     this.loadEvents(1);
-
-    this.searchControl.valueChanges
-      .pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.loadEvents(1);
-      });
   }
 
   loadEvents(page = 1): void {
+    const dateFrom = this.dateFromControl.value;
+    const dateTo = this.dateToControl.value;
+    if (dateFrom && dateTo && dateFrom > dateTo) {
+      this.error.set('La fecha final debe ser igual o posterior a la inicial.');
+      return;
+    }
     this.loading.set(true);
     this.error.set(null);
 
+    const user = this.userControl.value.trim();
     const query = {
       page,
       page_size: 20,
       search: this.searchControl.value.trim(),
-      category: this.selectedCategory(),
+      category: this.categoryControl.value,
+      user_id: /^\d+$/.test(user) ? user : undefined,
+      user: user && !/^\d+$/.test(user) ? user : undefined,
+      action_code: this.actionControl.value.trim(),
+      resource_type: this.resourceTypeControl.value.trim(),
+      resource_id: this.resourceIdControl.value.trim(),
+      date_from: dateFrom,
+      date_to: dateTo,
     };
 
     this.auditApi
@@ -100,23 +110,15 @@ export class AuditoriaPage implements OnInit {
         },
         error: (err) => {
           this.error.set(
-            err?.error?.detail ||
+            err?.error?.error?.message || err?.error?.detail ||
               'No se pudo cargar la bitácora de auditoría. Verifica que cuentes con permisos de Administrador.',
           );
         },
       });
   }
 
-  selectCategory(category: string): void {
-    if (this.selectedCategory() !== category) {
-      this.selectedCategory.set(category);
-      this.loadEvents(1);
-    }
-  }
-
   clearSearch(): void {
-    this.searchControl.setValue('');
-    this.selectedCategory.set('');
+    this.filterControls.forEach((control) => control.setValue('', { emitEvent: false }));
     this.loadEvents(1);
   }
 
@@ -216,6 +218,10 @@ export class AuditoriaPage implements OnInit {
       default:
         return { class: 'pill-neutral', label: actionCode };
     }
+  }
+
+  hasDetailData(data: Record<string, unknown> | null): boolean {
+    return data != null && Object.keys(data).length > 0;
   }
 
   toJsonString(data: any): string {

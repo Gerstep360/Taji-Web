@@ -80,35 +80,6 @@ import { StaffMember, StaffOptions, StaffPayload } from './staff.models';
         </fieldset>
 
         <fieldset>
-          <legend>Acceso al sistema</legend>
-          @if (member()?.has_user_account) {
-            <div class="account-state">
-              <strong>Cuenta de acceso creada</strong>
-              <span>{{ member()?.user_email }}</span>
-            </div>
-          } @else {
-            <label class="account-toggle">
-              <input type="checkbox" formControlName="create_user_account" />
-              <span>Crear cuenta para que pueda iniciar sesión</span>
-            </label>
-            @if (createUserAccount()) {
-              <div class="account-fields">
-                <p>Usará el correo de contacto para iniciar sesión.</p>
-                <label>
-                  <span>Contraseña inicial *</span>
-                  <input
-                    type="password"
-                    formControlName="account_password"
-                    autocomplete="new-password"
-                  />
-                  <small>{{ accountPasswordError() }}</small>
-                </label>
-              </div>
-            }
-          }
-        </fieldset>
-
-        <fieldset>
           <legend>Información laboral</legend>
           <div class="system-code" aria-live="polite">
             <span>Código del sistema</span>
@@ -314,10 +285,6 @@ export class StaffEditorComponent {
       return;
     }
     const raw = this.form.getRawValue();
-    if (raw.create_user_account && raw.account_password && raw.account_password.length < 10) {
-      this.form.controls.account_password.markAsTouched();
-      return;
-    }
 
     if (!this.member()?.has_system_access && raw.create_system_access) {
       if (!raw.password) {
@@ -331,6 +298,7 @@ export class StaffEditorComponent {
         return;
       }
     }
+    const createAccess = raw.create_system_access;
     this.submitted.emit({
       first_name: raw.first_name,
       last_name: raw.last_name,
@@ -345,23 +313,15 @@ export class StaffEditorComponent {
       end_date: raw.status === 'INACTIVE' ? raw.end_date || null : null,
       status: raw.status,
       notes: raw.notes,
-      create_user_account: raw.create_user_account,
-      account_password: raw.create_user_account ? raw.account_password : undefined,
-      create_system_access: raw.create_system_access,
-      access_email: raw.create_system_access ? raw.access_email : (raw.access_email || undefined),
-      access_role: raw.create_system_access ? raw.access_role : undefined,
-      password: raw.create_system_access ? raw.password : undefined,
-      password_confirm: raw.create_system_access ? raw.password_confirm : undefined,
+      create_user_account: createAccess,
+      account_password: createAccess ? raw.password : undefined,
+      create_system_access: createAccess,
+      access_email: createAccess ? raw.access_email : (raw.access_email || undefined),
+      access_role: createAccess ? raw.access_role : undefined,
+      password: createAccess ? raw.password : undefined,
+      password_confirm: createAccess ? raw.password_confirm : undefined,
       toggle_access: this.member()?.has_system_access ? raw.toggle_access : undefined,
     });
-  }
-
-  accountPasswordError(): string {
-    const control = this.form.controls.account_password;
-    if (!this.createUserAccount() || !control.touched) return '';
-    if (!control.value) return 'Ingresa una contraseña inicial.';
-    if (control.value.length < 10) return 'Usa al menos 10 caracteres.';
-    return '';
   }
 
   fieldError(field: string): string {

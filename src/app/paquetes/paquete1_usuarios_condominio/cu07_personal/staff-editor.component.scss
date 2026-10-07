@@ -116,6 +116,35 @@ legend {
   color: var(--taji-muted);
   font-size: 0.61rem;
 }
+.account-toggle {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  justify-content: start;
+  margin-bottom: 0.85rem;
+}
+.account-toggle input {
+  width: 1rem;
+  min-height: 1rem;
+  margin: 0;
+  accent-color: var(--taji-primary);
+}
+.account-state,
+.account-fields {
+  display: grid;
+  gap: 0.45rem;
+}
+.account-state {
+  padding: 0.8rem;
+  border-left: 3px solid #31805b;
+  background: #f0f8f3;
+  color: #315e47;
+  font-size: 0.72rem;
+}
+.account-fields p {
+  margin: 0 0 0.25rem;
+  color: var(--taji-muted);
+  font-size: 0.68rem;
+}
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

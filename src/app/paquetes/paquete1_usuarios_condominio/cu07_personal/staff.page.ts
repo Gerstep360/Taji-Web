@@ -340,7 +340,9 @@ export class StaffPage implements OnInit {
         this.successMessage.set(
           this.editing()
             ? 'Los datos del personal fueron actualizados.'
-            : 'La persona fue registrada en el equipo.',
+            : payload.create_user_account
+              ? `Personal registrado. Ya puede iniciar sesión con ${payload.contact_email}.`
+              : 'La persona fue registrada en el equipo.',
         );
         this.load(this.editing() ? this.pagination().page : 1);
       },

@@ -229,11 +229,16 @@ NGINX
         EXTRA_INCLUDES="${EXTRA_INCLUDES}    include /etc/nginx/snippets/drapemind-subpath.conf;\n"
     fi
 
+    SSL_DIRECTIVES=""
+    if [[ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]]; then
+        SSL_DIRECTIVES="    listen 443 ssl;\n    listen [::]:443 ssl;\n    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers HIGH:!aNULL:!MD5;\n    ssl_prefer_server_ciphers off;\n    ssl_session_cache shared:SSL:10m;\n    ssl_session_timeout 1d;\n"
+    fi
+
     cat >"$SITE" <<NGINX
 server {
     listen 80;
     listen [::]:80;
-    server_name $DOMAIN;
+$(echo -e "$SSL_DIRECTIVES")    server_name $DOMAIN;
 
     root $TARGET_DIR;
 

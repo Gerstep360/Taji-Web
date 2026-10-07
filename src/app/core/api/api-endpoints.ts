@@ -1,4 +1,5 @@
 export const API_ENDPOINTS = {
+  visitConsultation: '/security/cu12/visits/',
   auth: {
     login: '/auth/login/',
     register: '/auth/register/',

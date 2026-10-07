@@ -267,6 +267,13 @@ export class MainLayoutComponent {
           isAvailable: false,
         },
         {
+          label: 'Visitas y personas dentro',
+          route: '/visitas-dentro',
+          permissions: ['manage_visits', 'register_visits', 'validate_visits', 'register_entry_exit'],
+          icon: 'clock',
+          isAvailable: true,
+        },
+        {
           label: 'Auditoría y Bitácora',
           icon: 'file-text',
           route: '/auditoria',

@@ -75,6 +75,7 @@ export const API_ENDPOINTS = {
     cancel: (id: number) => `/visit-authorizations/${id}/cancel/`,
   },
   securityShifts: {
+    // CU13 conserva sus rutas; CU14 utiliza un recurso separado.
     root: '/paquete2/turnos/',
     options: '/paquete2/turnos/options/',
     detail: (id: number) => `/paquete2/turnos/${id}/`,
@@ -85,5 +86,7 @@ export const API_ENDPOINTS = {
     proximos: '/paquete2/turnos/proximos/',
     historial: '/paquete2/turnos/historial/',
   },
+  shiftLogs: { root: '/paquete2/novedades-turno/' },
+  handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
 } as const;
 

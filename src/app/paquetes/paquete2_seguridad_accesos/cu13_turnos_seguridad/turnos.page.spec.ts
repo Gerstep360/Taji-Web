@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { roleOrPermissionGuard } from '../../../core/auth/auth.guard';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -80,6 +80,110 @@ describe('CU13 Integration & Access Control Tests', () => {
     turnosApiMock.historial.mockReturnValue(of([]));
     turnosApiMock.options.mockReturnValue(of({ statuses: [] }));
     staffApiMock.list.mockReturnValue(of({ results: [{ id: 5, full_name: 'Juan Pérez', staff_type: 'SECURITY', status: 'ACTIVE' }] }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  function guardFixture(shift: SecurityShift) {
+    setupAuthUser({ role: { slug: 'seguridad', permissions: [] } });
+    turnosApiMock.actual.mockReturnValue(of(shift));
+    turnosApiMock.proximos.mockReturnValue(of([]));
+    const fixture = TestBed.createComponent(TurnosPage);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('blocks an early start in the UI and does not send it to the API', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(sampleShift.scheduled_start) - 16 * 60_000);
+    const fixture = guardFixture(sampleShift);
+    const button = fixture.nativeElement.querySelector('.btn-action.start') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Habilitado desde');
+    fixture.componentInstance.openConfirm('iniciar', sampleShift);
+    expect(fixture.componentInstance.confirmModal().open).toBe(false);
+    expect(turnosApiMock.iniciar).not.toHaveBeenCalled();
+    fixture.destroy();
+  });
+
+  it('enables the start automatically at the fifteen-minute boundary', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.parse(sampleShift.scheduled_start) - 15 * 60_000 - 1000);
+    const fixture = guardFixture(sampleShift);
+    expect(fixture.nativeElement.querySelector('.btn-action.start').disabled).toBe(true);
+    vi.advanceTimersByTime(1000);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.btn-action.start').disabled).toBe(false);
+    fixture.destroy();
+  });
+
+  it('uses the server clock when the computer clock differs', () => {
+    const serverTime = Date.parse(sampleShift.scheduled_start) - 60 * 60_000;
+    vi.spyOn(Date, 'now').mockReturnValue(serverTime + 2 * 60 * 60_000);
+    const fixture = guardFixture({ ...sampleShift, timing: {
+      server_time: new Date(serverTime).toISOString(),
+      start_allowed_at: new Date(Date.parse(sampleShift.scheduled_start) - 15 * 60_000).toISOString(),
+      can_start: false, start_block_reason: '', other_open_shift_id: null,
+      is_overdue: false, is_missed: false, closing_timing: 'EARLY', close_reason_required: false,
+    } });
+    expect(fixture.componentInstance.serverNow()).toBe(serverTime);
+    expect(fixture.nativeElement.querySelector('.btn-action.start').disabled).toBe(true);
+    fixture.destroy();
+  });
+
+  it('shows a missed shift and prevents starting it at the final time', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(sampleShift.scheduled_end));
+    const fixture = guardFixture(sampleShift);
+    expect(fixture.nativeElement.textContent).toContain('Sin iniciar');
+    expect(fixture.nativeElement.querySelector('.btn-action.start').disabled).toBe(true);
+    fixture.destroy();
+  });
+
+  it('keeps an overdue shift open with its close action and warning', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(sampleShift.scheduled_end) + 60_000);
+    const fixture = guardFixture({ ...sampleShift, status: 'OPEN', opened_at: sampleShift.scheduled_start });
+    expect(fixture.nativeElement.textContent).toContain('Horario finalizado, cierre pendiente');
+    expect(fixture.nativeElement.querySelector('.btn-action.close').disabled).toBe(false);
+    expect(turnosApiMock.cerrar).not.toHaveBeenCalled();
+    fixture.destroy();
+  });
+
+  it.each([-60_000, 60_000])('requires and sends the reason for a closure %s ms from the end', (offset) => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(sampleShift.scheduled_end) + offset);
+    const shift: SecurityShift = { ...sampleShift, status: 'OPEN', opened_at: sampleShift.scheduled_start };
+    const fixture = guardFixture(shift);
+    const page = fixture.componentInstance;
+    page.openConfirm('cerrar', shift);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Motivo del cierre (obligatorio)');
+    expect(fixture.nativeElement.querySelector('.dialog-footer .btn-primary').disabled).toBe(true);
+    page.executeConfirmAction();
+    expect(turnosApiMock.cerrar).not.toHaveBeenCalled();
+    expect(page.confirmError()).toContain('motivo');
+    page.confirmModal.update((modal) => ({ ...modal, notes: '  Permiso / relevo tardío  ' }));
+    turnosApiMock.cerrar.mockReturnValue(of({ ...shift, status: 'CLOSED' }));
+    page.executeConfirmAction();
+    expect(turnosApiMock.cerrar).toHaveBeenCalledWith(shift.id, 'Permiso / relevo tardío');
+    fixture.destroy();
+  });
+
+  it('shows API validation errors inside the close dialog', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse(sampleShift.scheduled_end) + 60_000);
+    const shift: SecurityShift = { ...sampleShift, status: 'OPEN' };
+    const fixture = guardFixture(shift);
+    const page = fixture.componentInstance;
+    page.openConfirm('cerrar', shift);
+    page.confirmModal.update((modal) => ({ ...modal, notes: 'Motivo' }));
+    turnosApiMock.cerrar.mockReturnValue(throwError(() => ({ error: { error: {
+      message: 'Revisa los campos indicados.', fields: { notes: ['Motivo inválido.'] },
+    } } })));
+    page.executeConfirmAction();
+    fixture.detectChanges();
+    expect(page.confirmModal().open).toBe(true);
+    expect(fixture.nativeElement.querySelector('.dialog-body').textContent).toContain('Motivo inválido.');
+    fixture.destroy();
   });
 
   // --- PRUEBAS DE GUARDS Y ACCESO DE RUTAS ---

@@ -119,12 +119,24 @@ export const routes: Routes = [
       },
       {
         path: 'turnos-seguridad',
-        canActivate: [roleOrPermissionGuard(['seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
         loadComponent: () =>
           import('./paquetes/paquete2_seguridad_accesos/cu13_turnos_seguridad').then(
             (m) => m.TurnosPage,
           ),
         title: 'Turnos de Seguridad | Taji',
+      },
+      {
+        path: 'novedades-turno',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
+        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu14_novedades_incidentes/novedades.page').then(m => m.NovedadesPage),
+        title: 'Novedades de Turno | Taji',
+      },
+      {
+        path: 'entregas-turno',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
+        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu15_entrega_turno/entregas.page').then(m => m.EntregasPage),
+        title: 'Entrega y Recepción de Turno | Taji',
       },
 
 

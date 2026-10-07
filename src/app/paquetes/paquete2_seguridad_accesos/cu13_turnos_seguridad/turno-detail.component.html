@@ -26,7 +26,7 @@
 
       <div class="info-group">
         <label>Horario Planificado</label>
-        <p>{{ shift().scheduled_start | date:'dd/MM/yyyy HH:mm' }} a {{ shift().scheduled_end | date:'HH:mm' }}</p>
+        <p>{{ shift().scheduled_start | date:'dd/MM/yyyy HH:mm' }} a {{ shift().scheduled_end | date:'dd/MM/yyyy HH:mm' }}</p>
       </div>
 
       <div class="info-group">
@@ -54,6 +54,16 @@
         </p>
         @if (shift().closing_notes) {
           <small class="notes">Nota: {{ shift().closing_notes }}</small>
+        }
+        @if (shift().status === 'CLOSED' && shift().timing?.closing_timing === 'EARLY') {
+          <p>Cierre anticipado</p>
+        } @else if (shift().status === 'CLOSED' && shift().timing?.closing_timing === 'LATE') {
+          <p>Cierre posterior al horario</p>
+        }
+        @if (shift().timing?.is_overdue) {
+          <p>Horario finalizado, cierre pendiente.</p>
+        } @else if (shift().timing?.is_missed) {
+          <p>Horario finalizado: turno sin iniciar.</p>
         }
       </div>
 

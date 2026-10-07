@@ -1,6 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { IconComponent } from '../../../shared/ui/icon.component';
@@ -10,6 +12,7 @@ import { TurnoDetailComponent } from './turno-detail.component';
 import { TurnoEditorComponent } from './turno-editor.component';
 import { TurnosApi } from './turnos.api';
 import { SecurityShift, ShiftPayload, ShiftStatus } from './turnos.models';
+import { shiftCloseReasonRequired, shiftStartAllowedAt, shiftStartBlockReason, shiftTimingNotice } from './shift-timing';
 
 export type ActiveTab = 'gestion' | 'miturno' | 'proximos' | 'historial';
 
@@ -32,6 +35,44 @@ export class TurnosPage implements OnInit {
   private readonly authService = inject(AuthService);
 
   readonly user = this.authService.user;
+  readonly clock = signal(Date.now());
+  private readonly serverOffset = signal(0);
+  readonly serverNow = computed(() => this.clock() + this.serverOffset());
+  readonly confirmError = signal('');
+
+  constructor() {
+    interval(1000).pipe(takeUntilDestroyed()).subscribe(() => this.clock.set(Date.now()));
+  }
+
+  private syncClock(shifts: SecurityShift[]): void {
+    const serverTime = shifts.find((shift) => shift.timing)?.timing?.server_time;
+    if (serverTime) {
+      this.serverOffset.set(Date.parse(serverTime) - Date.now());
+    }
+    this.clock.set(Date.now());
+  }
+
+  canStart(shift: SecurityShift): boolean {
+    return !this.startBlockReason(shift);
+  }
+
+  startBlockReason(shift: SecurityShift): string {
+    return shiftStartBlockReason(shift, this.serverNow());
+  }
+
+  startAllowedAt(shift: SecurityShift): number {
+    return shiftStartAllowedAt(shift);
+  }
+
+  timingNotice(shift: SecurityShift): string {
+    return shiftTimingNotice(shift, this.serverNow());
+  }
+
+  closeReasonRequired(): boolean {
+    const modal = this.confirmModal();
+    return modal.type === 'cerrar' && !!modal.shift &&
+      shiftCloseReasonRequired(modal.shift, this.serverNow());
+  }
 
   // Permisos y Roles
   readonly isAdmin = computed(() => {
@@ -163,6 +204,7 @@ export class TurnosPage implements OnInit {
           } else {
             this.shiftsList.set([]);
           }
+          this.syncClock(this.shiftsList());
         },
         error: (err) => {
           this.loading.set(false);
@@ -187,6 +229,7 @@ export class TurnosPage implements OnInit {
           const msg = 'message' in res && typeof res.message === 'string' ? res.message : 'No tienes un turno activo en este momento.';
           this.currentShiftMessage.set(msg);
         }
+        this.syncClock(this.currentShift() ? [this.currentShift()!] : []);
       },
       error: (err) => {
         this.loading.set(false);
@@ -201,6 +244,7 @@ export class TurnosPage implements OnInit {
     this.turnosApi.proximos().subscribe({
       next: (res) => {
         this.upcomingShifts.set(res || []);
+        this.syncClock(this.upcomingShifts());
       },
       error: (err) => {
         this.errorMessage.set(this.extractErrorMsg(err, 'Error al obtener los próximos turnos.'));
@@ -221,6 +265,7 @@ export class TurnosPage implements OnInit {
         next: (res) => {
           this.loading.set(false);
           this.historyShifts.set(res || []);
+          this.syncClock(this.historyShifts());
         },
         error: (err) => {
           this.loading.set(false);
@@ -324,6 +369,11 @@ export class TurnosPage implements OnInit {
 
   // --- Operaciones de Iniciar, Cerrar y Cancelar ---
   openConfirm(type: 'iniciar' | 'cerrar' | 'cancelar', shift: SecurityShift): void {
+    this.confirmError.set('');
+    if (type === 'iniciar' && !this.canStart(shift)) {
+      this.errorMessage.set(this.startBlockReason(shift));
+      return;
+    }
     this.confirmModal.set({
       open: true,
       type,
@@ -333,6 +383,7 @@ export class TurnosPage implements OnInit {
   }
 
   closeConfirm(): void {
+    this.confirmError.set('');
     this.confirmModal.set({
       open: false,
       type: 'iniciar',
@@ -345,7 +396,17 @@ export class TurnosPage implements OnInit {
     const modal = this.confirmModal();
     if (!modal.shift) return;
 
-    const { type, shift, notes } = modal;
+    const { type, shift } = modal;
+    const notes = modal.notes.trim();
+    this.confirmError.set('');
+    if (type === 'iniciar' && !this.canStart(shift)) {
+      this.confirmError.set(this.startBlockReason(shift));
+      return;
+    }
+    if (this.closeReasonRequired() && !notes) {
+      this.confirmError.set('Indica el motivo del cierre anticipado o posterior al horario.');
+      return;
+    }
     this.actionLoading.set(true);
 
     if (type === 'iniciar') {
@@ -358,7 +419,7 @@ export class TurnosPage implements OnInit {
         },
         error: (err) => {
           this.actionLoading.set(false);
-          this.errorMessage.set(this.extractErrorMsg(err, 'No se pudo iniciar el turno.'));
+          this.confirmError.set(this.extractActionError(err, 'No se pudo iniciar el turno.'));
         },
       });
     } else if (type === 'cerrar') {
@@ -371,7 +432,7 @@ export class TurnosPage implements OnInit {
         },
         error: (err) => {
           this.actionLoading.set(false);
-          this.errorMessage.set(this.extractErrorMsg(err, 'No se pudo cerrar el turno.'));
+          this.confirmError.set(this.extractActionError(err, 'No se pudo cerrar el turno.'));
         },
       });
     } else if (type === 'cancelar') {
@@ -384,7 +445,7 @@ export class TurnosPage implements OnInit {
         },
         error: (err) => {
           this.actionLoading.set(false);
-          this.errorMessage.set(this.extractErrorMsg(err, 'No se pudo cancelar el turno.'));
+          this.confirmError.set(this.extractActionError(err, 'No se pudo cancelar el turno.'));
         },
       });
     }
@@ -429,5 +490,11 @@ export class TurnosPage implements OnInit {
     if (err?.error?.detail) return err.error.detail;
     if (typeof err?.error === 'string') return err.error;
     return fallback;
+  }
+
+  private extractActionError(err: any, fallback: string): string {
+    const notesError = err?.error?.error?.fields?.notes;
+    if (Array.isArray(notesError)) return notesError.join(' ');
+    return this.extractErrorMsg(err, fallback);
   }
 }

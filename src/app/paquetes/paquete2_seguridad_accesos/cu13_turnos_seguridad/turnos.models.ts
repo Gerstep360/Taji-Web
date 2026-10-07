@@ -9,6 +9,18 @@ export interface SecurityShiftOptions {
   statuses: CatalogOption[];
 }
 
+export interface ShiftTiming {
+  server_time: string;
+  start_allowed_at: string;
+  can_start: boolean;
+  start_block_reason: string;
+  other_open_shift_id: number | null;
+  is_overdue: boolean;
+  is_missed: boolean;
+  closing_timing: 'EARLY' | 'ON_TIME' | 'LATE';
+  close_reason_required: boolean;
+}
+
 export interface SecurityShift {
   id: number;
   condominium: number | null;
@@ -27,6 +39,7 @@ export interface SecurityShift {
   created_by_user: number | null;
   created_at: string;
   updated_at: string;
+  timing?: ShiftTiming;
 }
 
 export interface ShiftPayload {

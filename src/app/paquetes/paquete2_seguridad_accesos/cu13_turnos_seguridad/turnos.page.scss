@@ -434,3 +434,14 @@
     }
   }
 }
+.timing-notice {
+  margin: 0.5rem 0;
+  color: #92400e;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

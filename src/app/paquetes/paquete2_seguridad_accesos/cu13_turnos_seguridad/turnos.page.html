@@ -176,6 +176,9 @@
                     <span class="badge" [class]="statusBadgeClass(shift.status)">
                       {{ statusLabel(shift.status) }}
                     </span>
+                    @if (timingNotice(shift)) {
+                      <p class="timing-notice">{{ timingNotice(shift) }}</p>
+                    }
                   </td>
                   <td class="actions-col">
                     <button type="button" class="btn-icon" (click)="openDetail(shift)" title="Ver detalle">
@@ -242,16 +245,25 @@
 
               <!-- BOTONES DE ACCIÓN PRINCIPAL -->
               <div class="shift-action-box">
+                @if (timingNotice(currentShift()!)) {
+                  <p class="timing-notice" role="status">{{ timingNotice(currentShift()!) }}</p>
+                }
                 @if (currentShift()!.status === 'SCHEDULED') {
                   <button
                     type="button"
                     class="btn-action start"
                     (click)="openConfirm('iniciar', currentShift()!)"
-                    [disabled]="actionLoading()"
+                    [disabled]="actionLoading() || !canStart(currentShift()!)"
                   >
                     <taji-icon name="play" [size]="20" />
                     <span>INICIAR TURNO</span>
                   </button>
+                  @if (!canStart(currentShift()!)) {
+                    <p class="text-muted">{{ startBlockReason(currentShift()!) }}</p>
+                    @if (serverNow() < startAllowedAt(currentShift()!)) {
+                      <p class="text-muted">Habilitado desde {{ startAllowedAt(currentShift()!) | date:'dd/MM/yyyy HH:mm' }}.</p>
+                    }
+                  }
                 } @else if (currentShift()!.status === 'OPEN') {
                   <div class="ongoing-banner">
                     <taji-icon name="radio" [size]="20" class="pulse-icon" />
@@ -351,7 +363,7 @@
     <section class="tab-content">
       <div class="section-title">
         <h2>Historial de Turnos</h2>
-        <p>Registro de turnos finalizados y cancelados para trazabilidad.</p>
+        <p>Registro de turnos finalizados, cancelados y sin iniciar.</p>
       </div>
 
       @if (loading()) {
@@ -390,6 +402,9 @@
                     <span class="badge" [class]="statusBadgeClass(shift.status)">
                       {{ statusLabel(shift.status) }}
                     </span>
+                    @if (timingNotice(shift)) {
+                      <p class="timing-notice">{{ timingNotice(shift) }}</p>
+                    }
                   </td>
                   <td class="actions-col">
                     <button type="button" class="btn-icon" (click)="openDetail(shift)">
@@ -422,18 +437,26 @@
     </header>
 
     <div class="dialog-body">
+      @if (confirmError()) {
+        <div class="alert alert-danger" role="alert">{{ confirmError() }}</div>
+      }
       @if (confirmModal().type === 'iniciar') {
         <p>¿Deseas registrar la apertura oficial e iniciar tu turno de seguridad?</p>
       } @else if (confirmModal().type === 'cerrar') {
         <p>¿Deseas cerrar tu turno actual de seguridad?</p>
+        @if (closeReasonRequired()) {
+          <p>El cierre es anticipado o posterior al horario. Indica el motivo; quedará registrado para el administrador.</p>
+        }
       } @else {
         <p>¿Estás seguro de cancelar este turno programado?</p>
       }
 
       <label class="notes-input">
-        <span>Notas / Observaciones (opcional):</span>
+        <span>{{ closeReasonRequired() ? 'Motivo del cierre (obligatorio):' : 'Notas / Observaciones (opcional):' }}</span>
         <textarea
           rows="2"
+          [required]="closeReasonRequired()"
+          [attr.aria-required]="closeReasonRequired()"
           [ngModel]="confirmModal().notes"
           (ngModelChange)="confirmModal.set({ open: true, type: confirmModal().type, shift: confirmModal().shift, notes: $event })"
           placeholder="Comentario o reporte..."
@@ -447,7 +470,7 @@
         type="button"
         class="btn-primary"
         [class.btn-danger]="confirmModal().type === 'cancelar'"
-        [disabled]="actionLoading()"
+        [disabled]="actionLoading() || (closeReasonRequired() && !confirmModal().notes.trim())"
         (click)="executeConfirmAction()"
       >
         {{ actionLoading() ? 'Procesando…' : 'Confirmar' }}

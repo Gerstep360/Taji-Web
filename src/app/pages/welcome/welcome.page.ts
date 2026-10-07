@@ -9,6 +9,79 @@ import { AuthService } from '../../core/auth/auth.service';
 import { LogoComponent } from '../../shared/ui/logo.component';
 import { StripePaymentComponent } from '../../shared/components/stripe-payment/stripe-payment.component';
 
+const DEFAULT_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+  {
+    id: 1,
+    code: 'esencial',
+    name: 'Plan Esencial',
+    tagline: 'Control de visitas con pases QR rápidos y administración centralizada.',
+    description: 'Para condominios pequeños que requieren control de visitas y bitácora segura.',
+    price_bob: 150,
+    price_usd: 22,
+    billing_period: 'MONTHLY',
+    max_units: 30,
+    max_residents: 100,
+    features: [
+      'Hasta 30 unidades o departamentos',
+      'Pases de visita con Código QR instantáneo',
+      'Gestión de residentes y vehículos',
+      'Bitácora digital de accesos en tiempo real',
+      'Soporte técnico por correo electrónico 24/7',
+    ],
+    is_popular: false,
+    is_active: true,
+    order: 1,
+  },
+  {
+    id: 2,
+    code: 'profesional',
+    name: 'Plan Profesional',
+    tagline: 'Seguridad biométrica facial, pases QR, control financiero con Stripe y reservas.',
+    description: 'La opción predilecta para condominios modernos y torres residenciales.',
+    price_bob: 350,
+    price_usd: 50,
+    billing_period: 'MONTHLY',
+    max_units: 120,
+    max_residents: 500,
+    features: [
+      'Hasta 120 unidades o departamentos',
+      'Todo lo incluido en el Plan Esencial',
+      'Reconocimiento Facial biométrico con IA en garita',
+      'Notificaciones push automáticas a residentes',
+      'Gestión y reserva de áreas sociales y canchas',
+      'Control de expensas y cobros con Stripe (BOB / USD)',
+      'Soporte prioritario y capacitación técnica inicial',
+    ],
+    is_popular: true,
+    is_active: true,
+    order: 2,
+  },
+  {
+    id: 3,
+    code: 'corporativo',
+    name: 'Plan Corporativo',
+    tagline: 'Infraestructura de alta capacidad para macro-condominios y multi-torres.',
+    description: 'Potencia empresarial sin límites, con soporte 24/7 y multi-garitas en simultáneo.',
+    price_bob: 700,
+    price_usd: 100,
+    billing_period: 'MONTHLY',
+    max_units: 500,
+    max_residents: 2000,
+    features: [
+      'Hasta 500 unidades o departamentos',
+      'Todo lo incluido en el Plan Profesional',
+      'Múltiples garitas y accesos simultáneos',
+      'Integración con barreras vehiculares automáticas',
+      'Auditoría y trazabilidad forense de seguridad',
+      'Exportación contable y reportes ejecutivos',
+      'Gerente de cuenta dedicado y SLA 99.9%',
+    ],
+    is_popular: false,
+    is_active: true,
+    order: 3,
+  },
+];
+
 @Component({
   selector: 'app-welcome',
   standalone: true,
@@ -23,8 +96,8 @@ export class WelcomePage implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
-  readonly plans = signal<SubscriptionPlan[]>([]);
-  readonly isLoading = signal(true);
+  readonly plans = signal<SubscriptionPlan[]>(DEFAULT_SUBSCRIPTION_PLANS);
+  readonly isLoading = signal(false);
   readonly isAnnual = signal(false);
   readonly isAuthenticated = signal(false);
 
@@ -91,83 +164,13 @@ export class WelcomePage implements OnInit {
     this.isLoading.set(true);
     this.saasService.getPlans().subscribe({
       next: (data) => {
-        this.plans.set(data);
+        if (Array.isArray(data) && data.length > 0) {
+          this.plans.set(data);
+        }
         this.isLoading.set(false);
       },
-      error: () => {
-        // Fallback default plans
-        this.plans.set([
-          {
-            id: 1,
-            code: 'esencial',
-            name: 'Plan Esencial',
-            tagline: 'Control de visitas con pases QR rápidos y administración centralizada.',
-            description: 'Para condominios pequeños que requieren control de visitas y bitácora segura.',
-            price_bob: 150,
-            price_usd: 22,
-            billing_period: 'MONTHLY',
-            max_units: 30,
-            max_residents: 100,
-            features: [
-              'Hasta 30 unidades o departamentos',
-              'Pases de visita con Código QR instantáneo',
-              'Gestión de residentes y vehículos',
-              'Bitácora digital de accesos en tiempo real',
-              'Soporte técnico por correo electrónico',
-            ],
-            is_popular: false,
-            is_active: true,
-            order: 1,
-          },
-          {
-            id: 2,
-            code: 'profesional',
-            name: 'Plan Profesional',
-            tagline: 'Seguridad biométrica facial, pases QR, control financiero con Stripe y reservas.',
-            description: 'La opción predilecta para condominios modernos y torres residenciales.',
-            price_bob: 350,
-            price_usd: 50,
-            billing_period: 'MONTHLY',
-            max_units: 120,
-            max_residents: 500,
-            features: [
-              'Hasta 120 unidades o departamentos',
-              'Todo lo incluido en el Plan Esencial',
-              'Reconocimiento Facial biométrico en garita',
-              'Notificaciones push automáticas a residentes',
-              'Gestión y reserva de áreas sociales y canchas',
-              'Control de expensas y cobros con Stripe (BOB / USD)',
-              'Soporte prioritario y capacitación técnica',
-            ],
-            is_popular: true,
-            is_active: true,
-            order: 2,
-          },
-          {
-            id: 3,
-            code: 'corporativo',
-            name: 'Plan Corporativo',
-            tagline: 'Infraestructura de alta capacidad para macro-condominios y multi-torres.',
-            description: 'Potencia empresarial sin límites, con soporte 24/7 y multi-garitas en simultáneo.',
-            price_bob: 700,
-            price_usd: 100,
-            billing_period: 'MONTHLY',
-            max_units: 500,
-            max_residents: 2000,
-            features: [
-              'Hasta 500 unidades o departamentos',
-              'Todo lo incluido en el Plan Profesional',
-              'Múltiples garitas y accesos simultáneos',
-              'Integración con barreras vehiculares automáticas',
-              'Auditoría y trazabilidad forense de seguridad',
-              'Exportación contable y reportes ejecutivos',
-              'Gerente de cuenta dedicado y SLA 99.9%',
-            ],
-            is_popular: false,
-            is_active: true,
-            order: 3,
-          },
-        ]);
+      error: (err) => {
+        console.warn('Usando catálogo predeterminado de planes SaaS:', err);
         this.isLoading.set(false);
       },
     });
@@ -181,12 +184,24 @@ export class WelcomePage implements OnInit {
     this.selectedUnitRange.set(range);
   }
 
-  getPrice(plan: SubscriptionPlan): number {
-    const base = Number(plan.price_bob);
+  getPrice(plan: SubscriptionPlan | null | undefined): number {
+    if (!plan) return 0;
+    const raw = plan.price_bob;
+    const base = typeof raw === 'number' ? raw : parseFloat(String(raw)) || 0;
     if (this.isAnnual()) {
-      return Math.round(base * 0.85); // 15% discount
+      return Math.round(base * 0.85); // 15% de descuento anual
     }
-    return base;
+    return Math.round(base);
+  }
+
+  getPriceUsd(plan: SubscriptionPlan | null | undefined): number {
+    if (!plan) return 0;
+    const raw = plan.price_usd;
+    const base = typeof raw === 'number' ? raw : parseFloat(String(raw)) || 0;
+    if (this.isAnnual()) {
+      return Math.round(base * 0.85);
+    }
+    return Math.round(base);
   }
 
   openOnboarding(plan?: SubscriptionPlan, method: 'TRIAL' | 'STRIPE' = 'TRIAL'): void {

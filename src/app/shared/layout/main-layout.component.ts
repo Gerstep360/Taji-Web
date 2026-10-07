@@ -145,15 +145,23 @@ interface PackageDropdown {
             </div>
           </div>
           <div class="topbar-right">
-            <div class="tenant-pill" title="Instancia de Condominio Activa (Multi-Tenant SaaS)">
+            <a
+              routerLink="/mi-condominio"
+              class="tenant-pill"
+              title="Instancia Cloud Multi-Tenant SaaS · Clic para administrar suscripción y condominio"
+            >
               <div class="tenant-icon-wrap">
                 <taji-icon name="building" [size]="15" />
               </div>
               <div class="tenant-text">
-                <span class="tenant-eyebrow">Condominio</span>
+                <span class="tenant-eyebrow">Condominio Activo</span>
                 <strong class="tenant-name">{{ activeTenant()?.name || 'Condominio Taji' }}</strong>
               </div>
-            </div>
+              <span class="saas-badge" title="Instancia Cloud Aislada · SLA 99.9%">
+                <taji-icon name="sparkles" [size]="10" />
+                <span>SaaS Pro</span>
+              </span>
+            </a>
             <span class="avatar" aria-label="Perfil">{{ initials }}</span>
           </div>
         </header>
@@ -311,19 +319,19 @@ export class MainLayoutComponent {
           permission: 'manage_roles',
           isAvailable: true,
         },
-        {
-          label: 'Verificación Facial',
-          icon: 'scan-face',
-          route: '/verificacion-facial',
-          isAvailable: true,
-        },
       ],
     },
     {
       id: 'paquete3',
       title: 'Incidencias e IA',
-      icon: 'alert-triangle',
+      icon: 'sparkles',
       items: [
+        {
+          label: 'Reconocimiento Facial',
+          icon: 'scan-face',
+          route: '/verificacion-facial',
+          isAvailable: true,
+        },
         {
           label: 'Reportar Incidencia',
           icon: 'alert-triangle',

@@ -470,7 +470,15 @@ h1 {
   background: #ffffff;
   border: 1px solid var(--taji-border, #e2e8f0);
   box-shadow: 0 1px 4px rgba(16, 35, 60, 0.04);
-  transition: all 0.15s ease;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(15, 111, 255, 0.08);
+    transform: translateY(-1px);
+  }
 
   .tenant-icon-wrap {
     width: 28px;
@@ -508,8 +516,30 @@ h1 {
     }
   }
 
+  .saas-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 99px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-left: 0.25rem;
+    flex-shrink: 0;
+
+    taji-icon {
+      color: #2563eb;
+    }
+  }
+
   @media (max-width: 640px) {
-    .tenant-text {
+    .tenant-text,
+    .saas-badge {
       display: none;
     }
     padding: 0.3rem;

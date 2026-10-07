@@ -268,7 +268,12 @@
               <span class="curr-amount">{{ getPrice(plan) }}</span>
               <span class="curr-period">/ mes</span>
             </div>
-            <div class="price-alt">Aprox. ${{ plan.price_usd }} USD</div>
+            <div class="price-alt">
+              Aprox. ${{ getPriceUsd(plan) }} USD
+              @if (isAnnual()) {
+                <span class="save-tag">· 15% dto. anual</span>
+              }
+            </div>
           </div>
 
           <!-- QUOTAS -->
@@ -329,6 +334,66 @@
           </div>
         </div>
       }
+    </div>
+  </section>
+
+  <!-- SAAS MULTI-TENANT ENTERPRISE SHOWCASE -->
+  <section class="section-wrap saas-showcase-section">
+    <div class="saas-showcase-card">
+      <div class="saas-showcase-header">
+        <div class="saas-badge-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>ARQUITECTURA SAAS MULTI-TENANT ENTERPRISE</span>
+        </div>
+        <h2>Instancias Cloud Seguras y 100% Aisladas para Cada Condominio</h2>
+        <p>Taji opera como una plataforma SaaS multi-inquilino de última generación. Cada comunidad dispone de su propio entorno virtual, base de datos particionada y personalización total.</p>
+      </div>
+
+      <div class="saas-pillars-grid">
+        <div class="saas-pillar">
+          <div class="pillar-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+          </div>
+          <h4>Aislamiento Estricto de Datos</h4>
+          <p>Esquema multi-tenant con filtros a nivel de base de datos. Ningún usuario puede acceder a registros de otro condominio.</p>
+        </div>
+
+        <div class="saas-pillar">
+          <div class="pillar-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <h4>SLA 99.9% & Alta Disponibilidad</h4>
+          <p>Despliegue cloud optimizado con backups automáticos continuos y reconexión inmediata para porterías y guardias.</p>
+        </div>
+
+        <div class="saas-pillar">
+          <div class="pillar-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+          </div>
+          <h4>Suscripciones & Cobros Stripe</h4>
+          <p>Facturación automatizada con cobros en Bolivianos (BOB) y Dólares (USD). Gestión de expensas, prórrogas y recibos.</p>
+        </div>
+
+        <div class="saas-pillar">
+          <div class="pillar-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h4>IA Biométrica & Control QR</h4>
+          <p>Embeddings faciales InsightFace 512-D y validación de visitas mediante QR firmados criptográficamente.</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -692,7 +757,7 @@
                     </p>
                   </div>
                   <div class="summary-price">
-                    <span class="num">Bs. {{ selectedPlan()?.price_bob }}</span>
+                    <span class="num">Bs. {{ getPrice(selectedPlan()) || 350 }}</span>
                     <span class="unit">/ mes</span>
                   </div>
                 </div>
@@ -752,7 +817,7 @@
                 <div class="stripe-checkout-embed">
                   <app-stripe-payment
                     [planId]="selectedPlan()?.id || 2"
-                    [amount]="selectedPlan()?.price_bob || 350"
+                    [amount]="getPrice(selectedPlan()) || 350"
                     [planName]="selectedPlan()?.name || 'Plan Profesional'"
                     (paid)="onStripePaymentCompleted($event)"
                   ></app-stripe-payment>

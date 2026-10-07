@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
-import { anyPermissionGuard, authGuard, guestGuard, permissionGuard } from './core/auth/auth.guard';
+import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard } from './core/auth/auth.guard';
+
 
 export const routes: Routes = [
   {
@@ -165,6 +166,27 @@ export const routes: Routes = [
             (m) => m.ControlAccesosPage,
           ),
         title: 'Control de Accesos | Taji',
+      },
+      {
+        path: 'turnos-seguridad',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu13_turnos_seguridad').then(
+            (m) => m.TurnosPage,
+          ),
+        title: 'Turnos de Seguridad | Taji',
+      },
+      {
+        path: 'novedades-turno',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
+        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu14_novedades_incidentes/novedades.page').then(m => m.NovedadesPage),
+        title: 'Novedades de Turno | Taji',
+      },
+      {
+        path: 'entregas-turno',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
+        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu15_entrega_turno/entregas.page').then(m => m.EntregasPage),
+        title: 'Entrega y Recepción de Turno | Taji',
       },
       {
         path: 'acceso-denegado',

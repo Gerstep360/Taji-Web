@@ -18,7 +18,9 @@ export const API_ENDPOINTS = {
     root: '/staff/',
     options: '/staff/options/',
     detail: (id: number) => `/staff/${id}/`,
+    resetPassword: (id: number) => `/staff/${id}/reset-password/`,
   },
+
 
   residents: {
     root: '/residents/',
@@ -90,4 +92,19 @@ export const API_ENDPOINTS = {
     onboardingRegister: '/saas/onboarding/register/',
     publicCondominiums: '/saas/condominiums/public/',
   },
+  securityShifts: {
+    // CU13 conserva sus rutas; CU14 utiliza un recurso separado.
+    root: '/paquete2/turnos/',
+    options: '/paquete2/turnos/options/',
+    detail: (id: number) => `/paquete2/turnos/${id}/`,
+    iniciar: (id: number) => `/paquete2/turnos/${id}/iniciar/`,
+    cerrar: (id: number) => `/paquete2/turnos/${id}/cerrar/`,
+    cancelar: (id: number) => `/paquete2/turnos/${id}/cancelar/`,
+    actual: '/paquete2/turnos/actual/',
+    proximos: '/paquete2/turnos/proximos/',
+    historial: '/paquete2/turnos/historial/',
+  },
+  shiftLogs: { root: '/paquete2/novedades-turno/' },
+  handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
 } as const;
+

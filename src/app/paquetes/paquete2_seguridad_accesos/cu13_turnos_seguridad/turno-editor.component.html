@@ -1,0 +1,79 @@
+<div class="drawer-backdrop" (click)="cancel()"></div>
+<aside class="editor" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+  <header>
+    <div>
+      <span class="kicker">{{ shift() ? 'Modificar Turno Programado' : 'Programación de Turno' }}</span>
+      <h2 id="editor-title">{{ shift() ? 'Editar Turno #' + shift()?.id : 'Programar nuevo turno de seguridad' }}</h2>
+      <p>Asigna un horario y guardia responsable perteneciente al área de Seguridad.</p>
+    </div>
+    <button type="button" class="close" (click)="cancel()" aria-label="Cerrar formulario">
+      ×
+    </button>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (formError()) {
+      <div class="form-error" role="alert">{{ formError() }}</div>
+    }
+
+    <fieldset>
+      <legend>Guardia de Seguridad</legend>
+      <div class="form-grid">
+        <label class="wide">
+          <span>Seleccionar Guardia Responsable *</span>
+          <select formControlName="guard_staff">
+            <option value="0" disabled>-- Selecciona personal de seguridad --</option>
+            @for (guard of securityStaff(); track guard.id) {
+              <option [value]="guard.id">
+                {{ guard.full_name }} ({{ guard.employee_code || 'Sin código' }})
+              </option>
+            }
+          </select>
+          <small class="error-text">{{ fieldError('guard_staff') }}</small>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Programación Horaria</legend>
+      <div class="form-grid">
+        <label>
+          <span>Fecha del turno *</span>
+          <input formControlName="fecha" type="date" />
+          <small class="error-text">{{ fieldError('fecha') }}</small>
+        </label>
+        <label>
+          <span>Hora Inicio Planificada *</span>
+          <input formControlName="hora_inicio" type="time" />
+          <small class="error-text">{{ fieldError('hora_inicio') }}</small>
+        </label>
+        <label>
+          <span>Hora Fin Planificada *</span>
+          <input formControlName="hora_fin" type="time" />
+          <small class="error-text">{{ fieldError('hora_fin') }}</small>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Observación Administrativa</legend>
+      <div class="form-grid">
+        <label class="wide">
+          <span>Observación u Orden de Servicio</span>
+          <textarea
+            formControlName="observation"
+            rows="3"
+            placeholder="Ej: Garita principal, control vehicular e inspección de rondas nocturnas"
+          ></textarea>
+        </label>
+      </div>
+    </fieldset>
+
+    <footer>
+      <button type="button" class="secondary" (click)="cancel()">Cancelar</button>
+      <button type="submit" class="primary" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : shift() ? 'Guardar Cambios' : 'Programar Turno' }}
+      </button>
+    </footer>
+  </form>
+</aside>

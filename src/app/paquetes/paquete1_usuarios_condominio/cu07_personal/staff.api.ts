@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiClient } from '../../../core/api/api-client.service';
 import { API_ENDPOINTS } from '../../../core/api/api-endpoints';
 import {
+  ResetPasswordPayload,
   StaffListResponse,
   StaffMember,
   StaffOptions,
@@ -42,7 +43,15 @@ export class StaffApi {
     return this.api.patch<StaffPayload, StaffMember>(API_ENDPOINTS.staff.detail(id), payload);
   }
 
+  resetPassword(id: number, payload: ResetPasswordPayload) {
+    return this.api.post<ResetPasswordPayload, { detail: string }>(
+      API_ENDPOINTS.staff.resetPassword(id),
+      payload
+    );
+  }
+
   delete(id: number) {
     return this.api.delete<void>(API_ENDPOINTS.staff.detail(id));
   }
 }
+

@@ -1,0 +1,52 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-titles">
+      <span class="eyebrow">Seguridad y Accesos</span>
+      <h1>Novedades de turno</h1>
+      <p>Consulta de novedades, incidentes y alertas registrados por el personal de guardia.</p>
+    </div>
+    <a class="btn-primary" routerLink="/turnos-seguridad"><taji-icon name="clock" [size]="18" />Turnos</a>
+  </header>
+  @if (error()) { <div class="alert alert-danger" role="alert">{{ error() }}</div> }
+  <form class="filters-bar" (ngSubmit)="load()">
+    <div class="filter-group"><label for="log-guard">Guardia</label>
+      <select id="log-guard" name="guard" [(ngModel)]="guard"><option value="">Todos</option>
+        @for (g of guards(); track g.id) { <option [value]="g.id">{{ g.full_name }}</option> }
+      </select>
+    </div>
+    <div class="filter-group"><label for="log-shift">Turno #</label><input id="log-shift" name="shift" type="number" min="1" [(ngModel)]="shift" /></div>
+    <div class="filter-group"><label for="log-type">Tipo</label><select id="log-type" name="type" [(ngModel)]="type"><option value="">Todos</option>
+      @for (t of types; track t.value) { <option [value]="t.value">{{ t.label }}</option> }</select></div>
+    <div class="filter-group"><label for="log-severity">Prioridad</label><select id="log-severity" name="severity" [(ngModel)]="severity"><option value="">Todas</option>
+      @for (s of severities; track s.value) { <option [value]="s.value">{{ s.label }}</option> }</select></div>
+    <div class="filter-group"><label for="log-from">Desde</label><input id="log-from" name="from" type="date" [(ngModel)]="dateFrom" /></div>
+    <div class="filter-group"><label for="log-to">Hasta</label><input id="log-to" name="to" type="date" [(ngModel)]="dateTo" /></div>
+    <div class="filter-group search-group"><label for="log-search">Buscar</label><input id="log-search" name="search" type="search" maxlength="120" placeholder="Título o descripción…" [(ngModel)]="search" /></div>
+    <button class="filter-button" type="submit">Buscar</button>
+    <button class="filter-button" type="button" (click)="load(page())" [disabled]="loading()">Actualizar</button>
+  </form>
+  <p class="muted">Los registros se conservan sin edición ni eliminación. Las alertas quedan registradas aquí; no envían notificaciones externas.</p>
+  @if (loading()) { <div class="loading-state" role="status"><span class="spinner"></span>Cargando novedades…</div> }
+  @else if (!entries().length) { <div class="empty-state"><taji-icon name="file-text" [size]="48" /><h3>No hay registros para estos filtros</h3></div> }
+  @else {
+    <section class="log-list" aria-label="Registros de turno">
+      @for (entry of entries(); track entry.id) {
+        <article class="log-card">
+          <div class="log-heading"><h2>{{ entry.title }}</h2>
+            <span class="log-badge">{{ typeLabel(entry.entry_type) }}</span>
+            <span class="log-badge" [class.urgent]="entry.severity === 'HIGH' || entry.severity === 'CRITICAL'">{{ severityLabel(entry.severity) }}</span>
+          </div>
+          <p class="muted">Turno #{{ entry.shift }} · {{ entry.guard_name }} · {{ entry.condominium_name || 'Sin condominio asignado' }}</p>
+          <p class="muted">Horario: {{ entry.scheduled_start | date:'dd/MM/yyyy HH:mm' }} — {{ entry.scheduled_end | date:'dd/MM/yyyy HH:mm' }}</p>
+          <p class="log-description">{{ entry.description }}</p>
+          <small>Registrado: {{ entry.occurred_at | date:'dd/MM/yyyy HH:mm:ss' }}</small>
+        </article>
+      }
+    </section>
+    <nav class="log-pagination" aria-label="Páginas de novedades">
+      <button type="button" class="filter-button" [disabled]="page() <= 1" (click)="load(page()-1)">Anterior</button>
+      <span>Página {{ page() }} de {{ pages() }} · {{ total() }} registros</span>
+      <button type="button" class="filter-button" [disabled]="page() >= pages()" (click)="load(page()+1)">Siguiente</button>
+    </nav>
+  }
+</div>

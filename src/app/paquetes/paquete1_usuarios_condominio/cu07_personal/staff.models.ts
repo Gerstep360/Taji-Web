@@ -32,6 +32,14 @@ export interface StaffMember {
   status: string;
   status_display: string;
   notes: string;
+
+  // Acceso al sistema
+  has_system_access?: boolean;
+  user_id?: number | null;
+  access_email?: string | null;
+  user_is_active?: boolean | null;
+  role_slug?: string | null;
+  role_name?: string | null;
 }
 
 export interface StaffPayload {
@@ -48,8 +56,21 @@ export interface StaffPayload {
   end_date: string | null;
   status: string;
   notes: string;
-  create_user_account: boolean;
+  create_user_account?: boolean;
   account_password?: string;
+
+  // Acceso al sistema
+  create_system_access?: boolean;
+  access_email?: string;
+  access_role?: string;
+  password?: string;
+  password_confirm?: string;
+  toggle_access?: boolean;
+}
+
+export interface ResetPasswordPayload {
+  password: string;
+  password_confirm: string;
 }
 
 export interface StaffQuery {
@@ -72,3 +93,4 @@ export interface StaffListResponse {
   };
   results: StaffMember[];
 }
+

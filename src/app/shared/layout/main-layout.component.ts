@@ -12,8 +12,10 @@ interface SubNavItem {
   route?: string;
   permission?: string;
   permissions?: string[];
+  roles?: string[];
   isAvailable: boolean;
 }
+
 
 interface PackageDropdown {
   id: string;
@@ -272,15 +274,34 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
-          label: 'Turnos y Novedades',
+          label: 'Turnos de seguridad',
           icon: 'clock',
-          isAvailable: false,
+          route: '/turnos-seguridad',
+          roles: ['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'],
+          permissions: ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'],
+          isAvailable: true,
         },
         {
           label: 'Visitas y personas dentro',
           route: '/visitas-dentro',
           permissions: ['manage_visits', 'register_visits', 'validate_visits', 'register_entry_exit'],
+          icon: 'users',
+          isAvailable: true,
+        },
+        {
+          label: 'Novedades de turno',
+          icon: 'file-text',
+          route: '/novedades-turno',
+          roles: ['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'],
+          permissions: ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'],
+          isAvailable: true,
+        },
+        {
+          label: 'Entrega y recepción',
           icon: 'clock',
+          route: '/entregas-turno',
+          roles: ['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'],
+          permissions: ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'],
           isAvailable: true,
         },
         {
@@ -388,9 +409,13 @@ export class MainLayoutComponent {
 
   canAccess(item: SubNavItem): boolean {
     if (!item.isAvailable) return false;
-    if (!item.permission && !item.permissions?.length) return true;
     const current = this.user();
     if (current?.is_superuser) return true;
+
+    const userRoleSlug = current?.role?.slug?.toLowerCase() ?? '';
+    if (item.roles && item.roles.some((r) => r.toLowerCase() === userRoleSlug)) return true;
+
+    if (!item.permission && !item.permissions?.length && !item.roles?.length) return true;
     if (item.permission && current?.role?.permissions.includes(item.permission)) return true;
     if (
       item.permissions &&
@@ -400,6 +425,7 @@ export class MainLayoutComponent {
     }
     return false;
   }
+
 
   get initials(): string {
     const current = this.user();

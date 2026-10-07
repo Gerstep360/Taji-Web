@@ -1,0 +1,792 @@
+<div class="welcome-shell">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-wrap">
+        <taji-logo></taji-logo>
+        <span class="brand-badge">SaaS Condominios</span>
+      </div>
+
+      <nav class="nav-links">
+        <button type="button" class="nav-link-btn" (click)="scrollToSection('features')">Módulos</button>
+        <button type="button" class="nav-link-btn" (click)="scrollToSection('configurator')">Simulador & Planes</button>
+        <button type="button" class="nav-link-btn" (click)="scrollToSection('security')">Seguridad</button>
+      </nav>
+
+      <div class="nav-actions">
+        @if (isAuthenticated()) {
+          <a routerLink="/inicio" class="btn-primary-link">
+            <span>Ir al Panel</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        } @else {
+          <a routerLink="/iniciar-sesion" class="btn-ghost-link">Iniciar Sesión</a>
+          <button type="button" class="btn-primary-link" (click)="openOnboarding()">
+            <span>Registrar Condominio</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <div class="kicker-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <line x1="9" y1="6" x2="9.01" y2="6"/>
+          <line x1="15" y1="6" x2="15.01" y2="6"/>
+          <line x1="9" y1="10" x2="9.01" y2="10"/>
+          <line x1="15" y1="10" x2="15.01" y2="10"/>
+        </svg>
+        <span>PLATAFORMA SAAS DE GESTIÓN Y SEGURIDAD</span>
+      </div>
+
+      <h1 class="hero-title">
+        Control de accesos inteligente y administración integral para tu comunidad
+      </h1>
+
+      <p class="hero-lead">
+        Pases QR temporales con validez estricta, biometría facial en garita, pasarela de cobros Stripe (BOB / USD) y aprovisionamiento multi-tenant en una infraestructura en la nube moderna y de alta confiabilidad.
+      </p>
+
+      <div class="hero-buttons">
+        <button type="button" class="btn-hero-cta" (click)="openOnboarding()">
+          <span>Comenzar Prueba de 14 Días</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+
+        <button type="button" class="btn-hero-outline" (click)="scrollToSection('configurator')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <span>Configurar Plan y Tarifas</span>
+        </button>
+      </div>
+
+      <!-- HIGHLIGHT PILLS -->
+      <div class="capability-row">
+        <div class="cap-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <span>Pases QR Criptográficos</span>
+        </div>
+
+        <div class="cap-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M3 17v2a2 2 0 0 0 2 2h2"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Biometría Facial Neuronal</span>
+        </div>
+
+        <div class="cap-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+          <span>Cobros Seguros con Stripe</span>
+        </div>
+
+        <div class="cap-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+          <span>Aislamiento de Datos por Tenant</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES / MODULES SECTION -->
+  <section id="features" class="section-wrap">
+    <div class="section-header">
+      <span class="sub-kicker">MÓDULOS DE VANGUARDIA</span>
+      <h2>Seguridad Operativa y Conectividad Residencial</h2>
+      <p>Diseñado especialmente para comités de administración, guardias de seguridad y copropietarios.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f6fff" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </div>
+        <h3>Control de Acceso con QR de Visita</h3>
+        <p>Los residentes generan pases temporales en segundos. Cada código contiene una firma digital con vigencia estricta para validación instantánea en garita de guardia.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f6fff" stroke-width="2">
+            <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M3 17v2a2 2 0 0 0 2 2h2"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <h3>Verificación Biométrica Facial</h3>
+        <p>Identificación de residentes y propietarios en accesos mediante vectores faciales normalizados de 128 dimensiones con tolerancia configurable y auditoría fotográfica en garita.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f6fff" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </div>
+        <h3>Pasarela de Cobros Stripe (BOB / USD)</h3>
+        <p>Cobro de suscripciones de condominio y expensas en moneda nacional con tarjetas de crédito/débito, webhooks criptográficos y modo sandbox transparente.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-header-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f6fff" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </div>
+        <h3>Aislamiento Multi-Tenant Estricto</h3>
+        <p>Cada condominio opera en su propio espacio virtual independiente. Cuotas automáticas de unidades y residentes sin interferencia entre comunidades.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMUNITY SIZING CONFIGURATOR & PRICING -->
+  <section id="configurator" class="section-wrap configurator-section">
+    <div class="section-header">
+      <span class="sub-kicker">SIMULADOR & CONFIGURACIÓN DE PLAN</span>
+      <h2>Configura la Escala de tu Condominio</h2>
+      <p>Selecciona la cantidad estimada de unidades para recomendarte el plan óptimo para tu comunidad.</p>
+
+      <!-- UNIT SELECTOR TABS -->
+      <div class="unit-selector-bar">
+        <button
+          type="button"
+          class="unit-tab"
+          [class.active]="selectedUnitRange() === 'small'"
+          (click)="setUnitRange('small')"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          </svg>
+          <span>1 - 30 Unidades</span>
+        </button>
+
+        <button
+          type="button"
+          class="unit-tab"
+          [class.active]="selectedUnitRange() === 'medium'"
+          (click)="setUnitRange('medium')"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="2" width="16" height="20" rx="2"/>
+            <line x1="9" y1="6" x2="9.01" y2="6"/>
+            <line x1="15" y1="6" x2="15.01" y2="6"/>
+          </svg>
+          <span>31 - 120 Unidades (Más común)</span>
+        </button>
+
+        <button
+          type="button"
+          class="unit-tab"
+          [class.active]="selectedUnitRange() === 'large'"
+          (click)="setUnitRange('large')"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="2"/>
+            <path d="M7 2v20M17 2v20M2 12h20"/>
+          </svg>
+          <span>121 - 500+ Unidades</span>
+        </button>
+      </div>
+
+      <!-- BILLING FREQUENCY TOGGLE -->
+      <div class="billing-frequency-wrap">
+        <span [class.active-mode]="!isAnnual()" (click)="toggleBillingPeriod()">Pago Mensual</span>
+        <button
+          type="button"
+          class="switch-btn"
+          [class.is-annual]="isAnnual()"
+          (click)="toggleBillingPeriod()"
+          aria-label="Alternar facturación anual"
+        >
+          <span class="switch-dot"></span>
+        </button>
+        <span [class.active-mode]="isAnnual()" (click)="toggleBillingPeriod()">
+          Pago Anual <small class="save-badge">Ahorra 15%</small>
+        </span>
+      </div>
+    </div>
+
+    <!-- PLANS COMPARISON CARDS -->
+    <div class="plans-grid">
+      @for (plan of plans(); track plan.id) {
+        <div
+          class="plan-card"
+          [class.is-recommended]="recommendedPlan()?.code === plan.code"
+          [class.is-popular]="plan.is_popular"
+        >
+          @if (recommendedPlan()?.code === plan.code) {
+            <div class="badge-recommended">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span>Recomendado para tu escala</span>
+            </div>
+          } @else if (plan.is_popular) {
+            <div class="badge-recommended popular">
+              <span>Más Elegido</span>
+            </div>
+          }
+
+          <div class="card-head">
+            <h3 class="tier-title">{{ plan.name }}</h3>
+            <p class="tier-subtitle">{{ plan.tagline }}</p>
+          </div>
+
+          <div class="price-display">
+            <div class="price-main">
+              <span class="curr-symbol">Bs.</span>
+              <span class="curr-amount">{{ getPrice(plan) }}</span>
+              <span class="curr-period">/ mes</span>
+            </div>
+            <div class="price-alt">Aprox. ${{ plan.price_usd }} USD</div>
+          </div>
+
+          <!-- QUOTAS -->
+          <div class="quotas-box">
+            <div class="quota-row">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <line x1="9" y1="6" x2="9.01" y2="6"/>
+                <line x1="15" y1="6" x2="15.01" y2="6"/>
+              </svg>
+              <span>Hasta <strong>{{ plan.max_units }}</strong> unidades / departamentos</span>
+            </div>
+            <div class="quota-row">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+              </svg>
+              <span>Hasta <strong>{{ plan.max_residents }}</strong> residentes y propietarios</span>
+            </div>
+          </div>
+
+          <!-- FEATURES -->
+          <ul class="features-list">
+            @for (f of plan.features; track f) {
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span>{{ f }}</span>
+              </li>
+            }
+          </ul>
+
+          <div class="card-actions">
+            <button
+              type="button"
+              class="btn-plan-primary"
+              [class.btn-prominent]="recommendedPlan()?.code === plan.code"
+              (click)="openOnboarding(plan, 'TRIAL')"
+            >
+              <span>Comenzar Prueba Gratis (14 Días)</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              class="btn-plan-secondary"
+              (click)="openOnboarding(plan, 'STRIPE')"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+              </svg>
+              <span>Comprar Plan con Tarjeta</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- SECURITY & INFRASTRUCTURE SECTION -->
+  <section id="security" class="section-wrap">
+    <div class="security-box">
+      <div class="sec-left-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0f6fff" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <div class="sec-body">
+        <h3>Cumplimiento de Seguridad y Cifrado de Extremo a Extremo</h3>
+        <p>Las contraseñas se almacenan mediante derivación PBKDF2 con sal individual. Todas las transacciones de pago son procesadas con certificación PCI-DSS Nivel 1 a través de Stripe, garantizando que los datos de las tarjetas bancarias nunca toquen servidores no autorizados.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="system-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <taji-logo></taji-logo>
+        <p>Sistema Integral de Seguridad y Gestión para Condominios Modernos.</p>
+      </div>
+      <div class="footer-copy">
+        <span>© 2026 Taji SaaS Platform. Todos los derechos reservados.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 3-STEP ONBOARDING WIZARD MODAL -->
+  @if (showOnboardingModal()) {
+    <div class="onboarding-overlay" (click)="closeOnboarding()">
+      <div class="onboarding-card" (click)="$event.stopPropagation()">
+        <!-- MODAL HEADER -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-kicker">Aprovisionamiento Inmediato</span>
+            <h3 class="modal-title">Registra tu Condominio en Taji</h3>
+            <p class="modal-sub">Tu cuenta quedará activa con permisos de Administrador inmediatamente.</p>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="closeOnboarding()" aria-label="Cerrar ventana">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- STEPPER TABS -->
+        <div class="stepper-bar">
+          <div
+            class="stepper-step"
+            [class.active]="onboardingStep() === 1"
+            [class.done]="onboardingStep() > 1"
+            (click)="setStep(1)"
+          >
+            <span class="step-badge">1</span>
+            <span class="step-text">Condominio</span>
+          </div>
+
+          <div class="stepper-divider"></div>
+
+          <div
+            class="stepper-step"
+            [class.active]="onboardingStep() === 2"
+            [class.done]="onboardingStep() > 2"
+            (click)="setStep(2)"
+          >
+            <span class="step-badge">2</span>
+            <span class="step-text">Administrador</span>
+          </div>
+
+          <div class="stepper-divider"></div>
+
+          <div
+            class="stepper-step"
+            [class.active]="onboardingStep() === 3"
+            (click)="setStep(3)"
+          >
+            <span class="step-badge">3</span>
+            <span class="step-text">Plan & Activación</span>
+          </div>
+        </div>
+
+        <!-- NOTICES -->
+        @if (onboardingError()) {
+          <div class="notice-box error" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ onboardingError() }}</span>
+          </div>
+        }
+
+        @if (onboardingSuccess()) {
+          <div class="notice-box success" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>{{ onboardingSuccess() }}</span>
+          </div>
+        }
+
+        <!-- FORM CONTENT -->
+        <form [formGroup]="onboardingForm" (ngSubmit)="submitOnboarding()">
+          <!-- STEP 1: CONDOMINIUM INFO -->
+          @if (onboardingStep() === 1) {
+            <div class="step-pane">
+              <div class="field-item">
+                <label for="obCondoName">Nombre del Condominio o Edificio *</label>
+                <div class="input-with-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2"/>
+                    <line x1="9" y1="6" x2="9.01" y2="6"/>
+                    <line x1="15" y1="6" x2="15.01" y2="6"/>
+                  </svg>
+                  <input
+                    id="obCondoName"
+                    type="text"
+                    formControlName="condominium_name"
+                    placeholder="Ej. Condominio Torres del Sol"
+                    class="form-control-input"
+                  />
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="field-item">
+                  <label for="obCondoCode">Identificador / Código único</label>
+                  <div class="input-with-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="4 17 10 11 4 5"/>
+                      <line x1="12" y1="19" x2="20" y2="19"/>
+                    </svg>
+                    <input
+                      id="obCondoCode"
+                      type="text"
+                      formControlName="condominium_code"
+                      placeholder="ej. torres-del-sol"
+                      class="form-control-input"
+                    />
+                  </div>
+                </div>
+
+                <div class="field-item">
+                  <label for="obUnits">Unidades aproximadas</label>
+                  <div class="input-with-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    </svg>
+                    <input
+                      id="obUnits"
+                      type="number"
+                      formControlName="estimated_units"
+                      placeholder="40"
+                      class="form-control-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-item">
+                <label for="obAddress">Dirección / Ubicación</label>
+                <div class="input-with-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <input
+                    id="obAddress"
+                    type="text"
+                    formControlName="address"
+                    placeholder="Ej. Av. Las Américas #340, Zona Norte"
+                    class="form-control-input"
+                  />
+                </div>
+              </div>
+
+              <div class="field-item">
+                <label for="obPhone">Teléfono de Contacto del Condominio</label>
+                <div class="input-with-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                  <input
+                    id="obPhone"
+                    type="tel"
+                    formControlName="phone"
+                    placeholder="Ej. +591 3 3456789"
+                    class="form-control-input"
+                  />
+                </div>
+              </div>
+
+              <div class="step-footer-actions right">
+                <button type="button" class="btn-step-advance" (click)="setStep(2)">
+                  <span>Siguiente: Datos del Administrador</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- STEP 2: ADMINISTRATOR ACCOUNT -->
+          @if (onboardingStep() === 2) {
+            <div class="step-pane">
+              <div class="field-item">
+                <label for="obAdminName">Nombre Completo del Administrador *</label>
+                <div class="input-with-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <input
+                    id="obAdminName"
+                    type="text"
+                    formControlName="admin_name"
+                    placeholder="Ej. Roberto Morales"
+                    class="form-control-input"
+                  />
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="field-item">
+                  <label for="obAdminEmail">Correo Electrónico (Inicio de Sesión) *</label>
+                  <div class="input-with-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect width="20" height="16" x="2" y="4" rx="2"/>
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                    <input
+                      id="obAdminEmail"
+                      type="email"
+                      formControlName="admin_email"
+                      placeholder="admin@tucondominio.com"
+                      class="form-control-input"
+                    />
+                  </div>
+                </div>
+
+                <div class="field-item">
+                  <label for="obAdminPhone">Teléfono Móvil</label>
+                  <div class="input-with-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                      <line x1="12" y1="18" x2="12.01" y2="18"/>
+                    </svg>
+                    <input
+                      id="obAdminPhone"
+                      type="tel"
+                      formControlName="admin_phone"
+                      placeholder="Ej. 70012345"
+                      class="form-control-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="field-item">
+                  <label for="obAdminDoc">C.I. / Documento de Identidad</label>
+                  <div class="input-with-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="4" width="18" height="16" rx="2"/>
+                      <line x1="7" y1="8" x2="17" y2="8"/>
+                      <line x1="7" y1="12" x2="17" y2="12"/>
+                    </svg>
+                    <input
+                      id="obAdminDoc"
+                      type="text"
+                      formControlName="admin_document"
+                      placeholder="Ej. 6543210 SC"
+                      class="form-control-input"
+                    />
+                  </div>
+                </div>
+
+                <div class="field-item">
+                  <label for="obAdminPass">Contraseña (mín. 8 caracteres) *</label>
+                  <div class="input-with-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <input
+                      id="obAdminPass"
+                      type="password"
+                      formControlName="admin_password"
+                      placeholder="••••••••"
+                      class="form-control-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-item">
+                <label for="obAdminPassConfirm">Repite la Contraseña *</label>
+                <div class="input-with-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <input
+                    id="obAdminPassConfirm"
+                    type="password"
+                    formControlName="admin_password_confirm"
+                    placeholder="••••••••"
+                    class="form-control-input"
+                  />
+                </div>
+              </div>
+
+              <div class="step-footer-actions between">
+                <button type="button" class="btn-step-prev" (click)="setStep(1)">
+                  ← Volver a Condominio
+                </button>
+                <button type="button" class="btn-step-advance" (click)="setStep(3)">
+                  <span>Siguiente: Plan & Activación</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- STEP 3: PLAN SELECTION & IMMEDIATE ACTIVATION -->
+          @if (onboardingStep() === 3) {
+            <div class="step-pane">
+              <!-- PLAN CARD PREVIEW -->
+              <div class="plan-summary-banner">
+                <div class="summary-top">
+                  <span class="summary-tag">PLAN SELECCIONADO</span>
+                  <div class="plan-switch-mini">
+                    @for (p of plans(); track p.id) {
+                      <button
+                        type="button"
+                        class="plan-btn-chip"
+                        [class.active]="selectedPlan()?.id === p.id"
+                        (click)="choosePlanForOnboarding(p)"
+                      >
+                        {{ p.name }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <div class="summary-details">
+                  <div>
+                    <h4 class="summary-plan-name">{{ selectedPlan()?.name || 'Plan Profesional' }}</h4>
+                    <p class="summary-plan-quotas">
+                      Hasta <strong>{{ selectedPlan()?.max_units }}</strong> unidades y <strong>{{ selectedPlan()?.max_residents }}</strong> residentes.
+                    </p>
+                  </div>
+                  <div class="summary-price">
+                    <span class="num">Bs. {{ selectedPlan()?.price_bob }}</span>
+                    <span class="unit">/ mes</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PAYMENT METHOD SELECTOR -->
+              <div class="method-options-grid">
+                <label
+                  class="method-card"
+                  [class.is-selected]="onboardingForm.get('payment_method')?.value === 'TRIAL'"
+                >
+                  <input
+                    type="radio"
+                    formControlName="payment_method"
+                    value="TRIAL"
+                  />
+                  <div class="method-card-content">
+                    <div class="method-title-line">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                      </svg>
+                      <strong>Prueba Gratuita por 14 Días (Recomendado)</strong>
+                    </div>
+                    <p class="method-desc">
+                      Acceso total inmediato a todos los módulos. Tu condominio queda 100% activo sin ingresar tarjeta bancaria por 14 días.
+                    </p>
+                  </div>
+                </label>
+
+                <label
+                  class="method-card"
+                  [class.is-selected]="onboardingForm.get('payment_method')?.value === 'STRIPE'"
+                >
+                  <input
+                    type="radio"
+                    formControlName="payment_method"
+                    value="STRIPE"
+                  />
+                  <div class="method-card-content">
+                    <div class="method-title-line">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                        <line x1="2" y1="10" x2="22" y2="10"/>
+                      </svg>
+                      <strong>Pago Inmediato con Tarjeta (Stripe)</strong>
+                    </div>
+                    <p class="method-desc">
+                      Paga la suscripción con tarjeta de crédito/débito en moneda nacional (BOB) con recibo electrónico inmediato.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- IF STRIPE SELECTED, SHOW STRIPE CHECKOUT COMPONENT -->
+              @if (onboardingForm.get('payment_method')?.value === 'STRIPE' && !stripePaymentCompleted()) {
+                <div class="stripe-checkout-embed">
+                  <app-stripe-payment
+                    [planId]="selectedPlan()?.id || 2"
+                    [amount]="selectedPlan()?.price_bob || 350"
+                    [planName]="selectedPlan()?.name || 'Plan Profesional'"
+                    (paid)="onStripePaymentCompleted($event)"
+                  ></app-stripe-payment>
+                </div>
+              }
+
+              <!-- STEP ACTIONS -->
+              <div class="step-footer-actions between">
+                <button type="button" class="btn-step-prev" (click)="setStep(2)" [disabled]="onboardingSaving()">
+                  ← Volver a Administrador
+                </button>
+
+                @if (onboardingForm.get('payment_method')?.value === 'TRIAL') {
+                  <button
+                    type="submit"
+                    class="btn-step-finish"
+                    [disabled]="onboardingSaving() || onboardingForm.invalid"
+                  >
+                    @if (onboardingSaving()) {
+                      <span class="btn-loader-dot"></span>
+                      <span>Aprovisionando Condominio...</span>
+                    } @else {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <span>Activar Condominio e Ingresar al Panel</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </form>
+      </div>
+    </div>
+  }
+</div>

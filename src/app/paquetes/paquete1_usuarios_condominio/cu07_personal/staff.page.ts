@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormBuilder } from '@angular/forms';
 import { debounceTime, finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -41,7 +41,7 @@ const EMPTY_PAGINATION: StaffListResponse['pagination'] = {
         <div>
           <span class="kicker">Administración · CU07</span>
           <h2 id="staff-title">Personal del condominio</h2>
-          <p>Registra al equipo, actualiza sus datos y clasifícalo por área de trabajo.</p>
+          <p>Registra al equipo, gestiona su acceso al sistema y clasifícalo por área de trabajo.</p>
         </div>
         <button class="primary-action" type="button" (click)="openCreate()">
           <span aria-hidden="true">+</span> Nuevo personal
@@ -135,6 +135,7 @@ const EMPTY_PAGINATION: StaffListResponse['pagination'] = {
                 <tr>
                   <th>Personal</th>
                   <th>Área</th>
+                  <th>Acceso al sistema</th>
                   <th>Contacto</th>
                   <th>Inicio de trabajo</th>
                   <th>Estado</th>
@@ -162,10 +163,19 @@ const EMPTY_PAGINATION: StaffListResponse['pagination'] = {
                         >{{ member.staff_type_display }}</span
                       >
                     </td>
+                    <td data-label="Acceso al sistema">
+                      @if (member.has_system_access) {
+                        <span class="access-pill active" [title]="'Rol: ' + (member.role_name || member.role_slug || 'Seguridad')">
+                          CUENTA ACTIVA
+                        </span>
+                      } @else {
+                        <span class="access-pill inactive">Sin acceso</span>
+                      }
+                    </td>
                     <td data-label="Contacto">
                       <div class="contact">
                         <span>{{ member.phone || 'Sin teléfono' }}</span
-                        ><small>{{ member.contact_email || 'Sin correo' }}</small>
+                        ><small>{{ member.access_email || member.contact_email || 'Sin correo' }}</small>
                       </div>
                     </td>
                     <td data-label="Inicio de trabajo">{{ formatDate(member.hire_date) }}</td>
@@ -176,6 +186,16 @@ const EMPTY_PAGINATION: StaffListResponse['pagination'] = {
                     </td>
                     <td>
                       <div class="row-actions">
+                        @if (member.has_system_access) {
+                          <button
+                            type="button"
+                            class="reset-btn"
+                            (click)="openResetPassword(member)"
+                            [attr.aria-label]="'Restablecer contraseña de ' + member.full_name"
+                          >
+                            Clave
+                          </button>
+                        }
                         <button
                           type="button"
                           (click)="openEdit(member)"
@@ -236,6 +256,42 @@ const EMPTY_PAGINATION: StaffListResponse['pagination'] = {
         (submitted)="save($event)"
       />
     }
+
+    @if (resetMember()) {
+      <div class="modal-backdrop" (click)="closeResetPassword()"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+        <header class="modal-header">
+          <h3 id="reset-modal-title">Restablecer contraseña</h3>
+          <button type="button" class="close" (click)="closeResetPassword()">×</button>
+        </header>
+        <p class="modal-subtitle">
+          Define una nueva contraseña para <strong>{{ resetMember()?.full_name }}</strong> ({{ resetMember()?.access_email }}).
+        </p>
+
+        @if (resetError()) {
+          <div class="notice error" role="alert">{{ resetError() }}</div>
+        }
+
+        <form [formGroup]="resetForm" (ngSubmit)="submitResetPassword()" novalidate>
+          <label class="modal-field">
+            <span>Nueva contraseña *</span>
+            <input formControlName="password" type="password" autocomplete="new-password" placeholder="••••••••" />
+            <small class="error-text">{{ resetFieldError('password') }}</small>
+          </label>
+          <label class="modal-field">
+            <span>Confirmar nueva contraseña *</span>
+            <input formControlName="password_confirm" type="password" autocomplete="new-password" placeholder="••••••••" />
+            <small class="error-text">{{ resetFieldError('password_confirm') }}</small>
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="secondary" (click)="closeResetPassword()">Cancelar</button>
+            <button type="submit" class="primary" [disabled]="resettingPassword()">
+              {{ resettingPassword() ? 'Guardando…' : 'Restablecer contraseña' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
   `,
   styleUrl: './staff.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -257,7 +313,18 @@ export class StaffPage implements OnInit {
   readonly editorOpen = signal(false);
   readonly editing = signal<StaffMember | null>(null);
 
+  // Reset password dialog state
+  readonly resetMember = signal<StaffMember | null>(null);
+  readonly resettingPassword = signal(false);
+  readonly resetError = signal('');
+  readonly resetFields = signal<Record<string, string>>({});
+
   readonly filters = this.fb.nonNullable.group({ search: '', staff_type: '', status: '' });
+
+  readonly resetForm = this.fb.nonNullable.group({
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    password_confirm: ['', [Validators.required]],
+  });
 
   readonly hasFilters = computed(() => Object.values(this.filters.getRawValue()).some(Boolean));
   readonly rangeStart = computed(() =>
@@ -340,7 +407,9 @@ export class StaffPage implements OnInit {
         this.successMessage.set(
           this.editing()
             ? 'Los datos del personal fueron actualizados.'
-            : 'La persona fue registrada en el equipo.',
+            : payload.create_user_account
+              ? `Personal registrado. Ya puede iniciar sesión con ${payload.contact_email}.`
+              : 'La persona fue registrada en el equipo.',
         );
         this.load(this.editing() ? this.pagination().page : 1);
       },
@@ -349,6 +418,64 @@ export class StaffPage implements OnInit {
         this.formError.set(apiErrorMessage(error));
       },
     });
+  }
+
+  openResetPassword(member: StaffMember): void {
+    this.resetMember.set(member);
+    this.resetError.set('');
+    this.resetFields.set({});
+    this.resetForm.reset();
+  }
+
+  closeResetPassword(): void {
+    if (!this.resettingPassword()) {
+      this.resetMember.set(null);
+    }
+  }
+
+  submitResetPassword(): void {
+    if (this.resetForm.invalid) {
+      this.resetForm.markAllAsTouched();
+      return;
+    }
+
+    const { password, password_confirm } = this.resetForm.getRawValue();
+    if (password !== password_confirm) {
+      this.resetForm.controls.password_confirm.setErrors({ mismatch: true });
+      this.resetForm.markAllAsTouched();
+      return;
+    }
+
+    const member = this.resetMember();
+    if (!member) return;
+
+    this.resettingPassword.set(true);
+    this.resetError.set('');
+    this.resetFields.set({});
+
+    this.api
+      .resetPassword(member.id, { password, password_confirm })
+      .pipe(finalize(() => this.resettingPassword.set(false)))
+      .subscribe({
+        next: () => {
+          this.resetMember.set(null);
+          this.successMessage.set(`Contraseña restablecida exitosamente para ${member.full_name}.`);
+        },
+        error: (error) => {
+          this.resetFields.set(apiFieldErrors(error));
+          this.resetError.set(apiErrorMessage(error, 'No se pudo restablecer la contraseña.'));
+        },
+      });
+  }
+
+  resetFieldError(field: string): string {
+    if (this.resetFields()[field]) return this.resetFields()[field];
+    const control = this.resetForm.get(field);
+    if (!control?.touched) return '';
+    if (control.hasError('required')) return 'Este campo es obligatorio.';
+    if (control.hasError('minlength')) return 'Debe tener al menos 8 caracteres.';
+    if (control.hasError('mismatch')) return 'Las contraseñas no coinciden.';
+    return '';
   }
 
   remove(member: StaffMember): void {
@@ -397,3 +524,4 @@ export class StaffPage implements OnInit {
     this.formFields.set({});
   }
 }
+

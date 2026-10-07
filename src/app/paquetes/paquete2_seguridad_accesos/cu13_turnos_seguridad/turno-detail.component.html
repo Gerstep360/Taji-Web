@@ -1,0 +1,82 @@
+<div class="modal-backdrop" (click)="close()"></div>
+<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+  <header>
+    <div>
+      <span class="kicker">Detalle del Turno #{{ shift().id }}</span>
+      <h2 id="detail-title">{{ shift().guard_name || 'Guardia de Seguridad' }}</h2>
+      <span class="badge" [class]="statusClass(shift().status)">
+        {{ statusLabel(shift().status) }}
+      </span>
+    </div>
+    <button type="button" class="close" (click)="close()" aria-label="Cerrar modal">×</button>
+  </header>
+
+  <div class="modal-body">
+    <div class="info-grid">
+      <div class="info-group">
+        <label>Guardia Responsable</label>
+        <p><strong>{{ shift().guard_name }}</strong></p>
+        <small>Código: {{ shift().guard_employee_code || 'Sin código' }}</small>
+      </div>
+
+      <div class="info-group">
+        <label>Condominio</label>
+        <p>{{ shift().condominium_name || 'Condominio Principal' }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Horario Planificado</label>
+        <p>{{ shift().scheduled_start | date:'dd/MM/yyyy HH:mm' }} a {{ shift().scheduled_end | date:'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Apertura Real (Inicio)</label>
+        <p>
+          @if (shift().opened_at) {
+            <span class="text-success">{{ shift().opened_at | date:'dd/MM/yyyy HH:mm' }}</span>
+          } @else {
+            <span class="text-muted">Pendiente de inicio</span>
+          }
+        </p>
+        @if (shift().opening_notes) {
+          <small class="notes">Nota: {{ shift().opening_notes }}</small>
+        }
+      </div>
+
+      <div class="info-group">
+        <label>Cierre Real (Finalización)</label>
+        <p>
+          @if (shift().closed_at) {
+            <span class="text-info">{{ shift().closed_at | date:'dd/MM/yyyy HH:mm' }}</span>
+          } @else {
+            <span class="text-muted">Pendiente de cierre</span>
+          }
+        </p>
+        @if (shift().closing_notes) {
+          <small class="notes">Nota: {{ shift().closing_notes }}</small>
+        }
+        @if (shift().status === 'CLOSED' && shift().timing?.closing_timing === 'EARLY') {
+          <p>Cierre anticipado</p>
+        } @else if (shift().status === 'CLOSED' && shift().timing?.closing_timing === 'LATE') {
+          <p>Cierre posterior al horario</p>
+        }
+        @if (shift().timing?.is_overdue) {
+          <p>Horario finalizado, cierre pendiente.</p>
+        } @else if (shift().timing?.is_missed) {
+          <p>Horario finalizado: turno sin iniciar.</p>
+        }
+      </div>
+
+      @if (shift().observation) {
+        <div class="info-group wide">
+          <label>Observación Administrativa</label>
+          <p class="box-note">{{ shift().observation }}</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <footer>
+    <button type="button" class="btn-secondary" (click)="close()">Cerrar</button>
+  </footer>
+</div>

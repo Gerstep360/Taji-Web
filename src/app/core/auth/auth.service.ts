@@ -1,4 +1,4 @@
-﻿import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom, Observable, shareReplay, tap, finalize, switchMap, map } from 'rxjs';
 
 import { AuthApi } from './auth.api';
@@ -15,6 +15,7 @@ export class AuthService {
 
   readonly user = this.currentUser.asReadonly();
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
+  readonly activeTenant = computed(() => this.currentUser()?.active_tenant ?? null);
 
   async restoreSession(): Promise<void> {
 

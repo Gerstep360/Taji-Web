@@ -11,8 +11,11 @@ interface SubNavItem {
   icon: string;
   route?: string;
   permission?: string;
+  permissions?: string[];
+  roles?: string[];
   isAvailable: boolean;
 }
+
 
 interface PackageDropdown {
   id: string;
@@ -142,6 +145,15 @@ interface PackageDropdown {
             </div>
           </div>
           <div class="topbar-right">
+            <div class="tenant-pill" title="Instancia de Condominio Activa (Multi-Tenant SaaS)">
+              <div class="tenant-icon-wrap">
+                <taji-icon name="building" [size]="15" />
+              </div>
+              <div class="tenant-text">
+                <span class="tenant-eyebrow">Condominio</span>
+                <strong class="tenant-name">{{ activeTenant()?.name || 'Condominio Taji' }}</strong>
+              </div>
+            </div>
             <span class="avatar" aria-label="Perfil">{{ initials }}</span>
           </div>
         </header>
@@ -158,6 +170,7 @@ export class MainLayoutComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly user = this.auth.user;
+  readonly activeTenant = computed(() => this.user()?.active_tenant ?? null);
   readonly isMobileMenuOpen = signal<boolean>(false);
 
   constructor() {
@@ -206,9 +219,9 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
-          label: 'Datos del Condominio',
+          label: 'Mi Condominio & SaaS',
           icon: 'building',
-          route: '/condominium/config',
+          route: '/mi-condominio',
           permission: 'manage_settings',
           isAvailable: true,
         },
@@ -241,24 +254,55 @@ export class MainLayoutComponent {
       icon: 'shield',
       items: [
         {
-          label: 'Registro de Visitantes',
+          label: 'Visitantes y Autorizaciones',
           icon: 'user-check',
-          isAvailable: false,
+          route: '/visitantes',
+          permissions: ['manage_visits', 'register_visits'],
+          isAvailable: true,
         },
         {
           label: 'Pases QR de Visita',
           icon: 'qr-code',
-          isAvailable: false,
+          route: '/pases-qr',
+          isAvailable: true,
         },
         {
           label: 'Control de Accesos',
           icon: 'door-open',
-          isAvailable: false,
+          route: '/control-accesos',
+          permission: 'register_entry_exit',
+          isAvailable: true,
         },
         {
-          label: 'Turnos y Novedades',
+          label: 'Turnos de seguridad',
           icon: 'clock',
-          isAvailable: false,
+          route: '/turnos-seguridad',
+          roles: ['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'],
+          permissions: ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'],
+          isAvailable: true,
+        },
+        {
+          label: 'Visitas y personas dentro',
+          route: '/visitas-dentro',
+          permissions: ['manage_visits', 'register_visits', 'validate_visits', 'register_entry_exit'],
+          icon: 'users',
+          isAvailable: true,
+        },
+        {
+          label: 'Novedades de turno',
+          icon: 'file-text',
+          route: '/novedades-turno',
+          roles: ['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'],
+          permissions: ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'],
+          isAvailable: true,
+        },
+        {
+          label: 'Entrega y recepción',
+          icon: 'clock',
+          route: '/entregas-turno',
+          roles: ['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'],
+          permissions: ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'],
+          isAvailable: true,
         },
         {
           label: 'Auditoría y Bitácora',
@@ -270,7 +314,8 @@ export class MainLayoutComponent {
         {
           label: 'Verificación Facial',
           icon: 'scan-face',
-          isAvailable: false,
+          route: '/verificacion-facial',
+          isAvailable: true,
         },
       ],
     },
@@ -364,12 +409,23 @@ export class MainLayoutComponent {
 
   canAccess(item: SubNavItem): boolean {
     if (!item.isAvailable) return false;
-    if (!item.permission) return true;
     const current = this.user();
-    return Boolean(
-      current?.is_superuser || current?.role?.permissions.includes(item.permission),
-    );
+    if (current?.is_superuser) return true;
+
+    const userRoleSlug = current?.role?.slug?.toLowerCase() ?? '';
+    if (item.roles && item.roles.some((r) => r.toLowerCase() === userRoleSlug)) return true;
+
+    if (!item.permission && !item.permissions?.length && !item.roles?.length) return true;
+    if (item.permission && current?.role?.permissions.includes(item.permission)) return true;
+    if (
+      item.permissions &&
+      item.permissions.some((p) => current?.role?.permissions.includes(p))
+    ) {
+      return true;
+    }
+    return false;
   }
+
 
   get initials(): string {
     const current = this.user();

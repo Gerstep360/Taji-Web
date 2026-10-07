@@ -22,7 +22,10 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
       <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         @if (pendingMessage) {
           <div class="pending-notice" role="status">
-            <span aria-hidden="true">⏳</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="pending-svg" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
             <span>{{ pendingMessage }}</span>
           </div>
         }
@@ -34,16 +37,32 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
         </div>
         <taji-button type="submit" [loading]="loading">Ingresar a Taji</taji-button>
       </form>
-      <p class="auth-switch">¿Aún no tienes cuenta? <a routerLink="/crear-cuenta">Crear cuenta</a></p>
+      <p class="auth-switch">¿Eres residente y aún no tienes cuenta? <a routerLink="/crear-cuenta">Crear cuenta de residente</a></p>
+
+      <div class="saas-prompt-box">
+        <span>¿Eres Administrador o deseas registrar tu Condominio?</span>
+        <a routerLink="/welcome" class="saas-link">Registra tu comunidad en Taji SaaS (14 días gratis)</a>
+      </div>
 
       <div class="apk-download-box">
         <a href="https://github.com/Gerstep360/Taji-Movil/releases/download/v1.0/taji-v1.0.apk" target="_blank" rel="noopener noreferrer" class="apk-download-btn" title="Descargar APK para Android">
-          <span class="apk-icon" aria-hidden="true">📱</span>
+          <span class="apk-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </span>
           <div class="apk-text">
             <strong>Descargar App Móvil</strong>
             <small>Android APK v1.0 • Servidor Taji Conectado</small>
           </div>
-          <span class="apk-arrow" aria-hidden="true">⬇</span>
+          <span class="apk-arrow" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </span>
         </a>
       </div>
     </taji-auth-shell>
@@ -62,6 +81,28 @@ import { FieldComponent } from '../../../../shared/ui/field.component';
       font-weight: 600;
       line-height: 1.5;
       border: 1px solid #f5e0a0;
+    }
+    .pending-svg {
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .saas-prompt-box {
+      margin-top: 1rem;
+      padding: 0.85rem 1rem;
+      border-radius: 0.85rem;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      text-align: center;
+      font-size: 0.78rem;
+      color: #1e3a8a;
+    }
+    .saas-link {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: underline;
     }
     .apk-download-box {
       margin-top: 1.25rem;

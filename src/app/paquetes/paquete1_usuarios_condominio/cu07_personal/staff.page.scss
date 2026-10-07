@@ -289,11 +289,103 @@ tbody tr:hover {
   color: #a2620e;
   background: #fff3db;
 }
+.access-pill {
+  display: inline-flex;
+  padding: 0.28rem 0.55rem;
+  border-radius: 0.45rem;
+  font-size: 0.61rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+}
+.access-pill.active {
+  color: #15803d;
+  background: #dcfce7;
+}
+.access-pill.inactive {
+  color: #64748b;
+  background: #f1f5f9;
+}
+.row-actions .reset-btn {
+  color: #0284c7;
+  background: #e0f2fe;
+}
+.row-actions .reset-btn:hover {
+  color: #0369a1;
+  background: #bae6fd;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10, 28, 51, 0.45);
+  backdrop-filter: blur(3px);
+}
+.modal-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 51;
+  width: min(28rem, 92vw);
+  padding: 1.5rem;
+  border-radius: 1.1rem;
+  background: #fff;
+  box-shadow: 0 1.2rem 3.5rem rgba(15, 23, 42, 0.22);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+.modal-subtitle {
+  margin: 0 0 1.2rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+.modal-field span {
+  font-size: 0.68rem;
+  font-weight: 720;
+  color: #475569;
+}
+.modal-field input {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--taji-border);
+  border-radius: 0.65rem;
+  font-size: 0.78rem;
+}
+.error-text {
+  color: #e11d48;
+  font-size: 0.62rem;
+  min-height: 0.75rem;
+}
+.modal-actions {
+  margin-top: 1.2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.35rem;
 }
+
 .row-actions button {
   padding: 0.45rem 0.58rem;
   border-radius: 0.55rem;

@@ -454,6 +454,68 @@ h1 {
   text-overflow: ellipsis;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+
+.tenant-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+  border-radius: 99px;
+  background: #ffffff;
+  border: 1px solid var(--taji-border, #e2e8f0);
+  box-shadow: 0 1px 4px rgba(16, 35, 60, 0.04);
+  transition: all 0.15s ease;
+
+  .tenant-icon-wrap {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: var(--taji-primary, #0f6fff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .tenant-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+
+    .tenant-eyebrow {
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: var(--taji-muted, #64748b);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .tenant-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--taji-ink, #10233c);
+      max-width: 170px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .tenant-text {
+      display: none;
+    }
+    padding: 0.3rem;
+  }
+}
+
 .avatar {
   width: 2.8rem;
   height: 2.8rem;

@@ -1,0 +1,352 @@
+<section class="visitantes-page" aria-labelledby="page-title">
+  <!-- Encabezado de la Página -->
+  <header class="page-heading">
+    <div class="heading-content">
+      <span class="kicker">Seguridad y Accesos · CU08</span>
+      <h1 id="page-title">Visitantes y Autorizaciones</h1>
+      <p>
+        {{
+          isResidentActor()
+            ? 'Registra y autoriza anticipadamente las visitas a tu unidad con pases de acceso seguro.'
+            : 'Consulta global y gestión administrativa de visitantes y autorizaciones registradas.'
+        }}
+      </p>
+    </div>
+
+    <div class="heading-actions">
+      <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()" title="Refrescar lista">
+        <taji-icon name="refresh-cw" [size]="16" [class.spinning]="loading()" />
+        <span class="sr-only">Refrescar</span>
+      </button>
+
+      <button type="button" class="btn-primary-action" (click)="openCreate()">
+        <taji-icon name="plus" [size]="18" />
+        <span>Nueva Autorización</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Notificaciones de Éxito / Error -->
+  @if (successMessage()) {
+    <div class="notice success" role="status">
+      <taji-icon name="check-circle" [size]="18" />
+      <span>{{ successMessage() }}</span>
+      <button type="button" class="notice-dismiss" (click)="successMessage.set('')" aria-label="Cerrar notificación">
+        <taji-icon name="x" [size]="16" />
+      </button>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="notice error" role="alert">
+      <taji-icon name="alert-triangle" [size]="18" />
+      <div class="notice-text">
+        <strong>Error:</strong> {{ errorMessage() }}
+      </div>
+      <button type="button" class="btn-retry" (click)="load()">Reintentar</button>
+    </div>
+  }
+
+  <!-- Métricas Rápidas / Summary Strip -->
+  <section class="summary-cards" aria-label="Resumen de autorizaciones">
+    <div class="metric-card">
+      <div class="metric-icon total">
+        <taji-icon name="user-check" [size]="22" />
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Total Registradas</span>
+        <strong class="metric-value">{{ pagination().total_items }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon authorized">
+        <taji-icon name="check-circle" [size]="22" />
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Autorizadas / Pendientes</span>
+        <strong class="metric-value">{{ authorizedCount() }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon active">
+        <taji-icon name="door-open" [size]="22" />
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">En Recinto (Activas)</span>
+        <strong class="metric-value">{{ activeCount() }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon finished">
+        <taji-icon name="clock" [size]="22" />
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Concluidas / Vencidas</span>
+        <strong class="metric-value">{{ concludedCount() }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filtros de Búsqueda -->
+  <section class="filters-panel" aria-label="Filtros de autorizaciones">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="search-input-wrap">
+        <taji-icon name="search" [size]="16" class="search-icon" />
+        <input
+          type="search"
+          formControlName="search"
+          placeholder="Buscar por visitante, CI, código de unidad o motivo..."
+          aria-label="Buscar autorizaciones"
+        />
+      </div>
+
+      <div class="filter-select-wrap">
+        <label for="filter-status" class="sr-only">Estado</label>
+        <select id="filter-status" formControlName="status">
+          <option value="">Todos los estados</option>
+          @for (st of options().statuses; track st.value) {
+            <option [value]="st.value">{{ st.label }}</option>
+          }
+        </select>
+      </div>
+
+      @if (units().length > 0) {
+        <div class="filter-select-wrap">
+          <label for="filter-unit" class="sr-only">Unidad</label>
+          <select id="filter-unit" formControlName="unit">
+            <option value="">Todas las unidades</option>
+            @for (u of units(); track u.id) {
+              <option [value]="u.id">Unidad {{ u.code }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <div class="filter-dates-wrap">
+        <div class="date-field">
+          <span class="date-prefix">Desde:</span>
+          <input type="date" formControlName="date_from" aria-label="Fecha desde" />
+        </div>
+        <div class="date-field">
+          <span class="date-prefix">Hasta:</span>
+          <input type="date" formControlName="date_to" aria-label="Fecha hasta" />
+        </div>
+      </div>
+
+      @if (hasActiveFilters()) {
+        <button type="button" class="btn-clear-filters" (click)="clearFilters()">
+          <taji-icon name="x" [size]="14" />
+          <span>Limpiar filtros</span>
+        </button>
+      }
+    </form>
+  </section>
+
+  <!-- Tabla de Autorizaciones -->
+  <section class="table-container" [attr.aria-busy]="loading()">
+    @if (loading()) {
+      <div class="loading-state" role="status">
+        <taji-icon name="loader" [size]="32" class="spinning" />
+        <span>Cargando autorizaciones de visita...</span>
+      </div>
+    } @else if (visits().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <taji-icon name="user-check" [size]="48" />
+        </div>
+        <h3>No se encontraron autorizaciones</h3>
+        <p>
+          {{
+            hasActiveFilters()
+              ? 'No hay registros que coincidan con los filtros aplicados. Intenta ajustar la búsqueda.'
+              : 'Aún no se han registrado autorizaciones de visita en el condominio.'
+          }}
+        </p>
+        @if (hasActiveFilters()) {
+          <button type="button" class="btn-secondary" (click)="clearFilters()">
+            Restablecer filtros
+          </button>
+        } @else {
+          <button type="button" class="btn-primary" (click)="openCreate()">
+            <taji-icon name="plus" [size]="16" />
+            <span>Registrar Primera Visita</span>
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Visitante</th>
+              <th scope="col">Destino</th>
+              <th scope="col">Autorizado Por</th>
+              <th scope="col">Motivo</th>
+              <th scope="col">Periodo de Validez</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="th-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of visits(); track item.id) {
+              <tr [class.is-cancelled]="item.status === 'CANCELLED'">
+                <!-- Visitante -->
+                <td class="col-visitor">
+                  <div class="visitor-meta">
+                    <strong class="visitor-name">{{ item.visitor.full_name }}</strong>
+                    <span class="visitor-sub">
+                      {{ item.visitor.document_type }}: {{ item.visitor.document_number || 'S/N' }}
+                      @if (item.visitor.document_complement) {
+                        - {{ item.visitor.document_complement }}
+                      }
+                    </span>
+                    @if (item.visitor.phone) {
+                      <span class="visitor-phone">
+                        <taji-icon name="smartphone" [size]="12" /> {{ item.visitor.phone }}
+                      </span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Destino -->
+                <td class="col-unit">
+                  <span class="badge-unit">
+                    <taji-icon name="building" [size]="13" />
+                    <strong>{{ item.unit_detail?.code || item.unit }}</strong>
+                  </span>
+                  @if (item.unit_detail?.sector_name) {
+                    <small class="unit-sector">{{ item.unit_detail?.sector_name }}</small>
+                  }
+                </td>
+
+                <!-- Autorizado Por -->
+                <td class="col-authorizer">
+                  <span class="authorizer-name">{{ item.resident?.full_name || 'Administración' }}</span>
+                </td>
+
+                <!-- Motivo -->
+                <td class="col-purpose">
+                  <span class="purpose-text" [title]="item.purpose">{{ item.purpose }}</span>
+                </td>
+
+                <!-- Periodo de Validez -->
+                <td class="col-dates">
+                  <div class="date-range">
+                    <span class="range-from">
+                      <small>Desde:</small> {{ formatDateTime(item.valid_from) }}
+                    </span>
+                    <span class="range-until">
+                      <small>Hasta:</small> {{ formatDateTime(item.valid_until) }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Estado -->
+                <td class="col-status">
+                  <span class="status-pill" [attr.data-status]="item.status">
+                    <span class="status-dot"></span>
+                    {{ item.status_display }}
+                  </span>
+                </td>
+
+                <!-- Acciones -->
+                <td class="col-actions">
+                  <div class="actions-group">
+                    <button
+                      type="button"
+                      class="btn-action view"
+                      (click)="openDetail(item)"
+                      title="Ver detalle y Pase QR"
+                      aria-label="Ver detalle de visita"
+                    >
+                      <taji-icon name="eye" [size]="16" />
+                    </button>
+
+                    @if (canEditVisit(item)) {
+                      <button
+                        type="button"
+                        class="btn-action edit"
+                        (click)="openEdit(item)"
+                        title="Modificar autorización"
+                        aria-label="Editar visita"
+                      >
+                        <taji-icon name="edit-2" [size]="16" />
+                      </button>
+                    }
+
+                    @if (canCancelVisit(item)) {
+                      <button
+                        type="button"
+                        class="btn-action cancel"
+                        (click)="cancelVisit(item)"
+                        title="Cancelar autorización"
+                        aria-label="Cancelar visita"
+                      >
+                        <taji-icon name="ban" [size]="16" />
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      @if (pagination().total_pages > 1) {
+        <footer class="pagination-footer">
+          <span class="pagination-info">
+            Página {{ pagination().page }} de {{ pagination().total_pages }} ({{ pagination().total_items }} visitas)
+          </span>
+
+          <div class="pagination-controls">
+            <button
+              type="button"
+              class="btn-page"
+              [disabled]="!pagination().previous || loading()"
+              (click)="goToPage(pagination().page - 1)"
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              class="btn-page"
+              [disabled]="!pagination().next || loading()"
+              (click)="goToPage(pagination().page + 1)"
+            >
+              Siguiente
+            </button>
+          </div>
+        </footer>
+      }
+    }
+  </section>
+</section>
+
+<!-- Modales -->
+@if (isEditorOpen()) {
+  <taji-visit-editor
+    [visit]="selectedVisit()"
+    [options]="options()"
+    [units]="units()"
+    [residents]="residents()"
+    [isResidentActor]="isResidentActor()"
+    [residentUnitOptions]="residentUnitOptions()"
+    (saved)="onVisitSaved($event)"
+    (close)="closeEditor()"
+  />
+}
+
+@if (isDetailOpen() && selectedVisit(); as visit) {
+  <taji-visit-detail
+    [visit]="visit"
+    [canManage]="!isResidentActor()"
+    (close)="closeDetail()"
+    (edit)="openEdit($event)"
+    (cancelled)="onVisitCancelled($event)"
+  />
+}

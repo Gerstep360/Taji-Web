@@ -1,0 +1,53 @@
+<div class="page-container">
+  <header class="page-header"><div class="header-titles"><span class="eyebrow">Seguridad y Accesos</span>
+    <h1>Entrega y recepción de turno</h1><p>Seguimiento del relevo y de sus confirmaciones digitales.</p></div>
+    <a class="btn-primary" routerLink="/turnos-seguridad">Turnos de seguridad</a>
+  </header>
+  @if (error()) { <div class="alert alert-danger" role="alert">{{ error() }}</div> }
+  <form class="filters-bar" (ngSubmit)="load()">
+    <div class="filter-group"><label for="handover-status">Estado</label><select id="handover-status" name="status" [(ngModel)]="status">
+      <option value="">Todos</option><option value="PENDING">Pendiente de recepción</option><option value="RECEIVED">Recibida</option><option value="REJECTED">Rechazada</option>
+    </select></div>
+    <div class="filter-group"><label for="handover-guard">Guardia</label><select id="handover-guard" name="guard" [(ngModel)]="guard"><option value="">Todos</option>
+      @for (g of guards(); track g.id) { <option [value]="g.id">{{ g.full_name }}</option> }
+    </select></div>
+    <div class="filter-group"><label for="handover-condo">Condominio (ID)</label><input id="handover-condo" type="number" min="1" name="condominium" [(ngModel)]="condominium" /></div>
+    <div class="filter-group"><label for="handover-from">Desde</label><input id="handover-from" type="date" name="from" [(ngModel)]="dateFrom" /></div>
+    <div class="filter-group"><label for="handover-to">Hasta</label><input id="handover-to" type="date" name="to" [(ngModel)]="dateTo" /></div>
+    <button class="filter-button" type="submit">Buscar</button><button class="filter-button" type="button" [disabled]="loading()" (click)="load(page())">Actualizar</button>
+  </form>
+  <p class="muted">Solo los guardias asignados entregan y reciben. La apertura y el cierre de turno siguen siendo manuales.</p>
+  @if (loading()) { <div class="loading-state" role="status"><span class="spinner"></span>Cargando entregas…</div> }
+  @else if (!entries().length) { <div class="empty-state"><h3>No hay entregas para estos filtros</h3></div> }
+  @else {
+    <section class="log-list" aria-label="Entregas de turno">
+      @for (entry of entries(); track entry.id) {
+        <article class="log-card">
+          <div class="log-heading"><h2>Entrega #{{ entry.id }}</h2><span class="log-badge" [class.urgent]="entry.status === 'PENDING'">{{ statusLabel(entry.status) }}</span></div>
+          <p>{{ entry.outgoing_detail.guard_name }} (turno #{{ entry.outgoing_shift }}) → {{ entry.incoming_detail?.guard_name || 'Sin destinatario' }} (turno #{{ entry.incoming_shift }})</p>
+          <p class="muted">{{ entry.outgoing_detail.condominium_name }}</p>
+          <p>Entregada: {{ entry.delivered_at | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+          <p>Recibida: {{ entry.received_at ? (entry.received_at | date:'dd/MM/yyyy HH:mm:ss') : 'Pendiente' }}</p>
+          <button type="button" class="filter-button" (click)="detail(entry.id)">Ver resumen y novedades</button>
+        </article>
+      }
+    </section>
+    <nav class="log-pagination" aria-label="Páginas de entregas"><button class="filter-button" type="button" [disabled]="page() <= 1" (click)="load(page()-1)">Anterior</button>
+      <span>Página {{ page() }} de {{ pages() }} · {{ total() }} entregas</span>
+      <button class="filter-button" type="button" [disabled]="page() >= pages()" (click)="load(page()+1)">Siguiente</button></nav>
+  }
+  @if (detailLoading()) { <p role="status">Cargando detalle…</p> }
+  @if (selected(); as detail) {
+    <section class="log-card" aria-label="Detalle de entrega">
+      <h2>Detalle de entrega #{{ detail.id }}</h2>
+      <p>{{ statusLabel(detail.status) }} · {{ detail.outgoing_detail.guard_name }} → {{ detail.incoming_detail?.guard_name }}</p>
+      <h3>Resumen y pendientes</h3><p class="log-description">{{ detail.summary }}</p>
+      <h3>Novedades incluidas al entregar</h3>
+      @for (log of detail.log_entries; track log.id) {
+        <article><h4>{{ log.title }} · {{ typeLabel(log.entry_type) }} · {{ severityLabel(log.severity) }}</h4>
+          <p class="log-description">{{ log.description }}</p><small>{{ log.occurred_at | date:'dd/MM/yyyy HH:mm:ss' }}</small></article>
+      } @empty { <p>No había novedades registradas al entregar.</p> }
+      <button type="button" class="filter-button" (click)="selected.set(null)">Cerrar detalle</button>
+    </section>
+  }
+</div>

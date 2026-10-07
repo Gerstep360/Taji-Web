@@ -1,0 +1,337 @@
+<section class="tenant-page" aria-labelledby="tenant-title">
+  <!-- PAGE HEADING -->
+  <header class="page-heading">
+    <div>
+      <span class="kicker">SaaS & Tenancy · CU03</span>
+      <h2 id="tenant-title">Administración del Tenant & Planes SaaS</h2>
+      <p>Supervisa la suscripción de {{ activeTenant?.name || 'tu copropiedad' }}, cuotas autorizadas de unidades y procesa pagos seguros.</p>
+    </div>
+    @if (activeTenant?.slug) {
+      <div class="tenant-slug-badge">
+        <span class="slug-label">Identificador Tenant:</span>
+        <code>{{ activeTenant?.slug }}</code>
+      </div>
+    }
+  </header>
+
+  <!-- FEEDBACK NOTICE -->
+  @if (feedbackMessage()) {
+    <div class="notice" [class.success]="feedbackType() === 'success'" [class.error]="feedbackType() === 'error'" role="status">
+      <span aria-hidden="true">
+        @if (feedbackType() === 'success') { ✓ } @else { ✕ }
+      </span>
+      <span>{{ feedbackMessage() }}</span>
+    </div>
+  }
+
+  <!-- SECTION TABS -->
+  <nav class="tabs" aria-label="Secciones de administración del tenant">
+    <button
+      type="button"
+      [class.active]="activeTab() === 'suscripcion'"
+      (click)="setTab('suscripcion')"
+    >
+      Suscripción & Cuotas
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'datos'"
+      (click)="setTab('datos')"
+    >
+      Datos del Condominio
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'pagos'"
+      (click)="setTab('pagos')"
+    >
+      Historial de Pagos
+    </button>
+  </nav>
+
+  <!-- TAB 1: SUSCRIPCION & CUOTAS -->
+  @if (activeTab() === 'suscripcion') {
+    <div class="tab-panel">
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner" aria-hidden="true"></div>
+          <span>Cargando suscripción y métricas...</span>
+        </div>
+      } @else {
+        <!-- METRIC SUMMARY STRIP -->
+        <section class="metrics-grid" aria-label="Métricas de consumo">
+          <div class="metric-card">
+            <span class="metric-label">Unidades en uso</span>
+            <div class="metric-value-row">
+              <span class="metric-num">{{ subscription()?.used_units || 0 }}</span>
+              <span class="metric-total">/ {{ subscription()?.max_units || 500 }} máx.</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="getUnitPercentage()"></div>
+            </div>
+            <span class="metric-sub">{{ getUnitPercentage() }}% de la cuota utilizada</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Residentes registrados</span>
+            <div class="metric-value-row">
+              <span class="metric-num">{{ subscription()?.used_residents || 0 }}</span>
+              <span class="metric-total">/ {{ subscription()?.max_residents || 1500 }} máx.</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill resident" [style.width.%]="getResidentPercentage()"></div>
+            </div>
+            <span class="metric-sub">{{ getResidentPercentage() }}% de la cuota utilizada</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Estado de la suscripción</span>
+            <div class="status-badge-row">
+              <span class="badge" [class.active]="subscription()?.status === 'ACTIVE'" [class.trial]="subscription()?.status === 'TRIAL'">
+                {{ subscription()?.status_label || 'Prueba Gratuita' }}
+              </span>
+            </div>
+            <span class="metric-sub">Plan: {{ subscription()?.plan?.name || 'Inicial' }}</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Vigencia del periodo</span>
+            <div class="metric-value-row">
+              <span class="metric-num">{{ subscription()?.days_left || 0 }}</span>
+              <span class="metric-total">días restantes</span>
+            </div>
+            <span class="metric-sub">
+              @if (subscription()?.status === 'TRIAL') {
+                Periodo de prueba activo
+              } @else {
+                Renovación automática mensual
+              }
+            </span>
+          </div>
+        </section>
+
+        <!-- CURRENT PLAN BANNER -->
+        <section class="card current-plan-section">
+          <div class="card-header">
+            <div>
+              <h3>Plan Actual Contratado</h3>
+              <p>Detalles y cobertura del plan activo para este condominio.</p>
+            </div>
+            <span class="price-pill">
+              <strong>{{ subscription()?.plan?.price_bob || 0 }} Bs</strong> / mes
+            </span>
+          </div>
+
+          <div class="plan-details-grid">
+            <div class="plan-item">
+              <span class="item-title">{{ subscription()?.plan?.name || 'Plan Estándar' }}</span>
+              <p class="item-desc">{{ subscription()?.plan?.tagline || 'Gestión integral para copropiedades.' }}</p>
+            </div>
+            <div class="plan-features-list">
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Hasta <strong>{{ subscription()?.max_units || 500 }} unidades</strong> autorizadas</span>
+              </div>
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Hasta <strong>{{ subscription()?.max_residents || 1500 }} residentes</strong> registrados</span>
+              </div>
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Seguridad QR y Verificación Facial Biométrica</span>
+              </div>
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Soporte prioritario y copias de seguridad</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- AVAILABLE PLANS TO UPGRADE -->
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h3>Cambiar de Plan o Renovar Suscripción</h3>
+              <p>Selecciona un plan para pagar de forma segura vía Stripe o confirmar en modo de pruebas.</p>
+            </div>
+          </div>
+
+          <div class="plans-grid">
+            @for (plan of plans(); track plan.id) {
+              <div class="plan-card" [class.highlighted]="plan.is_popular">
+                @if (plan.is_popular) {
+                  <span class="popular-tag">Más Popular</span>
+                }
+                <h4>{{ plan.name }}</h4>
+                <p class="plan-desc">{{ plan.tagline }}</p>
+                <div class="plan-price">
+                  <span class="currency">Bs</span>
+                  <span class="amount">{{ plan.price_bob }}</span>
+                  <span class="period">/ mes</span>
+                </div>
+
+                <ul class="plan-specs">
+                  <li><strong>{{ plan.max_units }}</strong> unidades habitacionales</li>
+                  <li><strong>{{ plan.max_residents }}</strong> residentes autorizados</li>
+                  <li>Control de accesos y visitas QR</li>
+                  <li>Pasarela de pago Stripe integrada</li>
+                </ul>
+
+                <button
+                  type="button"
+                  class="primary-action full-width"
+                  (click)="openCheckout(plan)"
+                >
+                  Contratar con Stripe
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  <!-- TAB 2: DATOS DEL CONDOMINIO -->
+  @if (activeTab() === 'datos') {
+    <div class="tab-panel">
+      <form [formGroup]="condoForm" (ngSubmit)="saveCondoProfile()" class="card">
+        <div class="card-header">
+          <div>
+            <h3>Información General del Condominio</h3>
+            <p>Actualiza la razón social, dirección y datos de contacto de tu copropiedad.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="c_name">Nombre del Condominio <span class="required">*</span></label>
+            <input id="c_name" type="text" formControlName="name" placeholder="Ej. Condominio Taji" />
+          </div>
+
+          <div class="form-group">
+            <label for="c_legal">Razón Social</label>
+            <input id="c_legal" type="text" formControlName="legal_name" placeholder="Razón social fiscal" />
+          </div>
+
+          <div class="form-group">
+            <label for="c_phone">Teléfono de Administración</label>
+            <input id="c_phone" type="text" formControlName="phone" placeholder="Ej. 70012345" />
+          </div>
+
+          <div class="form-group">
+            <label for="c_email">Correo Electrónico de Contacto</label>
+            <input id="c_email" type="email" formControlName="email" placeholder="admin@condominio.bo" />
+          </div>
+
+          <div class="form-group">
+            <label for="c_tz">Zona Horaria</label>
+            <select id="c_tz" formControlName="timezone">
+              <option value="America/La_Paz">Bolivia (America/La_Paz)</option>
+              <option value="America/Santiago">Chile (America/Santiago)</option>
+              <option value="America/Lima">Perú (America/Lima)</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="c_address">Dirección Física</label>
+            <input id="c_address" type="text" formControlName="address" placeholder="Av. Principal #123" />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="c_rules">Resumen de Normas y Convivencia</label>
+            <textarea id="c_rules" formControlName="rules_summary" rows="3" placeholder="Pautas generales de convivencia del condominio..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="primary-action" [disabled]="saving() || condoForm.invalid">
+            @if (saving()) {
+              Guardando...
+            } @else {
+              Guardar Cambios
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- TAB 3: HISTORIAL DE PAGOS -->
+  @if (activeTab() === 'pagos') {
+    <div class="tab-panel">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h3>Historial de Pagos de Suscripción</h3>
+            <p>Registro de transacciones de Stripe y comprobantes emitidos.</p>
+          </div>
+        </div>
+
+        @if (payments().length === 0) {
+          <div class="empty-state">
+            <p>No se registran pagos previos para este condominio.</p>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Plan</th>
+                  <th>Monto</th>
+                  <th>Proveedor</th>
+                  <th>Transacción ID</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pay of payments(); track pay.id) {
+                  <tr>
+                    <td>{{ pay.created_at | date:'short' }}</td>
+                    <td><strong>{{ pay.plan_name || 'Suscripción' }}</strong></td>
+                    <td>{{ pay.amount }} {{ pay.currency }}</td>
+                    <td>{{ pay.provider }}</td>
+                    <td><code>{{ pay.payment_intent_id || pay.id }}</code></td>
+                    <td>
+                      <span class="badge" [class.active]="pay.status === 'APROBADO'" [class.trial]="pay.status === 'PENDIENTE'">
+                        {{ pay.status }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- STRIPE CHECKOUT MODAL -->
+  @if (showCheckoutModal() && selectedPlanForCheckout()) {
+    <div class="modal-backdrop" (click)="closeCheckout()">
+      <div class="modal-window" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div>
+            <h3>Pago de Suscripción</h3>
+            <p>Plan seleccionado: <strong>{{ selectedPlanForCheckout()?.name }}</strong> ({{ selectedPlanForCheckout()?.price_bob }} Bs/mes)</p>
+          </div>
+          <button type="button" class="close-btn" (click)="closeCheckout()" aria-label="Cerrar modal">✕</button>
+        </header>
+
+        <div class="modal-body">
+          <app-stripe-payment
+            [planId]="selectedPlanForCheckout()!.id"
+            [condominiumId]="activeTenant?.id"
+            [amount]="selectedPlanForCheckout()!.price_bob"
+            [planName]="selectedPlanForCheckout()!.name"
+            (paid)="onPaymentApproved($event)"
+            (canceled)="closeCheckout()"
+          />
+        </div>
+      </div>
+    </div>
+  }
+</section>

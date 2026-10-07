@@ -57,6 +57,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
           <line x1="9" y1="18" x2="9.01" y2="18"></line>
           <line x1="15" y1="18" x2="15.01" y2="18"></line>
         }
+        @case ('credit-card') {
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        }
         @case ('layout-grid') {
           <rect x="3" y="3" width="7" height="7"></rect>
           <rect x="14" y="3" width="7" height="7"></rect>
@@ -190,6 +194,51 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         @case ('inbox') {
           <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
           <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+        }
+        @case ('plus') {
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        }
+        @case ('check') {
+          <polyline points="20 6 9 17 4 12"></polyline>
+        }
+        @case ('filter') {
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+        }
+        @case ('refresh-cw') {
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        }
+        @case ('ban') {
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        }
+        @case ('trash-2') {
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        }
+        @case ('edit-2') {
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+        }
+        @case ('copy') {
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        }
+        @case ('eye') {
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        }
+        @case ('check-circle') {
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        }
+        @case ('x-circle') {
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
         }
       }
     </svg>

@@ -1,0 +1,110 @@
+.log-list {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.log-card {
+  background: #ffffff;
+  border: 1px solid var(--taji-border, #e2e8f0);
+  border-radius: 0.9rem;
+  padding: 1.5rem;
+  color: var(--taji-ink, #0f172a);
+  box-shadow: 0 2px 6px rgba(16, 35, 60, 0.03);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(16, 35, 60, 0.06);
+  }
+}
+
+.log-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--taji-ink, #0f172a);
+    overflow-wrap: anywhere;
+  }
+}
+
+.log-badge {
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: var(--taji-primary, #2563eb);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+
+  &.urgent {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+}
+
+.log-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--taji-ink, #1e293b);
+  line-height: 1.5;
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--taji-canvas, #f8fafc);
+  border-radius: 0.5rem;
+  border-left: 3px solid var(--taji-primary, #3b82f6);
+}
+
+.muted {
+  color: var(--taji-muted, #64748b);
+  font-size: 0.875rem;
+  margin: 0.25rem 0;
+}
+
+.filter-button {
+  padding: 0.55rem 1.1rem;
+  background: #ffffff;
+  color: var(--taji-primary-strong, #075ad7);
+  border: 1px solid var(--taji-border, #cbd5e1);
+  border-radius: 0.55rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: end;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--taji-canvas, #f8fafc);
+    border-color: #94a3b8;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.log-pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--taji-muted, #64748b);
+}
+
+.page-header a {
+  text-decoration: none;
+}
+
+.filter-group input[type=number] {
+  width: 100px;
+}

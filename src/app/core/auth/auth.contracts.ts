@@ -1,4 +1,4 @@
-﻿export interface LoginRequest {
+export interface LoginRequest {
   email: string;
   password: string;
   client: 'web';
@@ -8,9 +8,12 @@ export interface RegisterRequest {
   email: string;
   first_name: string;
   last_name: string;
-  phone: string;
+  phone?: string;
   password: string;
   password_confirm: string;
+  condominium_id?: number | null;
+  condominium_code?: string;
+  unit_label?: string;
 }
 
 export interface RefreshRequest {

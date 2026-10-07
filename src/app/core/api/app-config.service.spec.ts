@@ -32,16 +32,16 @@ describe('AppConfigService', () => {
     expect(service.config().requestTimeoutMs).toBe(8000);
   });
 
-  it('sanitizes internal port 8000 to public Nginx subpath', async () => {
+  it('preserves an explicitly configured local backend port', async () => {
     const loading = service.load();
     http.expectOne('config/app-config.json').flush({
-      apiBaseUrl: 'http://167.86.106.105:8000/api/v1',
+      apiBaseUrl: 'http://localhost:8000/api/v1',
       requestTimeoutMs: 8000,
     });
     await loading;
 
     expect(service.endpoint('/auth/login/')).toBe(
-      'http://167.86.106.105/taji/api/v1/auth/login/',
+      'http://localhost:8000/api/v1/auth/login/',
     );
   });
 

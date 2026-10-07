@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, forwardRef, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 let nextId = 0;
@@ -14,6 +14,7 @@ let nextId = 0;
           @case ('mail') { <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg> }
           @case ('lock') { <svg viewBox="0 0 24 24"><path d="M6 10h12v10H6zM8.5 10V7.5a3.5 3.5 0 0 1 7 0V10M12 14v2"/></svg> }
           @case ('phone') { <svg viewBox="0 0 24 24"><path d="M7 3H4.5A1.5 1.5 0 0 0 3 4.5C3 13.6 10.4 21 19.5 21a1.5 1.5 0 0 0 1.5-1.5V17l-4-1-1.4 2a14.8 14.8 0 0 1-9.6-9.6L8 7 7 3Z"/></svg> }
+          @case ('building') { <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/><line x1="9" y1="14" x2="9.01" y2="14"/><line x1="15" y1="14" x2="15.01" y2="14"/></svg> }
           @default { <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg> }
         }
       </span>
@@ -60,7 +61,7 @@ export class FieldComponent implements ControlValueAccessor {
   @Input() type: 'text' | 'email' | 'password' | 'tel' = 'text';
   @Input() placeholder = '';
   @Input() autocomplete = '';
-  @Input() icon: 'user' | 'mail' | 'lock' | 'phone' = 'user';
+  @Input() icon: 'user' | 'mail' | 'lock' | 'phone' | 'building' = 'user';
   @Input() hint = '';
   @Input() error = '';
 

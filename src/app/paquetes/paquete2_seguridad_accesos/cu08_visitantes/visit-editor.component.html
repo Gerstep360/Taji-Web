@@ -1,0 +1,316 @@
+<div class="modal-backdrop" (click)="onBackdropClick($event)" role="presentation">
+  <div
+    class="modal-sheet"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="isEditMode ? 'edit-visit-title' : 'create-visit-title'"
+  >
+    <header class="sheet-header">
+      <div class="sheet-titles">
+        <span class="sheet-kicker">CU08 · Control de Accesos</span>
+        <h2 [id]="isEditMode ? 'edit-visit-title' : 'create-visit-title'">
+          {{ isEditMode ? 'Actualizar Autorización de Visita' : 'Registrar y Autorizar Visita' }}
+        </h2>
+        <p>
+          {{
+            isEditMode
+              ? 'Modifica el motivo, vigencia o notas de la visita programada.'
+              : 'Registra anticipadamente los datos del visitante para emitir su autorización de acceso seguro.'
+          }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="btn-close"
+        (click)="close.emit()"
+        [disabled]="submitting()"
+        aria-label="Cerrar modal"
+      >
+        <taji-icon name="x" [size]="20" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="alert-box error" role="alert">
+        <taji-icon name="alert-triangle" [size]="18" />
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="sheet-body" novalidate>
+      @if (isEditMode && visit) {
+        <!-- Modo Edición: Resumen del Visitante y Unidad (solo lectura) -->
+        <section class="readonly-summary" aria-label="Información de la visita">
+          <div class="summary-card">
+            <div class="summary-icon">
+              <taji-icon name="user-check" [size]="20" />
+            </div>
+            <div class="summary-details">
+              <span class="label">Visitante</span>
+              <strong>{{ visit.visitor.full_name }}</strong>
+              <small>
+                {{ visit.visitor.document_type }}: {{ visit.visitor.document_number || 'S/N' }}
+                @if (visit.visitor.phone) {
+                  · Tel: {{ visit.visitor.phone }}
+                }
+              </small>
+            </div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-icon">
+              <taji-icon name="building" [size]="20" />
+            </div>
+            <div class="summary-details">
+              <span class="label">Destino</span>
+              <strong>Unidad {{ visit.unit_detail?.code || visit.unit }}</strong>
+              <small>{{ visit.unit_detail?.sector_name || 'Condominio' }}</small>
+            </div>
+          </div>
+        </section>
+      } @else {
+        <!-- Modo Creación: Datos del Visitante -->
+        <section class="form-section">
+          <div class="section-title">
+            <taji-icon name="users" [size]="16" />
+            <h3>Datos del Visitante</h3>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group" [class.has-error]="isFieldInvalid('visitor_first_name')">
+              <label for="visitor_first_name">Nombres <span class="required">*</span></label>
+              <input
+                id="visitor_first_name"
+                type="text"
+                formControlName="visitor_first_name"
+                placeholder="Ej. Roberto"
+                autocomplete="given-name"
+              />
+              @if (getFieldError('visitor_first_name'); as error) {
+                <span class="field-error">{{ error }}</span>
+              }
+            </div>
+
+            <div class="form-group" [class.has-error]="isFieldInvalid('visitor_last_name')">
+              <label for="visitor_last_name">Apellidos <span class="required">*</span></label>
+              <input
+                id="visitor_last_name"
+                type="text"
+                formControlName="visitor_last_name"
+                placeholder="Ej. Gómez Valdivia"
+                autocomplete="family-name"
+              />
+              @if (getFieldError('visitor_last_name'); as error) {
+                <span class="field-error">{{ error }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group" [class.has-error]="isFieldInvalid('visitor_document_type')">
+              <label for="visitor_document_type">Tipo de Documento</label>
+              <select id="visitor_document_type" formControlName="visitor_document_type">
+                @for (doc of options.document_types; track doc.value) {
+                  <option [value]="doc.value">{{ doc.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group" [class.has-error]="isFieldInvalid('visitor_document_number')">
+              <label for="visitor_document_number">Número de Documento</label>
+              <input
+                id="visitor_document_number"
+                type="text"
+                formControlName="visitor_document_number"
+                placeholder="Ej. 8493021"
+              />
+              @if (getFieldError('visitor_document_number'); as error) {
+                <span class="field-error">{{ error }}</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="visitor_document_complement">Complemento</label>
+              <input
+                id="visitor_document_complement"
+                type="text"
+                formControlName="visitor_document_complement"
+                placeholder="Ej. 1A"
+                maxlength="10"
+              />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group" [class.has-error]="isFieldInvalid('visitor_phone')">
+              <label for="visitor_phone">Teléfono / Celular</label>
+              <input
+                id="visitor_phone"
+                type="tel"
+                formControlName="visitor_phone"
+                placeholder="Ej. 70123456"
+                autocomplete="tel"
+              />
+              @if (getFieldError('visitor_phone'); as error) {
+                <span class="field-error">{{ error }}</span>
+              }
+            </div>
+
+            <div class="form-group" [class.has-error]="isFieldInvalid('visitor_email')">
+              <label for="visitor_email">Correo Electrónico</label>
+              <input
+                id="visitor_email"
+                type="email"
+                formControlName="visitor_email"
+                placeholder="visitante@correo.com"
+                autocomplete="email"
+              />
+              @if (getFieldError('visitor_email'); as error) {
+                <span class="field-error">{{ error }}</span>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Destino y Residente -->
+        <section class="form-section">
+          <div class="section-title">
+            <taji-icon name="building" [size]="16" />
+            <h3>Destino y Autorización</h3>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group" [class.has-error]="isFieldInvalid('unit_id')">
+              <label for="unit_id">Unidad de Destino <span class="required">*</span></label>
+              <select id="unit_id" formControlName="unit_id">
+                <option value="">Selecciona la unidad</option>
+                @if (residentUnitOptions.length > 0) {
+                  <optgroup label="Tus Unidades Asignadas">
+                    @for (ru of residentUnitOptions; track ru.unit_id) {
+                      <option [value]="ru.unit_id">Unidad {{ ru.unit_code }} (Mi Unidad)</option>
+                    }
+                  </optgroup>
+                  @if (units.length > 0) {
+                    <optgroup label="Todas las Unidades del Condominio">
+                      @for (u of units; track u.id) {
+                        <option [value]="u.id">
+                          Unidad {{ u.code }} {{ u.sector_name ? '· ' + u.sector_name : '' }}
+                        </option>
+                      }
+                    </optgroup>
+                  }
+                } @else {
+                  @for (u of units; track u.id) {
+                    <option [value]="u.id">
+                      Unidad {{ u.code }} {{ u.sector_name ? '· ' + u.sector_name : '' }}
+                    </option>
+                  }
+                }
+              </select>
+              @if (units.length === 0 && residentUnitOptions.length === 0) {
+                 <span class="field-hint">
+                   No hay unidades registradas. Debes crear al menos una unidad en Sectores y Unidades.
+                 </span>
+               }
+               @if (getFieldError('unit_id'); as error) {
+                <span class="field-error">{{ error }}</span>
+              }
+            </div>
+
+            @if (!isResidentActor) {
+              <div class="form-group">
+                <label for="authorized_by_resident_id">Residente Autorizante</label>
+                <select id="authorized_by_resident_id" formControlName="authorized_by_resident_id">
+                  <option value="">Asignar automáticamente por unidad</option>
+                  @for (r of residents; track r.id) {
+                    <option [value]="r.id">
+                      {{ r.full_name }} {{ r.document_number ? '(' + r.document_number + ')' : '' }}
+                    </option>
+                  }
+                </select>
+                <span class="field-hint">Opcional. Si se deja en blanco, se asociará al residente activo de la unidad.</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Motivo y Periodo de Validez -->
+      <section class="form-section">
+        <div class="section-title">
+          <taji-icon name="calendar" [size]="16" />
+          <h3>Motivo y Periodo de Validez</h3>
+        </div>
+
+        <div class="form-group" [class.has-error]="isFieldInvalid('purpose')">
+          <label for="purpose">Motivo de la Visita <span class="required">*</span></label>
+          <input
+            id="purpose"
+            type="text"
+            formControlName="purpose"
+            placeholder="Ej. Visita familiar, Entrega de paquete, Servicio de internet..."
+          />
+          @if (getFieldError('purpose'); as error) {
+            <span class="field-error">{{ error }}</span>
+          }
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group" [class.has-error]="isFieldInvalid('valid_from')">
+            <label for="valid_from">Válido Desde <span class="required">*</span></label>
+            <input id="valid_from" type="datetime-local" formControlName="valid_from" />
+            @if (getFieldError('valid_from'); as error) {
+              <span class="field-error">{{ error }}</span>
+            }
+          </div>
+
+          <div class="form-group" [class.has-error]="isFieldInvalid('valid_until') || form.hasError('datesInverted')">
+            <label for="valid_until">Válido Hasta <span class="required">*</span></label>
+            <input id="valid_until" type="datetime-local" formControlName="valid_until" />
+            @if (getFieldError('valid_until'); as error) {
+              <span class="field-error">{{ error }}</span>
+            }
+            @if (form.hasError('datesInverted')) {
+              <span class="field-error">La fecha de fin debe ser posterior a la fecha de inicio.</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notas u Observaciones Especiales</label>
+          <textarea
+            id="notes"
+            formControlName="notes"
+            rows="3"
+            placeholder="Ej. Trae vehículo con placa 4029-KPL, autorizada entrada a pie..."
+          ></textarea>
+        </div>
+      </section>
+
+      <footer class="sheet-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="close.emit()"
+          [disabled]="submitting()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="form.invalid || submitting()"
+        >
+          @if (submitting()) {
+            <taji-icon name="loader" [size]="16" class="spinning" />
+            <span>Guardando autorización...</span>
+          } @else {
+            <taji-icon [name]="isEditMode ? 'check' : 'plus'" [size]="16" />
+            <span>{{ isEditMode ? 'Actualizar Autorización' : 'Emitir Autorización' }}</span>
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,194 @@
+<div class="control-accesos-page">
+  <header class="page-header glass-card">
+    <div class="title-group">
+      <div class="icon-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="page-title">Control de Accesos y Validación QR</h1>
+        <p class="page-subtitle">CU10 / RF-10 — Escáner mediante cámara web o ingreso manual de código token</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid-layout">
+    <!-- Panel Escáner / Ingreso de Token QR -->
+    <section class="card glass-card">
+      <h2 class="card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        Validación de Código QR
+      </h2>
+
+      <!-- Canvas oculto para capturar frames de la cámara -->
+      <canvas #canvasElement style="display: none;"></canvas>
+
+      <!-- Viewport de Cámara Escáner -->
+      <div class="camera-viewport" style="margin-bottom: 1.25rem;">
+        @if (cameraActive()) {
+          <video #videoElement autoplay playsinline class="video-feed"></video>
+          <div class="qr-overlay">
+            <div class="qr-scan-box">
+              <div class="corner tl"></div>
+              <div class="corner tr"></div>
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+              <div class="scan-laser"></div>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-camera-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <p>Active la cámara web para escanear el pase QR en vivo o ingrese el código manualmente abajo.</p>
+          </div>
+        }
+      </div>
+
+      <div class="camera-actions" style="margin-bottom: 1.25rem; display: flex; gap: 0.75rem;">
+        @if (cameraActive()) {
+          <button class="btn btn-secondary" (click)="stopCamera()">
+            Detener Cámara
+          </button>
+        } @else {
+          <button class="btn btn-outline" (click)="startCamera()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 7l-7 5 7 5V7z"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            Activar Cámara Escáner
+          </button>
+        }
+      </div>
+
+      <!-- Ingreso Manual de Token -->
+      <div class="form-group">
+        <label class="form-label">Ingrese o Pegue el Código Token del Pase QR:</label>
+        <div class="input-with-button">
+          <input
+            type="text"
+            class="form-input"
+            placeholder="Ej. QR-8F92A14B..."
+            [ngModel]="qrTokenInput()"
+            (ngModelChange)="qrTokenInput.set($event)"
+            (keyup.enter)="validateQr()"
+          />
+          <button
+            class="btn btn-primary"
+            [disabled]="validating() || !qrTokenInput().trim()"
+            (click)="validateQr()"
+          >
+            @if (validating()) {
+              <span class="spinner"></span> Validando...
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Validar Código
+            }
+          </button>
+        </div>
+      </div>
+
+      @if (errorMsg()) {
+        <div class="alert alert-danger" style="margin-top: 1rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <span>{{ errorMsg() }}</span>
+        </div>
+      }
+
+      @if (successMsg()) {
+        <div class="alert alert-success" style="margin-top: 1rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>{{ successMsg() }}</span>
+        </div>
+      }
+    </section>
+
+    <!-- Panel Resultado de Validación -->
+    <section class="card glass-card">
+      <h2 class="card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        Dictamen de Acceso
+      </h2>
+
+      @if (result(); as res) {
+        <div class="result-details">
+          <div class="status-banner" [class.approved]="res.valid" [class.denied]="!res.valid">
+            @if (res.valid) {
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <div>
+                <h3>ACCESO AUTORIZADO</h3>
+                <p>El pase QR es auténtico y se encuentra dentro del rango de vigencia.</p>
+              </div>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <div>
+                <h3>ACCESO DENEGADO</h3>
+                <p>{{ res.reason || 'El pase QR no es válido o ha expirado.' }}</p>
+              </div>
+            }
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Visitante:</span>
+              <span class="val">{{ res.visitor_name || 'Desconocido' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Documento:</span>
+              <span class="val">{{ res.visitor_document || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Unidad Destino:</span>
+              <span class="val">{{ res.unit_code || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Autorizado Por:</span>
+              <span class="val">{{ res.authorizer_name || 'N/A' }}</span>
+            </div>
+          </div>
+
+          <button class="btn btn-secondary btn-block" (click)="resetScanner()">
+            Limpiar / Escanear Otro Pase
+          </button>
+        </div>
+      } @else {
+        <div class="placeholder-state">
+          <p>Ingrese o escanee un código QR en el panel de la izquierda para verificar la autorización.</p>
+        </div>
+      }
+    </section>
+  </div>
+</div>

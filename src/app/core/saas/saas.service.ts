@@ -43,10 +43,14 @@ export class SaasService {
     );
   }
 
-  confirmSandbox(paymentId: number): Observable<SaaSPayment> {
-    return this.api.post<{ payment_id: number }, SaaSPayment>(
+  confirmSandbox(paymentId?: number | null, planId?: number, condominiumId?: number): Observable<SaaSPayment> {
+    return this.api.post<{ payment_id?: number | null; plan_id?: number; condominium_id?: number }, SaaSPayment>(
       API_ENDPOINTS.saas.confirmSandbox,
-      { payment_id: paymentId },
+      {
+        payment_id: paymentId || null,
+        plan_id: planId,
+        condominium_id: condominiumId,
+      },
     );
   }
 

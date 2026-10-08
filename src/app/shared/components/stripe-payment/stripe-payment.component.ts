@@ -18,11 +18,14 @@ import type { Stripe, StripeElements, StripePaymentElement } from '@stripe/strip
 
 import { SaasService } from '../../../core/saas/saas.service';
 import { SaaSPayment, StripeIntentResponse } from '../../../core/saas/saas.models';
+import { AlertComponent } from '../../ui/alert.component';
 
 @Component({
   selector: 'app-stripe-payment',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  // `DecimalPipe` para formatear el importe y `AlertComponent` para el error,
+  // en vez de reimplementar ambos dentro de este componente.
+  imports: [CommonModule, FormsModule, AlertComponent],
   templateUrl: './stripe-payment.component.html',
   styleUrl: './stripe-payment.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

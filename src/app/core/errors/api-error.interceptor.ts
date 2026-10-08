@@ -46,6 +46,15 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         case 404:
           notices.show('No se encontró el recurso solicitado.', 'warning');
           break;
+        case 429:
+          // No cae en `default` a propósito: el backend ya envía un mensaje
+          // concreto (por ejemplo, cuántos intentos quedan) y redirigir a la
+          // página de error 500 sería engañoso, además de perder el formulario.
+          notices.show(
+            errorMessage(error, 'Demasiados intentos. Espera unos minutos antes de volver a intentar.'),
+            'warning',
+          );
+          break;
         case 502:
           // Una dependencia externa falló (por ejemplo, el servidor SMTP al
           // enviar una invitación). No es una caída de la aplicación, así que

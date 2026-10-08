@@ -13,6 +13,14 @@ interface SubNavItem {
   permission?: string;
   permissions?: string[];
   roles?: string[];
+  /**
+   * Visible solo para superusuarios de la plataforma.
+   *
+   * Hace falta un flag propio porque `canAccess` trata un item sin permisos ni
+   * roles como público, y `permission` no sirve: el superusuario pasa siempre y
+   * un administrador de condominio con ese permiso tambien.
+   */
+  superuserOnly?: boolean;
   isAvailable: boolean;
 }
 
@@ -197,8 +205,10 @@ export class MainLayoutComponent {
     this.isMobileMenuOpen.set(false);
   }
 
-  // Estado de acordeón por paquete: Paquete 1 abierto por defecto
+  // Estado de acordeón por paquete: Paquete 1 y Plataforma abiertos por
+  // defecto, para que el administrador global vea de entrada la consola global.
   readonly expandedPackages = signal<Record<string, boolean>>({
+    plataforma: true,
     paquete1: true,
     paquete2: false,
     paquete3: false,
@@ -207,6 +217,20 @@ export class MainLayoutComponent {
   });
 
   readonly packages: PackageDropdown[] = [
+    {
+      id: 'plataforma',
+      title: 'Plataforma',
+      icon: 'landmark',
+      items: [
+        {
+          label: 'Todos los condominios',
+          icon: 'building',
+          route: '/plataforma/condominios',
+          superuserOnly: true,
+          isAvailable: true,
+        },
+      ],
+    },
     {
       id: 'paquete1',
       title: 'Usuarios y Condominio',
@@ -425,6 +449,9 @@ export class MainLayoutComponent {
   canAccess(item: SubNavItem): boolean {
     if (!item.isAvailable) return false;
     const current = this.user();
+    // Se comprueba antes del atajo del superusuario para que un item marcado
+    // como exclusivo de la plataforma no dependa de ese `return true`.
+    if (item.superuserOnly) return current?.is_superuser === true;
     if (current?.is_superuser) return true;
 
     const userRoleSlug = current?.role?.slug?.toLowerCase() ?? '';

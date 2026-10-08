@@ -86,6 +86,9 @@ export const API_ENDPOINTS = {
     cancel: (id: number) => `/visit-authorizations/${id}/cancel/`,
   },
   saas: {
+    /** Listado global de tenants. Solo lectura, requiere superusuario. */
+    platformTenants: '/saas/platform/tenants/',
+    platformTenantsSummary: '/saas/platform/tenants/summary/',
     plans: '/saas/plans/',
     paymentConfig: '/saas/payment-config/',
     subscription: '/saas/subscription/',

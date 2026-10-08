@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard } from './core/auth/auth.guard';
+import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard, superuserGuard } from './core/auth/auth.guard';
 
 
 export const routes: Routes = [
@@ -68,6 +68,16 @@ export const routes: Routes = [
             (m) => m.ChangePasswordPage,
           ),
         title: 'Cambiar contraseña | Taji',
+      },
+      {
+        // Consola global de la plataforma. Solo lectura y solo para
+        // superusuarios: `permissionGuard` no sirve aqui porque cualquier
+        // administrador de condominio tiene `manage_settings`.
+        path: 'plataforma/condominios',
+        canActivate: [superuserGuard],
+        loadComponent: () =>
+          import('./core/saas/platform-tenants.page').then((m) => m.PlatformTenantsPage),
+        title: 'Todos los condominios | Taji',
       },
       {
         path: 'inicio',

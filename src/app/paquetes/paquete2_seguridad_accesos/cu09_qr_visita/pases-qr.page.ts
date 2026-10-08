@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ApiClient } from '../../../core/api/api-client.service';
-import { apiErrorMessage } from '../../../core/api-error';
+import { apiErrorMessage, apiErrorMessageWithTrace } from '../../../core/api-error';
 import { VisitantesApi } from '../cu08_visitantes/visitantes.api';
 import { VisitAuthorization } from '../cu08_visitantes/visitantes.models';
 
@@ -98,8 +98,10 @@ export class PasesQrPage implements OnInit {
             this.selectVisit(items[0]);
           }
         },
-        error: () => {
-          this.errorMsg.set('No fue posible cargar el listado de visitas.');
+        error: (reason: unknown) => {
+          this.errorMsg.set(
+            apiErrorMessage(reason, 'No fue posible cargar el listado de visitas.'),
+          );
           this.loadingVisits.set(false);
         },
       });
@@ -141,7 +143,10 @@ export class PasesQrPage implements OnInit {
           // El backend explica por que no emite (visita expirada, cancelada, fuera
           // de ventana). Ese motivo se conservaba en un 400 y se reemplazaba por un
           // texto generico, dejando al usuario sin saber que corregir.
-          const motivo = apiErrorMessage(
+          //
+          // Con `apiErrorMessageWithTrace`, un 503/500 añade el `trace_id` del
+          // servidor: sin el, quien ve el fallo no puede decir cual fue.
+          const motivo = apiErrorMessageWithTrace(
             reason,
             'No se pudo generar el pase QR. Verifique el estado de la visita.',
           );

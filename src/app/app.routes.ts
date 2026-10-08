@@ -59,6 +59,12 @@ export const routes: Routes = [
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
       {
+        path: 'reportes-personalizables',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin'], [])],
+        loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/reportes/reportes.page').then(m => m.ReportsPage),
+        title: 'Reportes personalizables | Taji',
+      },
+      {
         path: 'inicio',
         loadComponent: () =>
           import('./paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/dashboard.page').then((m) => m.DashboardPage),

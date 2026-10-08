@@ -1,0 +1,112 @@
+<section class="reports-page">
+  <header class="page-header">
+    <span class="eyebrow">SERVICIOS Y COMUNIDAD</span>
+    <h1>Reportes personalizables</h1>
+    <p>Elige columnas, criterios de selección y orden. Revisa el resultado antes de exportarlo.</p>
+    @if (catalog(); as data) { <span class="tenant-badge"><taji-icon name="building" [size]="16" /> {{ data.condominium.name }}</span> }
+  </header>
+  @if (error()) { <div class="alert error" role="alert">{{ error() }}</div> }
+  @if (notice()) { <div class="alert success" role="status">{{ notice() }}</div> }
+  @if (!catalog() && busy()) { <p role="status">Cargando reportes…</p> }
+  @if (!catalog() && !busy()) { <button type="button" class="secondary" (click)="ngOnInit()">Reintentar</button> }
+  @if (catalog()) {
+    <fieldset class="builder" [disabled]="busy()">
+      <legend class="sr-only">Configuración del reporte</legend>
+      <section class="panel">
+        <h2>1. Información a consultar</h2>
+        <div class="fields">
+          <label>Origen de los datos
+            <select [ngModel]="sourceKey()" (ngModelChange)="selectSource($event)">
+              @for (item of catalog()!.sources; track item.key) { <option [value]="item.key">{{ item.label }}</option> }
+            </select>
+          </label>
+          <label>Título del reporte
+            <input maxlength="120" [(ngModel)]="title" (ngModelChange)="changed()" />
+          </label>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>2. Columnas y su posición</h2>
+        <p class="muted">Marca las columnas que quieres incluir y ajusta su posición con las flechas.</p>
+        <div class="column-options">
+          @for (item of source()?.columns; track item.key) {
+            <label class="check"><input type="checkbox" [checked]="columns.includes(item.key)" (change)="toggleColumn(item.key)" />{{ item.label }}</label>
+          }
+        </div>
+        <ol class="selected-columns">
+          @for (key of columns; track key; let index = $index) {
+            <li><span>{{ column(key)?.label }}</span><div>
+              <button type="button" class="small" [disabled]="index === 0" (click)="moveColumn(index, -1)" [attr.aria-label]="'Mover antes: ' + column(key)?.label">←</button>
+              <button type="button" class="small" [disabled]="index === columns.length - 1" (click)="moveColumn(index, 1)" [attr.aria-label]="'Mover después: ' + column(key)?.label">→</button>
+            </div></li>
+          }
+        </ol>
+      </section>
+      <section class="panel">
+        <div class="section-heading"><h2>3. Criterios de selección</h2><button type="button" class="secondary" [disabled]="filters.length >= 10" (click)="addFilter()">+ Agregar filtro</button></div>
+        <p class="muted">Todos los filtros se deben cumplir. Sin filtros se consultan todos los registros de tu condominio.</p>
+        @for (filter of filters; track $index; let index = $index) {
+          <div class="criterion">
+            <label>Columna<select [ngModel]="filter.field" (ngModelChange)="changeFilterField(filter, $event)">
+              @for (item of source()?.columns; track item.key) { <option [value]="item.key">{{ item.label }}</option> }
+            </select></label>
+            <label>Condición<select [(ngModel)]="filter.operator" (ngModelChange)="changed()">
+              @for (operator of column(filter.field)?.operators; track operator) { <option [value]="operator">{{ operators[operator] }}</option> }
+            </select></label>
+            @if (needsValue(filter)) {
+              <label>Valor
+                @if (column(filter.field)?.type === 'choice') {
+                  <select [(ngModel)]="filter.value" (ngModelChange)="changed()"><option value="">Selecciona…</option>
+                    @for (choice of column(filter.field)?.choices; track choice.value) { <option [value]="choice.value">{{ choice.label }}</option> }
+                  </select>
+                } @else {
+                  <input [type]="['date', 'datetime'].includes(column(filter.field)?.type ?? '') ? 'date' : column(filter.field)?.type === 'number' ? 'number' : 'text'" maxlength="500" [(ngModel)]="filter.value" (ngModelChange)="changed()" />
+                }
+              </label>
+            } @else { <span class="muted">No requiere valor</span> }
+            <button type="button" class="small remove" (click)="removeFilter(index)" [attr.aria-label]="'Quitar filtro ' + (index + 1)">Quitar</button>
+          </div>
+        }
+        <p class="muted">Los filtros de fecha incluyen el día completo en la zona horaria del condominio.</p>
+      </section>
+      <section class="panel">
+        <div class="section-heading"><h2>4. Orden de las filas</h2><button type="button" class="secondary" [disabled]="ordering.length >= 3" (click)="addSort()">+ Agregar orden</button></div>
+        <p class="muted">Se aplica primero el criterio 1, luego el 2 y el 3. Sin criterios se usa el orden predeterminado del origen.</p>
+        @for (sort of ordering; track $index; let index = $index) {
+          <div class="sort-row">
+            <label>Criterio {{ index + 1 }}<select [(ngModel)]="sort.field" (ngModelChange)="changed()">
+              @for (item of source()?.columns; track item.key) { <option [value]="item.key">{{ item.label }}</option> }
+            </select></label>
+            <label>Dirección<select [(ngModel)]="sort.direction" (ngModelChange)="changed()"><option value="asc">Ascendente</option><option value="desc">Descendente</option></select></label>
+            <button type="button" class="small remove" (click)="removeSort(index)" [attr.aria-label]="'Quitar orden ' + (index + 1)">Quitar</button>
+          </div>
+        }
+      </section>
+      <button type="button" class="primary" (click)="generate()" [disabled]="!columns.length">Generar vista previa</button>
+    </fieldset>
+    @if (busy()) { <p role="status">Procesando reporte…</p> }
+    @if (preview(); as result) {
+      <section class="panel preview">
+        <div class="section-heading"><div><h2>{{ result.title }}</h2><p class="muted">{{ result.pagination.total }} registros encontrados · {{ catalog()!.condominium.name }}</p></div>
+          <div class="exports">
+            <button type="button" class="secondary" [disabled]="busy() || !result.can_export" (click)="download('xlsx')">Descargar Excel</button>
+            <button type="button" class="secondary" [disabled]="busy() || !result.can_export" (click)="download('html')">Descargar HTML</button>
+          </div>
+        </div>
+        @if (!result.can_export) { <p class="alert error">Supera {{ catalog()!.export_limit }} filas. Añade filtros para poder exportarlo completo.</p> }
+        <p class="muted">La descarga incluye todas las filas filtradas. Los datos se consultan nuevamente al exportar.</p>
+        <div class="table-scroll" tabindex="0" aria-label="Resultados del reporte">
+          <table><thead><tr>@for (item of result.columns; track item.key) { <th scope="col">{{ item.label }}</th> }</tr></thead>
+            <tbody>@for (row of result.rows; track $index) { <tr>@for (value of row; track $index) { <td>{{ value === '' ? '—' : value }}</td> }</tr> }
+              @empty { <tr><td [attr.colspan]="result.columns.length">No hay registros que cumplan los criterios.</td></tr> }
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination"><button type="button" class="secondary" [disabled]="busy() || result.pagination.page <= 1" (click)="generate(result.pagination.page - 1)">Anterior</button>
+          <span>Página {{ result.pagination.page }} de {{ result.pagination.pages }}</span>
+          <button type="button" class="secondary" [disabled]="busy() || result.pagination.page >= result.pagination.pages" (click)="generate(result.pagination.page + 1)">Siguiente</button>
+        </div>
+      </section>
+    } @else if (!busy()) { <p class="muted">Configura el reporte y genera su vista previa para habilitar las descargas.</p> }
+  }
+</section>

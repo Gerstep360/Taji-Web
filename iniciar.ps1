@@ -65,7 +65,7 @@ if (Test-Path $envPath) {
     }
 }
 
-$baseHref = "$inputSubpath/"
+$baseHref = $inputSubpath.TrimEnd('/') + '/'
 
 Write-Host ""
 Write-Host " ----------------------------------------------------------" -ForegroundColor DarkGray
@@ -77,4 +77,4 @@ Write-Host " ----------------------------------------------------------" -Foregr
 Write-Host ""
 
 Write-Host " Iniciando servidor dev Angular con sub-ruta $baseHref ..." -ForegroundColor Green
-& npm.cmd start -- --host 0.0.0.0 --port $inputPort --base-href "$baseHref" --serve-path "$baseHref"
+& npm.cmd start -- --host 0.0.0.0 --port $inputPort --serve-path "$baseHref"

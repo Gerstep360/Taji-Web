@@ -116,6 +116,49 @@ describe('PasesQrPage: motivo del rechazo del pase QR', () => {
     expect(fixture.componentInstance.errorMsg()).not.toContain('todavía no tiene');
   });
 
+  it('incluye el trace_id del servidor cuando el fallo es un 503', async () => {
+    // Sin el id, un 503 en pantalla es inaccionable: nadie sabe que peticion
+    // buscar en el log del servidor.
+    apiMock.post.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 503,
+            error: {
+              error: {
+                code: 'service_unavailable',
+                message: 'La base de datos no está disponible temporalmente.',
+                trace_id: 'a1b2c3d4e5f6',
+                exception: 'DataError',
+              },
+            },
+          }),
+      ),
+    );
+    apiMock.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    const fixture = await createPage();
+    fixture.componentInstance.generateOrFetchQr(7);
+    await fixture.whenStable();
+
+    const message = fixture.componentInstance.errorMsg();
+    expect(message).toContain('a1b2c3d4e5f6');
+    expect(message).toContain('no está disponible');
+  });
+
+  it('no inventa un trace_id en un rechazo de negocio', async () => {
+    apiMock.post.mockReturnValue(
+      throwError(() => rejection({ status_not_allowed: ['Visita cancelada.'] })),
+    );
+    apiMock.get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    const fixture = await createPage();
+    fixture.componentInstance.generateOrFetchQr(7);
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.errorMsg()).toBe('Visita: Visita cancelada.');
+  });
+
   it('limpia el mensaje cuando la emision funciona', async () => {
     apiMock.post.mockReturnValue(
       of({

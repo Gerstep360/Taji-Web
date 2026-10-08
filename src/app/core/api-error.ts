@@ -4,6 +4,7 @@ type ErrorEnvelope = {
   code?: unknown;
   message?: unknown;
   fields?: unknown;
+  trace_id?: unknown;
 };
 
 export function apiErrorMessage(
@@ -42,6 +43,34 @@ function normalizeFieldErrors(value: unknown): Record<string, string> {
     if (typeof message === 'string') errors[field] = message;
   }
   return errors;
+}
+
+/**
+ * Identificador que el servidor manda en fallos no controlados (503/500).
+ *
+ * Sin el, quien reporta un fallo solo puede decir "salio 503" y el operador no
+ * sabe cual de las peticiones fue. Con el, el `journalctl -u taji` lleva el mismo
+ * identificador en la linea del traceback.
+ */
+export function apiErrorTraceId(error: unknown): string | null {
+  if (!(error instanceof HttpErrorResponse)) return null;
+  const body = error.error as Record<string, unknown> | null;
+  const envelope = body?.['error'] as ErrorEnvelope | undefined;
+  const traceId = envelope && typeof envelope === 'object' ? envelope.trace_id : undefined;
+  return typeof traceId === 'string' && traceId ? traceId : null;
+}
+
+/**
+ * Mensaje de fallo no controlado, listo para mostrar: texto del servidor mas el
+ * `trace_id` entre parentesis para que el usuario pueda citarlo.
+ */
+export function apiErrorMessageWithTrace(
+  error: unknown,
+  fallback = 'No pudimos completar la acción. Intenta nuevamente.',
+): string {
+  const message = apiErrorMessage(error, fallback);
+  const traceId = apiErrorTraceId(error);
+  return traceId ? `${message} (ref. ${traceId})` : message;
 }
 
 function fieldLabel(field: string): string {

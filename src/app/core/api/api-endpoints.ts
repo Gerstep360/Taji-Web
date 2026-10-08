@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     me: '/auth/me/',
     forgotPassword: '/auth/forgot-password/',
     resetPassword: '/auth/reset-password/',
+    changePassword: '/auth/change-password/',
   },
 
   condominium: {
@@ -26,6 +27,7 @@ export const API_ENDPOINTS = {
     root: '/residents/',
     options: '/residents/options/',
     detail: (id: number) => `/residents/${id}/`,
+    resendInvitation: (id: number) => `/residents/${id}/resend-invitation/`,
   },
   roles: {
     root: '/roles/',
@@ -61,6 +63,11 @@ export const API_ENDPOINTS = {
     root: '/security/access-events/',
     people: '/security/access-events/people/',
     units: '/security/access-events/units/',
+    qrScans: {
+      history: '/security/visit-qr/scans/',
+      guards: '/security/visit-qr/scans/guards/',
+      validate: '/visit-qr/validate/',
+    },
     biometrics: {
       root: '/security/cu17/biometrics/',
       enroll: '/security/cu17/biometrics/enroll/',

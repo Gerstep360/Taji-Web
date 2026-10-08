@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { API_ENDPOINTS } from '../api/api-endpoints';
 import { ApiClient } from '../api/api-client.service';
 import {
+  ChangePasswordRequest,
   ForgotPasswordRequest,
   LoginRequest,
   MessageResponse,
@@ -57,5 +58,24 @@ export class AuthApi {
       password_confirm: passwordConfirm,
     };
     return this.api.post<ResetPasswordRequest, MessageResponse>(API_ENDPOINTS.auth.resetPassword, request);
+  }
+
+  /**
+   * Cambia la contraseña de la sesión activa.
+   *
+   * Es el paso que completa el alta con contraseña temporal: el residente
+   * entra con la clave del correo y aquí define la definitiva.
+   */
+  changePassword(
+    currentPassword: string,
+    password: string,
+    passwordConfirm: string,
+  ): Observable<MessageResponse> {
+    const request: ChangePasswordRequest = {
+      current_password: currentPassword,
+      password,
+      password_confirm: passwordConfirm,
+    };
+    return this.api.post<ChangePasswordRequest, MessageResponse>(API_ENDPOINTS.auth.changePassword, request);
   }
 }

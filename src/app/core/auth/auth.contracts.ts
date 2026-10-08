@@ -31,6 +31,13 @@ export interface ResetPasswordRequest {
   password_confirm: string;
 }
 
+/** Cambio de contraseña del usuario ya autenticado (cierra el alta temporal). */
+export interface ChangePasswordRequest {
+  current_password: string;
+  password: string;
+  password_confirm: string;
+}
+
 export interface MessageResponse {
   message: string;
 }

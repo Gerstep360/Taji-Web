@@ -59,6 +59,17 @@ export const routes: Routes = [
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
       {
+        // Cierre del alta con contraseña temporal. Va antes que el resto porque
+        // `authGuard` desvía aquí a cualquier usuario que aún use la clave
+        // enviada por la administración.
+        path: 'cambiar-contrasena',
+        loadComponent: () =>
+          import('./paquetes/paquete1_usuarios_condominio/cu01_autenticacion/change-password/change-password.page').then(
+            (m) => m.ChangePasswordPage,
+          ),
+        title: 'Cambiar contraseña | Taji',
+      },
+      {
         path: 'inicio',
         loadComponent: () =>
           import('./paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/dashboard.page').then((m) => m.DashboardPage),
@@ -158,6 +169,15 @@ export const routes: Routes = [
             (m) => m.ControlAccesosPage,
           ),
         title: 'Validación de Accesos QR | Taji',
+      },
+      {
+        path: 'historial-escaneos',
+        canActivate: [anyPermissionGuard(['validate_visits', 'manage_visits', 'register_entry_exit'])],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu10_validar_qr/qr-scan-history.page').then(
+            (m) => m.QrScanHistoryPage,
+          ),
+        title: 'Historial de Escaneos QR | Taji',
       },
       {
         path: 'visitas-dentro',

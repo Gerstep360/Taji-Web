@@ -179,7 +179,19 @@ const EMPTY_PAGINATION: ResidentListResponse['pagination'] = {
                           "
                         >
                           {{ resident.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
-                        </button>
+                        </button
+                        >@if (resident.contact_email) {
+                          <button
+                            type="button"
+                            (click)="resendInvitation(resident)"
+                            [disabled]="resendingId() === resident.id"
+                            [attr.aria-label]="'Reenviar invitación de acceso a ' + resident.full_name"
+                          >
+                            {{
+                              resendingId() === resident.id ? 'Enviando…' : 'Reenviar invitación'
+                            }}
+                          </button>
+                        }
                       </div>
                     </td>
                   </tr>
@@ -246,6 +258,8 @@ export class ResidentPage implements OnInit {
   readonly successMessage = signal('');
   readonly editorOpen = signal(false);
   readonly editing = signal<ResidentPerson | null>(null);
+  /** Residente cuyo reenvío está en curso, para deshabilitar solo ese botón. */
+  readonly resendingId = signal<number | null>(null);
 
   readonly filters = this.fb.nonNullable.group({ search: '', status: '' });
 
@@ -329,13 +343,21 @@ export class ResidentPage implements OnInit {
       ? this.api.update(this.editing()!.id, payload)
       : this.api.create(payload);
     request.pipe(finalize(() => this.saving.set(false))).subscribe({
-      next: () => {
+      next: (created) => {
         this.editorOpen.set(false);
         this.successMessage.set(
           this.editing()
             ? 'Los datos del residente fueron actualizados.'
             : 'El residente fue registrado correctamente.',
         );
+        // El alta envía las credenciales por correo: si no salieron, decirlo aquí
+        // evita que el operador asuma que el residente ya las recibió.
+        if (!this.editing() && created?.invitation && !created.invitation.email_sent) {
+          this.loadError.set(
+            created.invitation.detail ??
+              'El residente se registró, pero el correo con sus credenciales no pudo enviarse.',
+          );
+        }
         this.load(this.editing() ? this.pagination().page : 1);
       },
       error: (error) => {
@@ -343,6 +365,38 @@ export class ResidentPage implements OnInit {
         this.formError.set(apiErrorMessage(error));
       },
     });
+  }
+
+  /**
+   * Reenvía el enlace de acceso de un residente ya registrado.
+   *
+   * El backend responde 502 si el correo no salió, de modo que un error aquí
+   * significa "no se envió" y no "algo falló en la base de datos".
+   */
+  resendInvitation(resident: ResidentPerson): void {
+    this.successMessage.set('');
+    this.loadError.set('');
+    this.resendingId.set(resident.id);
+
+    this.api
+      .resendInvitation(resident.id)
+      .pipe(finalize(() => this.resendingId.set(null)))
+      .subscribe({
+        next: (result) => {
+          this.successMessage.set(
+            result.temporary_password_issued
+              ? `Invitación y contraseña temporal enviadas a ${result.email}.`
+              : `Invitación de acceso reenviada a ${result.email}.`,
+          );
+        },
+        error: (error) =>
+          this.loadError.set(
+            apiErrorMessage(
+              error,
+              'No se pudo enviar el correo. Verifica que el SMTP esté configurado en el servidor.',
+            ),
+          ),
+      });
   }
 
   toggleStatus(resident: ResidentPerson): void {

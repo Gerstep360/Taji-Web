@@ -53,5 +53,9 @@ function fieldLabel(field: string): string {
     password: 'Contraseña',
     password_confirm: 'Confirmación',
     token: 'Enlace',
+    // CU09: el backend rechaza la emision del pase con estos codigos.
+    status_not_allowed: 'Visita',
+    visit_window_ended: 'Visita',
+    ttl_minutes: 'Vigencia del QR',
   }[field] ?? 'Datos';
 }

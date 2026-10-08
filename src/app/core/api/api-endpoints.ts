@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     me: '/auth/me/',
     forgotPassword: '/auth/forgot-password/',
     resetPassword: '/auth/reset-password/',
+    changePassword: '/auth/change-password/',
   },
 
   condominium: {
@@ -31,6 +32,7 @@ export const API_ENDPOINTS = {
     root: '/residents/',
     options: '/residents/options/',
     detail: (id: number) => `/residents/${id}/`,
+    resendInvitation: (id: number) => `/residents/${id}/resend-invitation/`,
   },
   roles: {
     root: '/roles/',
@@ -66,6 +68,11 @@ export const API_ENDPOINTS = {
     root: '/security/access-events/',
     people: '/security/access-events/people/',
     units: '/security/access-events/units/',
+    qrScans: {
+      history: '/security/visit-qr/scans/',
+      guards: '/security/visit-qr/scans/guards/',
+      validate: '/visit-qr/validate/',
+    },
     biometrics: {
       root: '/security/cu17/biometrics/',
       enroll: '/security/cu17/biometrics/enroll/',
@@ -84,6 +91,9 @@ export const API_ENDPOINTS = {
     cancel: (id: number) => `/visit-authorizations/${id}/cancel/`,
   },
   saas: {
+    /** Listado global de tenants. Solo lectura, requiere superusuario. */
+    platformTenants: '/saas/platform/tenants/',
+    platformTenantsSummary: '/saas/platform/tenants/summary/',
     plans: '/saas/plans/',
     paymentConfig: '/saas/payment-config/',
     subscription: '/saas/subscription/',

@@ -1,9 +1,11 @@
 import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 
 import { ApiClient } from '../../../core/api/api-client.service';
 import { API_ENDPOINTS } from '../../../core/api/api-endpoints';
 import {
+  InvitationResult,
   ResidentListResponse,
   ResidentOptions,
   ResidentPayload,
@@ -41,6 +43,19 @@ export class ResidentApi {
     return this.api.patch<Partial<ResidentPayload>, ResidentPerson>(
       API_ENDPOINTS.residents.detail(id),
       payload,
+    );
+  }
+
+  /**
+   * Reenvía el acceso al correo del residente.
+   *
+   * Falla con 502 cuando el correo no pudo salir, en lugar de un 200 que
+   * haría creer al operador que el residente ya lo recibió.
+   */
+  resendInvitation(id: number): Observable<InvitationResult> {
+    return this.api.post<Record<string, never>, InvitationResult>(
+      API_ENDPOINTS.residents.resendInvitation(id),
+      {},
     );
   }
 }

@@ -1,0 +1,215 @@
+<section class="page-shell" aria-labelledby="scan-history-title">
+  <header class="page-heading">
+    <div>
+      <span class="kicker">Seguridad · CU10</span>
+      <h2 id="scan-history-title">Historial de escaneos QR</h2>
+      <p>
+        Cada lectura de un código QR en portería queda registrada, incluidos los códigos que no
+        corresponden a ninguna visita. Sirve para auditar los ingresos y para detectar intentos
+        con códigos falsos o vencidos.
+      </p>
+    </div>
+    <button type="button" class="ghost" (click)="load()" [disabled]="loading()">
+      {{ loading() ? 'Actualizando…' : 'Actualizar' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="notice error" role="alert">{{ error() }}</div>
+  }
+
+  <div class="metrics" aria-live="polite">
+    <article class="metric">
+      <span class="metric-label">Escaneos</span>
+      <strong class="metric-value">{{ summary().total | number }}</strong>
+      <small>en los últimos {{ days() }} días</small>
+    </article>
+
+    <article class="metric approved">
+      <span class="metric-label">Ingresos autorizados</span>
+      <strong class="metric-value">{{ summary().approved | number }}</strong>
+      <small>{{ summary().success_rate | number: '1.0-1' }}% del total</small>
+    </article>
+
+    <article class="metric rejected">
+      <span class="metric-label">Escaneos fallidos</span>
+      <strong class="metric-value">{{ summary().failed | number }}</strong>
+      <small>no autorizaron el ingreso</small>
+    </article>
+
+    <article class="metric">
+      <span class="metric-label">QR no registrados</span>
+      <strong class="metric-value">{{ summary().not_found | number }}</strong>
+      <small>códigos ajenos al condominio</small>
+    </article>
+  </div>
+
+  <section class="panel filters" aria-label="Filtros del historial">
+    <div class="filter-grid">
+      <label>
+        <span>Resultado</span>
+        <select
+          [ngModel]="result()"
+          (ngModelChange)="setResult($event)"
+          name="result"
+          aria-label="Filtrar por resultado"
+        >
+          <option value="">Todos</option>
+          <option value="VALID">Válidos</option>
+          <option value="REJECTED">Denegados</option>
+          <option value="NOT_FOUND">QR no registrados</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Guardia</span>
+        <select
+          [ngModel]="guardStaffId() ?? ''"
+          (ngModelChange)="onGuardChange($event)"
+          name="guard"
+          aria-label="Filtrar por guardia"
+        >
+          <option value="">Todos</option>
+          @for (guard of guards(); track guard.id) {
+            <option [value]="guard.id">{{ guard.full_name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Periodo</span>
+        <select
+          [ngModel]="days()"
+          (ngModelChange)="onDaysChange($event)"
+          name="days"
+          aria-label="Ventana temporal"
+        >
+          <option [value]="1">Hoy</option>
+          <option [value]="7">Últimos 7 días</option>
+          <option [value]="30">Últimos 30 días</option>
+          <option [value]="90">Últimos 90 días</option>
+          <option [value]="365">Último año</option>
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Buscar</span>
+        <input
+          type="search"
+          name="search"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          (keyup.enter)="applyFilters()"
+          placeholder="Visitante, documento o motivo"
+          aria-label="Buscar en el historial"
+        />
+      </label>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" class="primary" (click)="applyFilters()" [disabled]="loading()">
+        Aplicar filtros
+      </button>
+      <button type="button" class="ghost" (click)="clearFilters()" [disabled]="loading()">
+        Limpiar
+      </button>
+      @if (hasActiveFilters) {
+        <span class="filter-note">Hay filtros aplicados</span>
+      }
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Listado de escaneos">
+    <div class="table-header">
+      <h3>Escaneos registrados</h3>
+      @if (total() > 0) {
+        <span>{{ rangeStart }}–{{ rangeEnd }} de {{ total() | number }}</span>
+      }
+    </div>
+
+    @if (loading()) {
+      <div class="state">Cargando historial…</div>
+    } @else if (!rows().length) {
+      <div class="state">
+        @if (hasActiveFilters) {
+          No hay escaneos que coincidan con los filtros aplicados.
+        } @else {
+          Todavía no se ha escaneado ningún código QR.
+        }
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <caption class="sr-only">
+            Historial de escaneos QR con resultado, visitante, motivo, guardia y fecha
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Resultado</th>
+              <th scope="col">Visitante</th>
+              <th scope="col">Motivo</th>
+              <th scope="col">Guardia</th>
+              <th scope="col">Fecha y hora</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track trackById($index, row)) {
+              <tr>
+                <td>
+                  <span class="badge" [ngClass]="badgeClass(row)">{{ row.result_display }}</span>
+                </td>
+                <td>
+                  @if (row.visitor_name) {
+                    <strong>{{ row.visitor_name }}</strong>
+                    @if (row.visitor_document_number) {
+                      <small>CI {{ row.visitor_document_number }}</small>
+                    }
+                    @if (row.unit_code) {
+                      <small>Unidad {{ row.unit_code }}</small>
+                    }
+                  } @else {
+                    <span class="muted">Sin identificar</span>
+                  }
+                </td>
+                <td>
+                  <strong class="reason">{{ reasonLabel(row.reason) }}</strong>
+                  @if (row.message) {
+                    <small class="muted">{{ row.message }}</small>
+                  }
+                </td>
+                <td>
+                  @if (row.guard_staff) {
+                    {{ row.guard_staff.full_name }}
+                    @if (row.device_id) {
+                      <small class="muted">{{ row.device_id }}</small>
+                    }
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="nowrap">{{ formatDate(row.occurred_at) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (totalPages() > 1) {
+        <nav class="pagination" aria-label="Paginación del historial">
+          <button type="button" class="ghost" (click)="goToPage(page() - 1)" [disabled]="page() === 1">
+            Anterior
+          </button>
+          <span>Página {{ page() }} de {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="ghost"
+            (click)="goToPage(page() + 1)"
+            [disabled]="page() === totalPages()"
+          >
+            Siguiente
+          </button>
+        </nav>
+      }
+    }
+  </section>
+</section>

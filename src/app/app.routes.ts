@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard } from './core/auth/auth.guard';
+import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard, superuserGuard } from './core/auth/auth.guard';
 
 
 export const routes: Routes = [
@@ -58,6 +58,27 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
+      {
+        // Cierre del alta con contraseña temporal. Va antes que el resto porque
+        // `authGuard` desvía aquí a cualquier usuario que aún use la clave
+        // enviada por la administración.
+        path: 'cambiar-contrasena',
+        loadComponent: () =>
+          import('./paquetes/paquete1_usuarios_condominio/cu01_autenticacion/change-password/change-password.page').then(
+            (m) => m.ChangePasswordPage,
+          ),
+        title: 'Cambiar contraseña | Taji',
+      },
+      {
+        // Consola global de la plataforma. Solo lectura y solo para
+        // superusuarios: `permissionGuard` no sirve aqui porque cualquier
+        // administrador de condominio tiene `manage_settings`.
+        path: 'plataforma/condominios',
+        canActivate: [superuserGuard],
+        loadComponent: () =>
+          import('./core/saas/platform-tenants.page').then((m) => m.PlatformTenantsPage),
+        title: 'Todos los condominios | Taji',
+      },
       {
         path: 'reportes-personalizables',
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin'], [])],
@@ -164,6 +185,15 @@ export const routes: Routes = [
             (m) => m.ControlAccesosPage,
           ),
         title: 'Validación de Accesos QR | Taji',
+      },
+      {
+        path: 'historial-escaneos',
+        canActivate: [anyPermissionGuard(['validate_visits', 'manage_visits', 'register_entry_exit'])],
+        loadComponent: () =>
+          import('./paquetes/paquete2_seguridad_accesos/cu10_validar_qr/qr-scan-history.page').then(
+            (m) => m.QrScanHistoryPage,
+          ),
+        title: 'Historial de Escaneos QR | Taji',
       },
       {
         path: 'visitas-dentro',

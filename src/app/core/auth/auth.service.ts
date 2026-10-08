@@ -67,5 +67,19 @@ export class AuthService {
     this.currentUser.set(null);
     this.sessionHint.clear();
   }
+
+  /**
+   * Marca en la sesión local que la contraseña temporal ya fue sustituida.
+   *
+   * El backend es la fuente de verdad, pero el layout navega en cliente: sin
+   * este refresco el usuario quedaría atrapado en la pantalla de cambio de
+   * contraseña aunque el backend ya la hubiera aceptado.
+   */
+  markPasswordChanged(): void {
+    const user = this.currentUser();
+    if (user) {
+      this.currentUser.set({ ...user, must_change_password: false });
+    }
+  }
 }
 

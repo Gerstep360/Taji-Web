@@ -8,6 +8,12 @@ import { GlobalNoticeService } from './global-notice.service';
 
 const PUBLIC_AUTH_REQUEST = /\/(login|register|forgot-password|reset-password)\//;
 
+/** Extrae el mensaje que el backend ya devolvió, con un texto por defecto. */
+function errorMessage(error: HttpErrorResponse, fallback: string): string {
+  const body = error.error as { detail?: string; error?: { message?: string } } | null;
+  return body?.error?.message ?? body?.detail ?? fallback;
+}
+
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   const notices = inject(GlobalNoticeService);
@@ -39,6 +45,22 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           break;
         case 404:
           notices.show('No se encontró el recurso solicitado.', 'warning');
+          break;
+        case 429:
+          // No cae en `default` a propósito: el backend ya envía un mensaje
+          // concreto (por ejemplo, cuántos intentos quedan) y redirigir a la
+          // página de error 500 sería engañoso, además de perder el formulario.
+          notices.show(
+            errorMessage(error, 'Demasiados intentos. Espera unos minutos antes de volver a intentar.'),
+            'warning',
+          );
+          break;
+        case 502:
+          // Una dependencia externa falló (por ejemplo, el servidor SMTP al
+          // enviar una invitación). No es una caída de la aplicación, así que
+          // se informa sin sacar al usuario de la página donde está: perder el
+          // contexto justo cuando va a reintentar sería contraproducente.
+          notices.show(errorMessage(error, 'Un servicio externo no respondió. Intenta nuevamente.'), 'warning');
           break;
         default:
           if (error.status >= 500) void router.navigateByUrl('/error-servidor');

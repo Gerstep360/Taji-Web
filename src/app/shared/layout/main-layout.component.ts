@@ -13,6 +13,14 @@ interface SubNavItem {
   permission?: string;
   permissions?: string[];
   roles?: string[];
+  /**
+   * Visible solo para superusuarios de la plataforma.
+   *
+   * Hace falta un flag propio porque `canAccess` trata un item sin permisos ni
+   * roles como público, y `permission` no sirve: el superusuario pasa siempre y
+   * un administrador de condominio con ese permiso tambien.
+   */
+  superuserOnly?: boolean;
   isAvailable: boolean;
 }
 
@@ -55,7 +63,7 @@ interface PackageDropdown {
 
           <!-- Dropdowns por Paquete -->
           <div class="packages-list">
-            @for (pkg of packages; track pkg.id) {
+            @for (pkg of visiblePackages(); track pkg.id) {
               <div class="package-accordion" [class.is-expanded]="isExpanded(pkg.id)">
                 <button
                   type="button"
@@ -197,8 +205,10 @@ export class MainLayoutComponent {
     this.isMobileMenuOpen.set(false);
   }
 
-  // Estado de acordeón por paquete: Paquete 1 abierto por defecto
+  // Estado de acordeón por paquete: Paquete 1 y Plataforma abiertos por
+  // defecto, para que el administrador global vea de entrada la consola global.
   readonly expandedPackages = signal<Record<string, boolean>>({
+    plataforma: true,
     paquete1: true,
     paquete2: false,
     paquete3: false,
@@ -207,6 +217,20 @@ export class MainLayoutComponent {
   });
 
   readonly packages: PackageDropdown[] = [
+    {
+      id: 'plataforma',
+      title: 'Plataforma',
+      icon: 'landmark',
+      items: [
+        {
+          label: 'Todos los condominios',
+          icon: 'building',
+          route: '/plataforma/condominios',
+          superuserOnly: true,
+          isAvailable: true,
+        },
+      ],
+    },
     {
       id: 'paquete1',
       title: 'Usuarios y Condominio',
@@ -272,6 +296,13 @@ export class MainLayoutComponent {
           label: 'Pases QR de Visita',
           icon: 'qr-code',
           route: '/pases-qr',
+          isAvailable: true,
+        },
+        {
+          label: 'Historial de Escaneos QR',
+          icon: 'history',
+          route: '/historial-escaneos',
+          permissions: ['validate_visits', 'manage_visits', 'register_entry_exit'],
           isAvailable: true,
         },
         {
@@ -422,9 +453,23 @@ export class MainLayoutComponent {
     return pkg.items.filter((item) => item.isAvailable && this.canAccess(item)).length;
   }
 
+  /**
+   * Paquetes que tienen al menos una opción visible para este usuario.
+   *
+   * Sin esto, quien no sea superusuario vería un "Plataforma" desplegable que
+   * se abre vacío: la consola global es exclusiva de la plataforma, así que el
+   * encabezado tampoco debe aparecerle.
+   */
+  visiblePackages(): PackageDropdown[] {
+    return this.packages.filter((pkg) => this.getActiveCount(pkg) > 0);
+  }
+
   canAccess(item: SubNavItem): boolean {
     if (!item.isAvailable) return false;
     const current = this.user();
+    // Se comprueba antes del atajo del superusuario para que un item marcado
+    // como exclusivo de la plataforma no dependa de ese `return true`.
+    if (item.superuserOnly) return current?.is_superuser === true;
     if (current?.is_superuser) return true;
 
     const userRoleSlug = current?.role?.slug?.toLowerCase() ?? '';

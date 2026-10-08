@@ -214,6 +214,26 @@ describe('superuserGuard (consola global de la plataforma)', () => {
     expect(layout.canAccess(item)).toBe(true);
   });
 
+  it('hides the whole Plataforma section from non-superusers', () => {
+    // Si solo se ocultara el enlace, el usuario vería un desplegable vacío.
+    authServiceMock.user.mockReturnValue({
+      is_superuser: false,
+      role: { slug: 'administrador', permissions: ['manage_settings'] },
+    });
+
+    const layout = TestBed.runInInjectionContext(() => new MainLayoutComponent());
+
+    expect(layout.visiblePackages().map((pkg) => pkg.id)).not.toContain('plataforma');
+  });
+
+  it('shows the Plataforma section to a superuser', () => {
+    authServiceMock.user.mockReturnValue({ is_superuser: true, role: null });
+
+    const layout = TestBed.runInInjectionContext(() => new MainLayoutComponent());
+
+    expect(layout.visiblePackages().map((pkg) => pkg.id)).toContain('plataforma');
+  });
+
   it('protects the route with superuserGuard, not a permission guard', () => {
     const route = routes.flatMap((entry) => entry.children ?? [])
       .find((entry) => entry.path === 'plataforma/condominios')!;

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ApiClient } from '../../../core/api/api-client.service';
+import { apiErrorMessage } from '../../../core/api-error';
 import { VisitantesApi } from '../cu08_visitantes/visitantes.api';
 import { VisitAuthorization } from '../cu08_visitantes/visitantes.models';
 
@@ -136,7 +137,15 @@ export class PasesQrPage implements OnInit {
             this.successMsg.set('Pase QR generado y actualizado con éxito.');
           }
         },
-        error: () => {
+        error: (reason: unknown) => {
+          // El backend explica por que no emite (visita expirada, cancelada, fuera
+          // de ventana). Ese motivo se conservaba en un 400 y se reemplazaba por un
+          // texto generico, dejando al usuario sin saber que corregir.
+          const motivo = apiErrorMessage(
+            reason,
+            'No se pudo generar el pase QR. Verifique el estado de la visita.',
+          );
+
           // Fallback a consulta directa si la visita está finalizada o expirada
           this.api
             .get<VisitQrDetail>(`/visit-qr/${visitId}/`)
@@ -146,9 +155,17 @@ export class PasesQrPage implements OnInit {
                 this.qrDetail.set(qr);
                 this.loadingQr.set(false);
                 this.isRotating.set(false);
+                // La consulta directa no devuelve la imagen: el token en claro solo
+                // existe durante la emision. Sin este aviso el panel aparecia vacio
+                // sin explicar la causa.
+                this.errorMsg.set(
+                  qr.issued
+                    ? motivo
+                    : `${motivo} Esta visita todavía no tiene un pase QR emitido.`,
+                );
               },
               error: () => {
-                this.errorMsg.set('No se pudo generar el pase QR. Verifique el estado de la visita.');
+                this.errorMsg.set(motivo);
                 this.loadingQr.set(false);
                 this.isRotating.set(false);
               },

@@ -1,0 +1,211 @@
+<section class="platform-page" aria-labelledby="platform-title">
+  <header class="page-heading">
+    <div>
+      <span class="kicker">Plataforma · Administración global</span>
+      <h2 id="platform-title">Todos los condominios</h2>
+      <p>
+        Vista de solo lectura de los tenants registrados en Taji. Sirve para comprobar que la
+        plataforma opera con múltiples condominios aislados entre sí.
+      </p>
+    </div>
+    <button type="button" class="ghost" (click)="load(); loadSummary()" [disabled]="loading()">
+      {{ loading() ? 'Actualizando…' : 'Actualizar' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="notice error" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" (click)="load()">Reintentar</button>
+    </div>
+  }
+
+  @if (summary(); as totals) {
+    <section class="metrics" aria-label="Resumen de la plataforma">
+      <article class="metric">
+        <span class="metric-label">Condominios</span>
+        <strong class="metric-value">{{ totals.tenants | number }}</strong>
+        <small>{{ totals.active_tenants }} activos · {{ totals.inactive_tenants }} inactivos</small>
+      </article>
+      <article class="metric metric-ok">
+        <span class="metric-label">Con plan</span>
+        <strong class="metric-value">{{ totals.with_subscription | number }}</strong>
+        <small>{{ totals.without_subscription }} sin plan asignado</small>
+      </article>
+      <article class="metric">
+        <span class="metric-label">Unidades</span>
+        <strong class="metric-value">{{ totals.units | number }}</strong>
+        <small>{{ totals.residents | number }} residentes</small>
+      </article>
+      <article class="metric">
+        <span class="metric-label">Usuarios</span>
+        <strong class="metric-value">{{ totals.users | number }}</strong>
+        <small>{{ totals.staff | number }} de personal</small>
+      </article>
+    </section>
+  }
+
+  <form class="filters" (ngSubmit)="applyFilters()" aria-label="Filtros de condominios">
+    <label class="search-field">
+      <span class="sr-only">Buscar condominio</span>
+      <input
+        type="search"
+        name="search"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        placeholder="Buscar por nombre, slug o correo"
+      />
+    </label>
+
+    <label>
+      <span class="sr-only">Estado del condominio</span>
+      <select name="status" [ngModel]="status()" (ngModelChange)="status.set($event); load(1)">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVE">Activos</option>
+        <option value="INACTIVE">Inactivos</option>
+      </select>
+    </label>
+
+    <label>
+      <span class="sr-only">Estado de la suscripción</span>
+      <select
+        name="subscription"
+        [ngModel]="subscription()"
+        (ngModelChange)="subscription.set($event); load(1)"
+      >
+        <option value="">Cualquier suscripción</option>
+        <option value="NO_SUBSCRIPTION">Sin plan</option>
+        <option value="ACTIVE">Activa</option>
+        <option value="TRIAL">En prueba</option>
+        <option value="PAST_DUE">Pago pendiente</option>
+        <option value="EXPIRED">Expirada</option>
+      </select>
+    </label>
+
+    <button type="submit" class="primary">Filtrar</button>
+    @if (hasActiveFilters) {
+      <button type="button" class="ghost" (click)="clearFilters()">Limpiar</button>
+    }
+  </form>
+
+  <section class="table-card" [attr.aria-busy]="loading()">
+    <div class="table-header">
+      <h3>Condominios registrados</h3>
+      @if (total() > 0) {
+        <span>{{ rangeStart }}–{{ rangeEnd }} de {{ total() | number }}</span>
+      }
+    </div>
+
+    @if (loading() && !rows().length) {
+      <div class="state-container">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>Cargando condominios…</p>
+      </div>
+    } @else if (!rows().length) {
+      <div class="state-container">
+        <span class="state-icon" aria-hidden="true">▤</span>
+        <h4>{{ hasActiveFilters ? 'Sin coincidencias' : 'Todavía no hay condominios' }}</h4>
+        <p>
+          {{
+            hasActiveFilters
+              ? 'Prueba con otro nombre o cambia los filtros aplicados.'
+              : 'Los condominios aparecerán aquí en cuanto se aprovisionen.'
+          }}
+        </p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <caption class="sr-only">
+            Listado global de condominios con estado, plan y número de usuarios
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Condominio</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Plan</th>
+              <th scope="col" class="numeric">Usuarios</th>
+              <th scope="col" class="numeric">Unidades</th>
+              <th scope="col" class="numeric">Residentes</th>
+              <th scope="col" class="numeric">Personal</th>
+              <th scope="col">Alta</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tenant of rows(); track trackById($index, tenant)) {
+              <tr>
+                <td data-label="Condominio">
+                  <div class="identity">
+                    <span class="avatar" aria-hidden="true">{{ initials(tenant) }}</span>
+                    <div>
+                      <strong>{{ tenant.name }}</strong>
+                      @if (tenant.address) {
+                        <small>{{ tenant.address }}</small>
+                      }
+                      @if (tenant.slug) {
+                        <small class="muted">{{ tenant.slug }}</small>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <td data-label="Estado">
+                  <span class="badge" [class]="'badge badge-' + tenant.status.toLowerCase()">
+                    {{ tenant.status === 'ACTIVE' ? 'Activo' : tenant.status }}
+                  </span>
+                </td>
+
+                <td data-label="Plan">
+                  <div class="plan">
+                    <span class="badge" [class]="'badge ' + subscriptionBadge(tenant).className">
+                      {{ subscriptionBadge(tenant).label }}
+                    </span>
+                    @if (tenant.plan_name) {
+                      <small>{{ tenant.plan_name }}</small>
+                    }
+                    @if (subscriptionHint(tenant)) {
+                      <small class="muted">{{ subscriptionHint(tenant) }}</small>
+                    }
+                  </div>
+                </td>
+
+                <td data-label="Usuarios" class="numeric">{{ tenant.users_count | number }}</td>
+                <td data-label="Unidades" class="numeric">
+                  {{ tenant.units_count | number }}
+                  <small class="muted">{{ tenant.sectors_count }} sectores</small>
+                </td>
+                <td data-label="Residentes" class="numeric">{{ tenant.residents_count | number }}</td>
+                <td data-label="Personal" class="numeric">{{ tenant.staff_count | number }}</td>
+                <td data-label="Alta" class="nowrap">
+                  {{ tenant.created_at | date: 'dd/MM/yyyy' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (totalPages() > 1) {
+        <nav class="pagination" aria-label="Paginación de condominios">
+          <button type="button" class="ghost" (click)="goToPage(page() - 1)" [disabled]="page() === 1">
+            Anterior
+          </button>
+          <span>Página {{ page() }} de {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="ghost"
+            (click)="goToPage(page() + 1)"
+            [disabled]="page() === totalPages()"
+          >
+            Siguiente
+          </button>
+        </nav>
+      }
+    }
+  </section>
+
+  <p class="footnote">
+    Esta vista es de solo lectura. El alta y la modificación de condominios se realizan desde la
+    gestión de tenants de la plataforma.
+  </p>
+</section>

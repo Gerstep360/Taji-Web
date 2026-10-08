@@ -22,6 +22,20 @@ function getUserPermissions(user: any): string[] {
   return [];
 }
 
+/**
+ * Solo para administradores globales de la plataforma.
+ *
+ * No se puede resolver con `permissionGuard`, porque ese concede el paso a
+ * cualquier superusuario **y** a cualquiera con el permiso indicado: un
+ * administrador de condominio normal tambien tiene `manage_settings`.
+ */
+export const superuserGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const user = auth.user();
+  if (!user) return inject(Router).createUrlTree(['/iniciar-sesion']);
+  return user.is_superuser ? true : inject(Router).createUrlTree(['/acceso-denegado']);
+};
+
 export const authGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);
   const router = inject(Router);

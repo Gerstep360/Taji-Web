@@ -63,7 +63,7 @@ interface PackageDropdown {
 
           <!-- Dropdowns por Paquete -->
           <div class="packages-list">
-            @for (pkg of packages; track pkg.id) {
+            @for (pkg of visiblePackages(); track pkg.id) {
               <div class="package-accordion" [class.is-expanded]="isExpanded(pkg.id)">
                 <button
                   type="button"
@@ -444,6 +444,17 @@ export class MainLayoutComponent {
 
   getActiveCount(pkg: PackageDropdown): number {
     return pkg.items.filter((item) => item.isAvailable && this.canAccess(item)).length;
+  }
+
+  /**
+   * Paquetes que tienen al menos una opción visible para este usuario.
+   *
+   * Sin esto, quien no sea superusuario vería un "Plataforma" desplegable que
+   * se abre vacío: la consola global es exclusiva de la plataforma, así que el
+   * encabezado tampoco debe aparecerle.
+   */
+  visiblePackages(): PackageDropdown[] {
+    return this.packages.filter((pkg) => this.getActiveCount(pkg) > 0);
   }
 
   canAccess(item: SubNavItem): boolean {

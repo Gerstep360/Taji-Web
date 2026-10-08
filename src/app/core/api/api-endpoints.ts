@@ -1,4 +1,9 @@
 export const API_ENDPOINTS = {
+  reports: {
+    catalog: '/reports/catalog/',
+    preview: '/reports/preview/',
+    export: '/reports/export/',
+  },
   visitConsultation: '/security/cu12/visits/',
   auth: {
     login: '/auth/login/',

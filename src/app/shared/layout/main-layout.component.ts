@@ -427,6 +427,13 @@ export class MainLayoutComponent {
           icon: 'bar-chart',
           isAvailable: false,
         },
+        {
+          label: 'Reportes personalizables',
+          icon: 'bar-chart',
+          route: '/reportes-personalizables',
+          roles: ['admin', 'administrador', 'superadmin'],
+          isAvailable: true,
+        },
       ],
     },
   ];

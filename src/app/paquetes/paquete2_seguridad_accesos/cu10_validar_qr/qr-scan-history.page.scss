@@ -1,0 +1,290 @@
+:host {
+  display: block;
+}
+
+.page-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.page-heading p {
+  margin: 0.35rem 0 0;
+  color: #5a6f8b;
+  max-width: 70ch;
+  font-size: 0.9rem;
+}
+
+.kicker {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5a6f8b;
+  margin-bottom: 0.25rem;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e6ebf5;
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+  display: grid;
+  gap: 1rem;
+}
+
+/* --- Tarjetas de totales --- */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.metric {
+  background: #fff;
+  border: 1px solid #e6ebf5;
+  border-left: 4px solid #204a99;
+  border-radius: 16px;
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.metric.approved {
+  border-left-color: #31805b;
+}
+
+.metric.rejected {
+  border-left-color: #c0392b;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a6f8b;
+}
+
+.metric-value {
+  font-size: 1.9rem;
+  line-height: 1.1;
+  color: #1f2d3d;
+}
+
+.metric small {
+  color: #66758a;
+  font-size: 0.72rem;
+}
+
+/* --- Filtros --- */
+.filters {
+  gap: 1rem;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+  color: #1f2d3d;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+select,
+input {
+  width: 100%;
+  border: 1px solid #dfe7f5;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  font-weight: 400;
+  background: #f8fbff;
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.filter-note {
+  color: #66758a;
+  font-size: 0.75rem;
+}
+
+button {
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.primary {
+  border: none;
+  background: #204a99;
+  color: #fff;
+}
+
+.ghost {
+  border: 1px solid #dfe7f5;
+  background: #fff;
+  color: #204a99;
+}
+
+/* --- Tabla --- */
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.table-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.table-header span {
+  color: #66758a;
+  font-size: 0.78rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.7rem 0.6rem;
+  border-bottom: 1px solid #eef2f9;
+  vertical-align: top;
+}
+
+th {
+  color: #5a6f8b;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+td strong {
+  display: block;
+  font-weight: 600;
+}
+
+td small {
+  display: block;
+  margin-top: 0.15rem;
+  color: #66758a;
+  font-size: 0.72rem;
+}
+
+.reason {
+  color: #1f2d3d;
+}
+
+.nowrap {
+  white-space: nowrap;
+  color: #52627a;
+  font-size: 0.8rem;
+}
+
+.muted {
+  color: #66758a;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-valid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-not_found {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.state {
+  color: #52627a;
+  padding: 1.25rem 0;
+  text-align: center;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: #52627a;
+  font-size: 0.82rem;
+}
+
+.notice {
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.notice.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .page-heading {
+    flex-direction: column;
+  }
+}

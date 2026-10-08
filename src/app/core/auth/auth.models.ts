@@ -29,6 +29,11 @@ export interface User {
   phone: string;
   role: Role | null;
   date_joined: string;
+  /**
+   * True mientras la cuenta use la contraseña temporal entregada por la
+   * administración. El layout obliga a pasar por el cambio de clave.
+   */
+  must_change_password?: boolean;
   resident_units?: ResidentUnitSummary[];
   linked_residents?: LinkedResident[];
   active_tenant?: TenantInfo | null;
@@ -56,6 +61,8 @@ export interface LinkedResident {
 export interface AuthResponse {
   message: string;
   user: User;
+  /** Presente y `true` cuando el ingreso usó una contraseña temporal. */
+  must_change_password?: boolean;
 }
 
 export interface MeResponse {

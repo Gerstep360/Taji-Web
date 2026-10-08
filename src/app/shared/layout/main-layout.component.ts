@@ -275,6 +275,13 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
+          label: 'Historial de Escaneos QR',
+          icon: 'history',
+          route: '/historial-escaneos',
+          permissions: ['validate_visits', 'manage_visits', 'register_entry_exit'],
+          isAvailable: true,
+        },
+        {
           label: 'Control de Accesos',
           icon: 'door-open',
           route: '/control-accesos',

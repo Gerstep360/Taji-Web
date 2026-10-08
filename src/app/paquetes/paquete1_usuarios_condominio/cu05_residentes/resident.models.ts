@@ -26,6 +26,22 @@ export interface ResidentPerson {
   notes: string;
   registered_at: string;
   deactivated_at: string | null;
+  /** Presente solo en la respuesta de alta: qué pasó con el envío. */
+  invitation?: InvitationResult;
+}
+
+/**
+ * Resultado del envío de credenciales al residente.
+ *
+ * `email_sent` en `false` significa que la cuenta se creó pero el correo no
+ * salió (típicamente, SMTP sin configurar). La UI debe avisar en lugar de
+ * mostrar el mismo "registrado correctamente" de siempre.
+ */
+export interface InvitationResult {
+  detail?: string;
+  email_sent?: boolean;
+  email?: string;
+  temporary_password_issued?: boolean;
 }
 
 export interface ResidentPayload {

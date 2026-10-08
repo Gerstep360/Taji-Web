@@ -22,9 +22,20 @@ function getUserPermissions(user: any): string[] {
   return [];
 }
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);
-  return auth.isAuthenticated() ? true : inject(Router).createUrlTree(['/iniciar-sesion']);
+  const router = inject(Router);
+
+  if (!auth.isAuthenticated()) return router.createUrlTree(['/iniciar-sesion']);
+
+  // Mientras la cuenta use la contraseña temporal enviada por la
+  // administración no se permite navegar: hay que definir la clave personal
+  // primero. Se excluye la propia pantalla del cambio, o quedaría atrapado.
+  if (auth.user()?.must_change_password && route.url[0]?.path !== 'cambiar-contrasena') {
+    return router.createUrlTree(['/cambiar-contrasena']);
+  }
+
+  return true;
 };
 
 export const guestGuard: CanActivateFn = () => {

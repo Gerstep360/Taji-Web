@@ -1,0 +1,250 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-titles">
+      <span class="eyebrow">Incidencias e IA</span>
+      <h1>Nueva incidencia</h1>
+      <p>Reporta un problema del condominio para que la administración lo atienda.</p>
+    </div>
+  </header>
+
+  @if (created(); as incident) {
+    <section class="incident-card success-card" aria-live="polite">
+      <div class="success-badge"><taji-icon name="check-circle" [size]="28" /></div>
+      <h2>Incidencia registrada</h2>
+      <p class="muted">Guarda este código para dar seguimiento a tu reporte.</p>
+      <strong class="public-code">{{ incident.public_code }}</strong>
+      <dl class="success-summary">
+        <div><dt>Estado</dt><dd>{{ incident.status_display }}</dd></div>
+        <div><dt>Categoría</dt><dd>{{ incident.category.name }}</dd></div>
+        <div><dt>Prioridad asignada</dt><dd>{{ incident.priority.name }}</dd></div>
+        <div><dt>Ubicación</dt><dd>{{ incident.sector.name }}@if (incident.unit) { · Unidad {{ incident.unit.code }} }</dd></div>
+        <div><dt>Evidencias</dt><dd>{{ incident.evidences.length }}</dd></div>
+      </dl>
+      <div class="actions">
+        <a class="btn-secondary" routerLink="/inicio">Volver al inicio</a>
+        <button type="button" class="btn-primary" data-testid="register-another" (click)="registerAnother()">
+          <taji-icon name="plus" [size]="16" />
+          Registrar otra incidencia
+        </button>
+      </div>
+    </section>
+  } @else if (loadingOptions()) {
+    <div class="loading-state" role="status"><span class="spinner"></span>Cargando formulario…</div>
+  } @else if (optionsError()) {
+    <div class="incident-card options-error" role="alert">
+      <taji-icon name="alert-triangle" [size]="22" />
+      <p>{{ optionsError() }}</p>
+      <button type="button" class="btn-secondary" data-testid="retry-options" (click)="loadOptions()">
+        <taji-icon name="refresh-cw" [size]="16" />
+        Reintentar
+      </button>
+    </div>
+  } @else if (options(); as opts) {
+    <form class="incident-card" [formGroup]="form" (ngSubmit)="submit()" novalidate [attr.aria-busy]="submitting()">
+      @if (errorMessage()) {
+        <div class="alert-box error" role="alert">
+          <taji-icon name="alert-triangle" [size]="18" />
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <fieldset class="form-fields" [disabled]="submitting()">
+        <section class="form-section">
+          <div class="section-title">
+            <taji-icon name="file-text" [size]="16" />
+            <h2>¿Qué ocurrió?</h2>
+          </div>
+
+          <div class="form-group" [class.has-error]="isFieldInvalid('title')">
+            <label for="incident-title">Título <span class="optional">(opcional)</span></label>
+            <input
+              id="incident-title"
+              type="text"
+              formControlName="title"
+              [attr.maxlength]="titleMaxLength"
+              placeholder="Ej. Fuga de agua en el pasillo"
+              [attr.aria-invalid]="isFieldInvalid('title')"
+              [attr.aria-describedby]="isFieldInvalid('title') ? 'incident-title-error' : null"
+            />
+            @if (fieldError('title'); as error) {
+              <span class="field-error" id="incident-title-error">{{ error }}</span>
+            }
+          </div>
+
+          <div class="form-group" [class.has-error]="isFieldInvalid('description')">
+            <label for="incident-description">Descripción <span class="required">*</span></label>
+            <textarea
+              id="incident-description"
+              rows="5"
+              formControlName="description"
+              [attr.maxlength]="descriptionMaxLength"
+              placeholder="Describe el problema, desde cuándo ocurre y cualquier detalle útil."
+              [attr.aria-invalid]="isFieldInvalid('description')"
+              [attr.aria-describedby]="isFieldInvalid('description') ? 'incident-description-error' : null"
+            ></textarea>
+            <span class="field-hint">{{ form.controls.description.value.length }}/{{ descriptionMaxLength }} caracteres</span>
+            @if (fieldError('description'); as error) {
+              <span class="field-error" id="incident-description-error">{{ error }}</span>
+            }
+          </div>
+
+          <div class="form-group" [class.has-error]="isFieldInvalid('category')">
+            <label for="incident-category">Categoría <span class="required">*</span></label>
+            <select
+              id="incident-category"
+              formControlName="category"
+              [attr.aria-invalid]="isFieldInvalid('category')"
+              [attr.aria-describedby]="isFieldInvalid('category') ? 'incident-category-error' : null"
+            >
+              <option value="">Selecciona una categoría</option>
+              @for (category of opts.categories; track category.id) {
+                <option [value]="category.id">{{ category.name }}</option>
+              }
+            </select>
+            @if (categoryHint()) {
+              <span class="field-hint">{{ categoryHint() }}</span>
+            }
+            @if (fieldError('category'); as error) {
+              <span class="field-error" id="incident-category-error">{{ error }}</span>
+            }
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-title">
+            <taji-icon name="building" [size]="16" />
+            <h2>¿Dónde ocurrió?</h2>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group" [class.has-error]="isFieldInvalid('sector')">
+              <label for="incident-sector">Ubicación <span class="required">*</span></label>
+              <select
+                id="incident-sector"
+                formControlName="sector"
+                [attr.aria-invalid]="isFieldInvalid('sector')"
+                [attr.aria-describedby]="isFieldInvalid('sector') ? 'incident-sector-error' : null"
+              >
+                <option value="">Selecciona la ubicación</option>
+                @for (sector of sectorOptions(); track sector.id) {
+                  <option [value]="sector.id">{{ sector.label }}</option>
+                }
+              </select>
+              @if (fieldError('sector'); as error) {
+                <span class="field-error" id="incident-sector-error">{{ error }}</span>
+              }
+            </div>
+
+            <div class="form-group" [class.has-error]="isFieldInvalid('unit')">
+              <label for="incident-unit">Unidad <span class="optional">(opcional)</span></label>
+              <select
+                id="incident-unit"
+                formControlName="unit"
+                [attr.aria-describedby]="isFieldInvalid('unit') ? 'incident-unit-error' : null"
+              >
+                <option value="">Sin unidad</option>
+                @for (unit of availableUnits(); track unit.id) {
+                  <option [value]="unit.id">{{ unit.code }}</option>
+                }
+              </select>
+              @if (fieldError('unit'); as error) {
+                <span class="field-error" id="incident-unit-error">{{ error }}</span>
+              }
+            </div>
+
+            <div class="form-group" [class.has-error]="isFieldInvalid('asset')">
+              <label for="incident-asset">Activo <span class="optional">(opcional)</span></label>
+              <select
+                id="incident-asset"
+                formControlName="asset"
+                [attr.aria-describedby]="isFieldInvalid('asset') ? 'incident-asset-error' : null"
+              >
+                <option value="">Sin activo</option>
+                @for (asset of availableAssets(); track asset.id) {
+                  <option [value]="asset.id">{{ asset.name }} ({{ asset.code }})</option>
+                }
+              </select>
+              @if (fieldError('asset'); as error) {
+                <span class="field-error" id="incident-asset-error">{{ error }}</span>
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-title">
+            <taji-icon name="file-text" [size]="16" />
+            <h2>Evidencias <span class="optional">(opcional)</span></h2>
+          </div>
+
+          <div class="evidence-picker" [class.is-disabled]="!canAddEvidence()">
+            <label for="incident-evidences" class="btn-secondary">
+              <taji-icon name="plus" [size]="16" />
+              Adjuntar fotos o documentos
+            </label>
+            <input
+              id="incident-evidences"
+              class="visually-hidden"
+              type="file"
+              multiple
+              [attr.accept]="'.' + opts.evidence_rules.allowed_extensions.join(',.')"
+              [disabled]="!canAddEvidence()"
+              (change)="onFilesSelected($event)"
+            />
+            <span class="field-hint">{{ evidenceHint() }}</span>
+          </div>
+
+          @if (evidenceErrors().length) {
+            <ul class="evidence-errors" aria-live="polite">
+              @for (message of evidenceErrors(); track $index) {
+                <li>{{ message }}</li>
+              }
+            </ul>
+          }
+          @if (fieldError('evidences'); as error) {
+            <span class="field-error" id="incident-evidences-error">{{ error }}</span>
+          }
+
+          @if (evidences().length) {
+            <ul class="evidence-list" aria-label="Evidencias adjuntas">
+              @for (item of evidences(); track item.id) {
+                <li class="evidence-item">
+                  @if (item.previewUrl) {
+                    <img [src]="item.previewUrl" [alt]="'Vista previa de ' + item.file.name" />
+                  } @else {
+                    <span class="doc-icon"><taji-icon name="file-text" [size]="28" /></span>
+                  }
+                  <div class="evidence-meta">
+                    <span class="evidence-name" [title]="item.file.name">{{ item.file.name }}</span>
+                    <small>{{ item.sizeLabel }}</small>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-remove"
+                    (click)="removeEvidence(item.id)"
+                    [attr.aria-label]="'Quitar ' + item.file.name"
+                  >
+                    <taji-icon name="trash-2" [size]="16" />
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      </fieldset>
+
+      <footer class="form-footer">
+        <span class="muted">La prioridad y el responsable los asigna la administración.</span>
+        <button type="submit" class="btn-primary" [disabled]="submitting()">
+          @if (submitting()) {
+            <taji-icon name="loader" [size]="16" class="spinning" />
+            Registrando…
+          } @else {
+            <taji-icon name="check" [size]="16" />
+            Registrar incidencia
+          }
+        </button>
+      </footer>
+    </form>
+  }
+</div>

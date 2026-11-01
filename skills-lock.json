@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "skills": {
+    "chart": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/chart/SKILL.md",
+      "computedHash": "a3d4da093c9998d1d293c17a74a16fccecf69096371046898138ea42142443d2"
+    },
+    "effect": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".opencode/skills/effect/SKILL.md",
+      "computedHash": "9a4ebb9c1818e77d08dc550a5d7d5ffe6a8426bf10b288a92b9961c6216763c4"
+    },
+    "gh-issues": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/gh-issues/SKILL.md",
+      "computedHash": "8d1201da8b5f349809c77d97070077727c2738f5572527bd76956ab42f785a95"
+    },
+    "icon-jetbrains": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/icon-jetbrains/SKILL.md",
+      "computedHash": "134b5009a4d1a76ab9585d9bd5482212d13220c57705af69726638826eb460f5"
+    },
+    "icon-vscode": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/icon-vscode/SKILL.md",
+      "computedHash": "f26dddac6358d813fd17398afaf3f24919de61615953a7e95aa5a79270655131"
+    },
+    "jetbrains-arch": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/jetbrains-arch/SKILL.md",
+      "computedHash": "065d0d2a03a33143a005f51679ee7e0c28ee45ea30b5723bb2ccbabf2fe9fa04"
+    },
+    "jetbrains-cli-pin": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/jetbrains-cli-pin/SKILL.md",
+      "computedHash": "04459f96f8fff1e2250de60c3006d400d5f3d9a8d4133ce56981d45c5bb01188"
+    },
+    "jetbrains-dev": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/jetbrains-dev/SKILL.md",
+      "computedHash": "5ef9af59e78ab457b5aac71372ec82253b60cb9d68f700adfbe6ecd1eb9b0e96"
+    },
+    "jetbrains-sandbox": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/jetbrains-sandbox/SKILL.md",
+      "computedHash": "236142b5312945bac45b2b0dfc7dbd27a85e3bdba9c5d64bce8a6930cb39e6c1"
+    },
+    "jetbrains-session": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/jetbrains-session/SKILL.md",
+      "computedHash": "320c8ecd1faaff67334dd6a4f6f6b7eb27df8c65fc88c06f77cf9518491b20a6"
+    },
+    "jetbrains-ui": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/jetbrains-ui/SKILL.md",
+      "computedHash": "dd1dbaddc16acb899f08c23a94608a68ee2a82322899256081656c591a991448"
+    },
+    "kilocode-merge-minimizer": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/kilocode-merge-minimizer/SKILL.md",
+      "computedHash": "5054020a9cad23084c9ae359e73c77df441902654f3a6381ccb11aeea239fce5"
+    },
+    "pr-track-v1": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilo/skills/pr-track-v1/SKILL.md",
+      "computedHash": "916cc3ead6110396ebf39fd094c1067d00ee7acc56e278255c725125ebb75c7c"
+    },
+    "rtl-aware-development": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".opencode/skills/rtl-aware-development/SKILL.md",
+      "computedHash": "f48597bf6ab5b7f9014439152a25e2d0a52b2426b0829e32d874ebbe27bcc92f"
+    },
+    "vscode-visual-regression": {
+      "source": "Kilo-Org/kilocode",
+      "sourceType": "github",
+      "skillPath": ".kilocode/skills/vscode-visual-regression/SKILL.md",
+      "computedHash": "fb6b118d0cb18582c837048c016ba734389e39a3e12ee882aafef020bd04736f"
+    }
+  }
+}

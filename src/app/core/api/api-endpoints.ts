@@ -1,4 +1,5 @@
 export const API_ENDPOINTS = {
+  incidents: '/paquete3/incidents/',
   visitConsultation: '/security/cu12/visits/',
   auth: {
     login: '/auth/login/',

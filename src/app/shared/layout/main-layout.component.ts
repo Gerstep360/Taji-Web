@@ -371,7 +371,8 @@ export class MainLayoutComponent {
         {
           label: 'Seguimiento y Ciclo',
           icon: 'git-branch',
-          isAvailable: false,
+          route: '/incidencias',
+          isAvailable: true,
         },
         {
           label: 'Clasificación con IA',

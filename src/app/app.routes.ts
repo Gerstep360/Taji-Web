@@ -59,6 +59,11 @@ export const routes: Routes = [
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
       {
+        path: 'incidencias',
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu21_ciclo_atencion/incidents.page').then(m => m.IncidentsPage),
+        title: 'Seguimiento de incidencias | Taji',
+      },
+      {
         // Cierre del alta con contraseña temporal. Va antes que el resto porque
         // `authGuard` desvía aquí a cualquier usuario que aún use la clave
         // enviada por la administración.

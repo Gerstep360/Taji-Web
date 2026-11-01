@@ -366,7 +366,9 @@ export class MainLayoutComponent {
         {
           label: 'Reportar Incidencia',
           icon: 'alert-triangle',
-          isAvailable: false,
+          route: '/reportar-incidencia',
+          permissions: ['report_incidents', 'manage_incidents'],
+          isAvailable: true,
         },
         {
           label: 'Seguimiento y Ciclo',

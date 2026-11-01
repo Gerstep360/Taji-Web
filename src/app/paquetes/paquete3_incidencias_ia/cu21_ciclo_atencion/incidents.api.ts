@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { ApiClient } from '../../../core/api/api-client.service';
 import { API_ENDPOINTS } from '../../../core/api/api-endpoints';
+import { IncidentEvidence } from '../shared/incident-evidence.model';
 
 export interface PersonSummary {
   id: number;
@@ -35,13 +36,7 @@ export interface IncidentDetail {
   status_history: HistoryEntry[];
   public_comments: CommentEntry[];
   internal_comments: CommentEntry[];
-  attachments: {
-    id: number;
-    file_url: string | null;
-    file_path: string;
-    caption: string;
-    file_type_display: string;
-  }[];
+  attachments: IncidentEvidence[];
   assignments: {
     id: number;
     assigned_to: PersonSummary;

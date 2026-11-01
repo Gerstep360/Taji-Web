@@ -5,6 +5,7 @@ import { catchError, throwError } from 'rxjs';
 
 import { AuthService } from '../auth/auth.service';
 import { GlobalNoticeService } from './global-notice.service';
+import { KEEP_PAGE_ON_SERVER_ERROR } from '../api/api-client.service';
 
 const PUBLIC_AUTH_REQUEST = /\/(login|register|forgot-password|reset-password)\//;
 
@@ -63,7 +64,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           notices.show(errorMessage(error, 'Un servicio externo no respondió. Intenta nuevamente.'), 'warning');
           break;
         default:
-          if (error.status >= 500) void router.navigateByUrl('/error-servidor');
+          if (error.status >= 500 && !request.context.get(KEEP_PAGE_ON_SERVER_ERROR)) void router.navigateByUrl('/error-servidor');
       }
 
       return throwError(() => error);

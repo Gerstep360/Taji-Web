@@ -59,8 +59,14 @@ export const routes: Routes = [
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
       {
+        path: 'reportar-incidencia',
+        canActivate: [anyPermissionGuard(['report_incidents', 'manage_incidents'])],
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu18_registrar_incidencia/incident-report.page').then(m => m.IncidentReportPage),
+        title: 'Reportar incidencia | Taji',
+      },
+      {
         path: 'analisis-incidencias',
-        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu21_ciclo_atencion/incidents.page').then(m => m.IncidentsPage),
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu22_analisis_ia/incident-analysis.page').then(m => m.IncidentAnalysisPage),
         title: 'Análisis de incidencias | Taji',
       },
       {

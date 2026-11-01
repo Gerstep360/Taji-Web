@@ -41,7 +41,7 @@ test('CU22 conserva predicción, permite revisión y ofrece clasificación manua
     execution_status: failed ? 'FAILED' : 'SUCCEEDED',
     review_status: reviewed ? 'ACCEPTED' : 'PENDING',
     category: failed ? null : { id: 1, name: 'Incendios y humo' },
-    priority: failed ? null : { id: 3, name: 'Alta' },
+    priority: failed ? { id: 4, name: 'Crítica', rank: 4 } : { id: 3, name: 'Alta', rank: 3 },
     confidence: 0.9,
     risk_score: 70,
     summary: 'Se reporta un incendio; los niños están fuera del peligro.',
@@ -68,10 +68,18 @@ test('CU22 conserva predicción, permite revisión y ofrece clasificación manua
     const path = new URL(route.request().url()).pathname;
     let body: unknown = {};
     if (path.endsWith('/auth/me/')) body = { user };
+    else if (path.endsWith('/incident-ai/metrics/'))
+      body = {
+        total: 1,
+        pending_review: reviewed ? 0 : 1,
+        processing: 0,
+        failed: failed ? 1 : 0,
+        period_days: 30,
+      };
     else if (path.endsWith('/incident-ai/catalogs/'))
       body = {
         categories: [{ id: 1, name: 'Incendios y humo' }],
-        priorities: [{ id: 3, name: 'Alta', rank: 3 }],
+        priorities: [{ id: 3, name: 'Alta', rank: 3 }, { id: 4, name: 'Crítica', rank: 4 }],
         can_manage: true,
       };
     else if (
@@ -117,6 +125,9 @@ test('CU22 conserva predicción, permite revisión y ofrece clasificación manua
   reviewed = false;
   await page.getByRole('button', { name: 'Analizar de nuevo' }).click();
   await expect(page.getByRole('heading', { name: 'Clasificar manualmente' })).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('Alerta de seguridad: prioridad Crítica.');
+  await expect(page.getByText('Detectada por reglas del servidor;', { exact: false })).toBeVisible();
+  await expect(page.getByText('Propuesta pendiente de revisión', { exact: true })).not.toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => scrollTo(0, 0));
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

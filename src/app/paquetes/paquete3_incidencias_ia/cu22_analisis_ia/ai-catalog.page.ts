@@ -1,176 +1,186 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { ButtonComponent } from '../../../shared/ui/button.component';
+import { IconComponent } from '../../../shared/ui/icon.component';
 import { AIChoice, AICatalog, IncidentAIApi } from './incident-ai.api';
 
+type CatalogKind = 'categories' | 'priorities';
+interface CatalogDraft {
+  name: string;
+  description: string;
+  default_staff_type: string;
+  code: string;
+  rank: number;
+  target_minutes: number | null;
+  min_score: number | null;
+  max_score: number | null;
+}
 @Component({
   selector: 'taji-ai-catalog',
-  imports: [FormsModule],
+  imports: [FormsModule, ButtonComponent, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      h1 {
-        letter-spacing: -0.04em;
-      }
-      .columns {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-      }
-      section {
-        border: 1px solid #d6e2f4;
-        border-radius: 1rem;
-        background: white;
-        padding: 1.3rem;
-      }
-      form,
-      label {
-        display: grid;
-        gap: 0.7rem;
-      }
-      form {
-        margin-top: 1rem;
-      }
-      input,
-      button {
-        font: inherit;
-        padding: 0.75rem;
-        border: 1px solid #ccdbee;
-        border-radius: 0.65rem;
-      }
-      button {
-        cursor: pointer;
-        color: #1265d9;
-        background: #f5f9ff;
-      }
-      label {
-        font-size: 0.85rem;
-      }
-      p {
-        color: #60748b;
-      }
-      ul {
-        padding-left: 1.2rem;
-      }
-      .error {
-        color: #a52a3d;
-      }
-      @media (max-width: 750px) {
-        .columns {
-          grid-template-columns: 1fr;
-        }
-      }
-    `,
-  ],
-  template: `<h1>Catálogos de incidencias</h1>
-    <p>
-      Las categorías y prioridades se comparten entre condominios. Los nuevos valores estarán
-      disponibles para NVIDIA sin entrenar otro modelo.
-    </p>
-    @if (error()) {
-      <p role="alert" class="error">{{ error() }}</p>
-    }
-    @if (message()) {
-      <p role="status">{{ message() }}</p>
-    }
-    <div class="columns">
-      <section>
-        <h2>Categorías</h2>
-        <ul>
-          @for (c of data()?.categories; track c.id) {
-            <li>
-              {{ c.name }} <small>{{ c.code }}</small>
-            </li>
-          }
-        </ul>
-        <form (ngSubmit)="createCategory()">
-          <label
-            >Nombre visible<input name="name" [(ngModel)]="name" maxlength="100" required /></label
-          ><label
-            >Qué incluye<input
-              name="description"
-              [(ngModel)]="description"
-              maxlength="240" /></label
-          ><small>El código interno se genera automáticamente.</small
-          ><button [disabled]="busy() || !name.trim()">Agregar categoría</button>
-        </form>
-      </section>
-      <section>
-        <h2>Prioridades</h2>
-        <ul>
-          @for (p of data()?.priorities; track p.id) {
-            <li>{{ p.name }} · orden {{ p.rank }}</li>
-          }
-        </ul>
-        <form (ngSubmit)="createPriority()">
-          <label
-            >Código<input
-              name="code"
-              [(ngModel)]="code"
-              pattern="[A-Z_]+"
-              maxlength="20"
-              required
-              placeholder="Ej. ESPECIAL" /></label
-          ><label
-            >Nombre visible<input
-              name="priorityName"
-              [(ngModel)]="priorityName"
-              maxlength="40"
-              required /></label
-          ><label
-            >Orden de urgencia<input
-              name="rank"
-              type="number"
-              min="1"
-              [(ngModel)]="rank"
-              required /></label
-          ><label
-            >Plazo objetivo en minutos<input
-              name="minutes"
-              type="number"
-              min="1"
-              [(ngModel)]="minutes"
-              required /></label
-          ><button [disabled]="busy() || !priorityName.trim() || !code.trim()">
-            Agregar prioridad
-          </button>
-        </form>
-      </section>
-    </div>`,
+  templateUrl: './ai-catalog.page.html',
+  styleUrl: './ai-catalog.page.scss',
 })
 export class AICatalogPage {
   private readonly api = inject(IncidentAIApi);
   readonly data = signal<AICatalog | null>(null);
+  readonly kind = signal<CatalogKind>('categories');
   readonly busy = signal(false);
+  readonly loading = signal(false);
   readonly error = signal('');
   readonly message = signal('');
-  name = '';
-  description = '';
-  code = '';
-  priorityName = '';
-  rank = 5;
-  minutes = 60;
+  readonly search = signal('');
+  readonly status = signal('all');
+  readonly editing = signal<AIChoice | null | undefined>(undefined);
+  readonly pendingDisable = signal<AIChoice | null>(null);
+  readonly rows = computed(() => this.data()?.[this.kind()] || []);
+  readonly activeCount = computed(() => this.rows().filter((r) => r.is_active !== false).length);
+  readonly filtered = computed(() =>
+    this.rows().filter(
+      (r) =>
+        (this.status() === 'all' || (r.is_active !== false) === (this.status() === 'active')) &&
+        `${r.name} ${r.code || ''} ${r.description || ''}`
+          .toLocaleLowerCase()
+          .includes(this.search().toLocaleLowerCase().trim()),
+    ),
+  );
+  draft: CatalogDraft = this.emptyDraft();
   constructor() {
     void this.load();
   }
-  private async load() {
-    try {
-      this.data.set(await firstValueFrom(this.api.catalogs()));
-    } catch {
-      this.error.set('No se pudieron cargar los catálogos.');
-    }
+  private emptyDraft(): CatalogDraft {
+    return {
+      name: '',
+      description: '',
+      default_staff_type: '',
+      code: '',
+      rank: 5,
+      target_minutes: null,
+      min_score: null,
+      max_score: null,
+    };
   }
-  private async save(kind: string, body: object) {
-    this.busy.set(true);
+  async load() {
+    this.loading.set(true);
     this.error.set('');
     try {
-      await firstValueFrom(this.api.writeCatalog(kind, null, body));
-      await this.load();
-      this.message.set('Valor agregado al catálogo.');
-      return true;
+      this.data.set(await firstValueFrom(this.api.catalogs(true)));
+    } catch {
+      this.error.set('No se pudieron cargar los catálogos. Vuelve a intentar.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+  selectKind(kind: CatalogKind) {
+    if (this.busy()) return;
+    this.kind.set(kind);
+    this.editing.set(undefined);
+    this.pendingDisable.set(null);
+    this.search.set('');
+    this.error.set('');
+  }
+  edit(row: AIChoice | null) {
+    if (this.busy()) return;
+    this.error.set('');
+    this.message.set('');
+    this.editing.set(row);
+    this.draft = row
+      ? {
+          name: row.name,
+          description: row.description || '',
+          default_staff_type: row.default_staff_type || '',
+          code: row.code || '',
+          rank: row.rank || 1,
+          target_minutes: row.target_minutes ?? null,
+          min_score: row.min_score != null ? +row.min_score : null,
+          max_score: row.max_score != null ? +row.max_score : null,
+        }
+      : this.emptyDraft();
+    if (!row) this.draft.rank = Math.max(0, ...this.data()!.priorities.map((p) => p.rank || 0)) + 1;
+  }
+  staffName(code?: string | null) {
+    return (
+      this.data()?.staff_types?.find((s) => s.code === code)?.name || 'Sin equipo predeterminado'
+    );
+  }
+  targetLabel(minutes?: number | null) {
+    if (!minutes) return 'Sin plazo objetivo';
+    return minutes % 1440 === 0
+      ? `${minutes / 1440} días`
+      : minutes % 60 === 0
+        ? `${minutes / 60} horas`
+        : `${minutes} minutos`;
+  }
+  async save() {
+    if (this.busy() || this.editing() === undefined || !this.draft.name.trim()) return;
+    const current = this.editing();
+    let body: object;
+    if (this.kind() === 'categories')
+      body = {
+        name: this.draft.name.trim(),
+        description: this.draft.description.trim(),
+        default_staff_type: this.draft.default_staff_type || null,
+      };
+    else {
+      if (
+        !this.draft.rank ||
+        this.draft.rank < 1 ||
+        this.draft.rank > 32767 ||
+        (this.draft.target_minutes !== null && this.draft.target_minutes <= 0)
+      ) {
+        this.error.set('El orden debe ser un entero positivo y el plazo debe ser mayor que cero.');
+        return;
+      }
+      body = {
+        name: this.draft.name.trim(),
+        ...(!current ? { code: this.draft.code.trim().toUpperCase() } : {}),
+        rank: this.draft.rank,
+        target_minutes: this.draft.target_minutes,
+        min_score: this.draft.min_score,
+        max_score: this.draft.max_score,
+      };
+    }
+    const row = await this.persist(current?.id || null, body);
+    if (row) {
+      this.editing.set(undefined);
+      this.message.set(current ? 'Cambios guardados.' : 'Nuevo valor agregado al catálogo.');
+    }
+  }
+  requestToggle(row: AIChoice) {
+    if (row.is_active === false) void this.toggle(row);
+    else this.pendingDisable.set(row);
+  }
+  async toggle(row: AIChoice) {
+    const saved = await this.persist(row.id, { is_active: row.is_active === false });
+    if (saved) {
+      this.pendingDisable.set(null);
+      this.message.set(
+        saved.is_active
+          ? 'Valor reactivado y disponible para nuevos reportes.'
+          : 'Valor desactivado. Su historial se conserva.',
+      );
+    }
+  }
+  private async persist(id: number | null, body: object): Promise<AIChoice | null> {
+    if (this.busy()) return null;
+    this.busy.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const row = await firstValueFrom(this.api.writeCatalog(this.kind(), id, body));
+      this.data.update((data) =>
+        data
+          ? {
+              ...data,
+              [this.kind()]: id
+                ? data[this.kind()].map((r) => (r.id === id ? row : r))
+                : [...data[this.kind()], row],
+            }
+          : data,
+      );
+      return row;
     } catch (e) {
       const d = (
         e as { error?: { error?: { message?: string; fields?: Record<string, string[]> } } }
@@ -180,35 +190,11 @@ export class AICatalogPage {
           .flat()
           .join(' ') ||
           d?.message ||
-          'No se pudo guardar. Verifica valores duplicados y orden.',
+          'No se pudo guardar. Comprueba que el nombre, código y orden no estén repetidos.',
       );
-      return false;
+      return null;
     } finally {
       this.busy.set(false);
-    }
-  }
-  async createCategory() {
-    if (
-      await this.save('categories', {
-        name: this.name.trim(),
-        description: this.description.trim(),
-      })
-    ) {
-      this.name = '';
-      this.description = '';
-    }
-  }
-  async createPriority() {
-    if (
-      await this.save('priorities', {
-        code: this.code.trim().toUpperCase(),
-        name: this.priorityName.trim(),
-        rank: +this.rank,
-        target_minutes: +this.minutes,
-      })
-    ) {
-      this.code = '';
-      this.priorityName = '';
     }
   }
 }

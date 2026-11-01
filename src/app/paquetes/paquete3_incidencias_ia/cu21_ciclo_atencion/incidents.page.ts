@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { IncidentEvidenceComponent } from '../shared/incident-evidence.component';
 import { IncidentsApi, IncidentDetail, AttentionAlert } from './incidents.api';
-import { IncidentAIComponent } from '../cu22_analisis_ia/incident-ai.component';
 
 @Component({
   selector: 'taji-incidents-page',
-  imports: [FormsModule, DatePipe, IncidentAIComponent],
+  imports: [FormsModule, DatePipe, RouterLink, IncidentEvidenceComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './incidents.page.scss',
   template: `
@@ -95,7 +96,11 @@ import { IncidentAIComponent } from '../cu22_analisis_ia/incident-ai.component';
               </dd>
             </div>
           </dl>
-          <taji-incident-ai [code]="d.public_code" (reviewed)="open(d.public_code)" />
+          <p>
+            <a routerLink="/analisis-incidencias" [queryParams]="{ codigo: d.public_code }"
+              >Consultar análisis y clasificación con IA →</a
+            >
+          </p>
           @if (transitions().length) {
             <form
               (ngSubmit)="mutate('change-status', { status: nextStatus, comment: statusComment })"
@@ -161,20 +166,7 @@ import { IncidentAIComponent } from '../cu22_analisis_ia/incident-ai.component';
               <li>Sin cambios registrados.</li>
             }
           </ol>
-          <h3>Evidencias</h3>
-          @for (a of d.attachments; track a.id) {
-            <p>
-              @if (a.file_url && safeLink(a.file_url)) {
-                <a [href]="a.file_url" target="_blank" rel="noopener noreferrer">{{
-                  a.caption || a.file_type_display
-                }}</a>
-              } @else {
-                {{ a.caption || 'Evidencia registrada' }}
-              }
-            </p>
-          } @empty {
-            <p class="muted">Sin evidencias adjuntas.</p>
-          }
+          <taji-incident-evidence [attachments]="d.attachments || []" />
           <h3>Asignaciones</h3>
           @for (a of d.assignments; track a.id) {
             <p>
@@ -229,6 +221,7 @@ import { IncidentAIComponent } from '../cu22_analisis_ia/incident-ai.component';
 })
 export class IncidentsPage {
   private readonly api = inject(IncidentsApi);
+  private readonly route = inject(ActivatedRoute);
   readonly items = signal<IncidentDetail[]>([]);
   readonly detail = signal<IncidentDetail | null>(null);
   readonly transitions = signal<{ value: string; label: string }[]>([]);
@@ -250,6 +243,8 @@ export class IncidentsPage {
   visibility = 'PUBLIC';
   constructor() {
     void this.load();
+    const code = this.route.snapshot.queryParamMap.get('codigo');
+    if (code) void this.open(code);
     this.api.alerts().subscribe({ next: (a) => this.alerts.set(a), error: () => {} });
   }
   async load() {
@@ -328,8 +323,5 @@ export class IncidentsPage {
   }
   setDate() {
     if (this.due) void this.mutate('set-target-date', { due_at: new Date(this.due).toISOString() });
-  }
-  safeLink(value: string) {
-    return /^https?:\/\//i.test(value) || /^\/(?!\/)/.test(value);
   }
 }

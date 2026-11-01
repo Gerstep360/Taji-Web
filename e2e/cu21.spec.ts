@@ -56,6 +56,9 @@ test('CU21 permite consultar seguimiento, comentar y cambiar estado en escritori
     const path = new URL(route.request().url()).pathname;
     let body: unknown = {};
     if (path.endsWith('/auth/me/')) body = { user };
+    else if (path.endsWith('/ai/')) body = { analyses: [], can_analyze: false, can_review: false };
+    else if (path.endsWith('/incident-ai/catalogs/'))
+      body = { categories: [], priorities: [], can_manage: false };
     else if (path.endsWith('/alerts/')) body = [];
     else if (path.endsWith('/assignees/')) body = [{ id: 3, name: 'Luis Mantenimiento' }];
     else if (path.endsWith('/transitions/'))

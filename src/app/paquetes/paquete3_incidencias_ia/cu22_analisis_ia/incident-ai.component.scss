@@ -1,0 +1,174 @@
+.ai-panel {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid #cddff9;
+  border-radius: 1rem;
+  background: #f6faff;
+  color: #10233c;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.eyebrow {
+  color: #1265d9;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+h3 {
+  margin: 0.4rem 0;
+  font-size: 1.2rem;
+}
+h4 {
+  margin: 1.2rem 0 0.6rem;
+}
+p,
+li {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  padding: 0.7rem;
+  border: 1px solid #ccdaf0;
+  border-radius: 0.65rem;
+  box-sizing: border-box;
+}
+button {
+  cursor: pointer;
+  color: #155bb2;
+  background: white;
+  font-size: 0.8rem;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.primary {
+  background: #0f6fff;
+  color: white;
+  justify-self: start;
+}
+.results {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+  background: white;
+  padding: 1rem;
+  border-radius: 0.7rem;
+}
+.results span,
+.results strong {
+  display: block;
+}
+.results span,
+.metadata,
+small {
+  font-size: 0.72rem;
+  color: #61768e;
+}
+.results strong {
+  margin-top: 0.4rem;
+}
+li small {
+  display: block;
+}
+.status {
+  color: #137058;
+  font-weight: 700;
+}
+.error {
+  color: #a32640;
+  background: #fff0f2;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+}
+.caution,
+.waiting {
+  background: #fff8e5;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+form {
+  display: grid;
+  gap: 0.8rem;
+  border-top: 1px solid #d4e1f5;
+  margin-top: 1.2rem;
+  padding-top: 0.5rem;
+}
+label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+input,
+select,
+textarea {
+  width: 100%;
+  background: white;
+  color: inherit;
+}
+.check {
+  display: flex;
+  align-items: start;
+  line-height: 1.4;
+}
+.check input {
+  width: auto;
+  margin-top: 0.2rem;
+}
+details {
+  margin: 1rem 0;
+}
+summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+pre {
+  overflow: auto;
+  max-height: 20rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.7rem;
+}
+.metadata {
+  display: block;
+  margin-top: 1rem;
+}
+.review-note {
+  border-left: 3px solid #29a67c;
+  padding-left: 0.8rem;
+}
+.empty {
+  color: #61768e;
+}
+:focus-visible {
+  outline: 3px solid #82b8ff;
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  header {
+    align-items: start;
+    flex-direction: column;
+  }
+  .results,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-panel {
+    padding: 1rem;
+  }
+}

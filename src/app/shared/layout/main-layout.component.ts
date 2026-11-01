@@ -377,8 +377,10 @@ export class MainLayoutComponent {
         {
           label: 'Clasificación con IA',
           icon: 'sparkles',
-          isAvailable: false,
+          route: '/analisis-incidencias',
+          isAvailable: true,
         },
+        { label: 'Catálogos de incidencias', icon: 'list', route: '/catalogos-incidencias', isAvailable: true, superuserOnly: true },
       ],
     },
     {

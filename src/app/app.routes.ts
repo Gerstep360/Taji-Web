@@ -59,6 +59,16 @@ export const routes: Routes = [
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
       {
+        path: 'analisis-incidencias',
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu21_ciclo_atencion/incidents.page').then(m => m.IncidentsPage),
+        title: 'Análisis de incidencias | Taji',
+      },
+      {
+        path: 'catalogos-incidencias', canActivate: [superuserGuard],
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu22_analisis_ia/ai-catalog.page').then(m => m.AICatalogPage),
+        title: 'Catálogos de incidencias | Taji',
+      },
+      {
         path: 'incidencias',
         loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu21_ciclo_atencion/incidents.page').then(m => m.IncidentsPage),
         title: 'Seguimiento de incidencias | Taji',

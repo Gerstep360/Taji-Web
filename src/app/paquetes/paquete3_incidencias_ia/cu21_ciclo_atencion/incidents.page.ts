@@ -3,10 +3,11 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { IncidentsApi, IncidentDetail, AttentionAlert } from './incidents.api';
+import { IncidentAIComponent } from '../cu22_analisis_ia/incident-ai.component';
 
 @Component({
   selector: 'taji-incidents-page',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, IncidentAIComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './incidents.page.scss',
   template: `
@@ -94,6 +95,7 @@ import { IncidentsApi, IncidentDetail, AttentionAlert } from './incidents.api';
               </dd>
             </div>
           </dl>
+          <taji-incident-ai [code]="d.public_code" (reviewed)="open(d.public_code)" />
           @if (transitions().length) {
             <form
               (ngSubmit)="mutate('change-status', { status: nextStatus, comment: statusComment })"

@@ -364,9 +364,11 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
-          label: 'Reportar Incidencia',
+          label: 'Registrar Incidencia',
           icon: 'alert-triangle',
-          isAvailable: false,
+          route: '/registrar-incidencia',
+          permissions: ['report_incidents', 'manage_incidents'],
+          isAvailable: true,
         },
         {
           label: 'Seguimiento y Ciclo',

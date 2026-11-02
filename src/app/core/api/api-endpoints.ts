@@ -120,6 +120,13 @@ export const API_ENDPOINTS = {
     historial: '/paquete2/turnos/historial/',
   },
   shiftLogs: { root: '/paquete2/novedades-turno/' },
+  incidents: {
+    // CU18: alta multipart con evidencias y catálogos del formulario.
+    root: '/incidents/',
+    options: '/incidents/options/',
+    categories: '/incidents/categories/',
+    priorities: '/incidents/priorities/',
+  },
   handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
 } as const;
 

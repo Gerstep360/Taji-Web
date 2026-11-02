@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
@@ -7,6 +7,15 @@ import { AuthService } from '../auth/auth.service';
 import { GlobalNoticeService } from './global-notice.service';
 
 const PUBLIC_AUTH_REQUEST = /\/(login|register|forgot-password|reset-password)\//;
+
+/**
+ * Marca una petición cuyo 403 y 5xx los muestra la propia pantalla.
+ *
+ * Sin esto, un formulario con archivos adjuntos (CU18) perdería todo lo cargado
+ * al redirigir a `/acceso-denegado` o `/error-servidor`, aunque el fallo sea
+ * recuperable (por ejemplo, el almacenamiento de evidencias no disponible).
+ */
+export const HANDLE_ERRORS_LOCALLY = new HttpContextToken<boolean>(() => false);
 
 /** Extrae el mensaje que el backend ya devolvió, con un texto por defecto. */
 function errorMessage(error: HttpErrorResponse, fallback: string): string {
@@ -41,7 +50,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           }
           break;
         case 403:
-          void router.navigateByUrl('/acceso-denegado');
+          if (!request.context.get(HANDLE_ERRORS_LOCALLY)) void router.navigateByUrl('/acceso-denegado');
           break;
         case 404:
           notices.show('No se encontró el recurso solicitado.', 'warning');
@@ -63,7 +72,9 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           notices.show(errorMessage(error, 'Un servicio externo no respondió. Intenta nuevamente.'), 'warning');
           break;
         default:
-          if (error.status >= 500) void router.navigateByUrl('/error-servidor');
+          if (error.status >= 500 && !request.context.get(HANDLE_ERRORS_LOCALLY)) {
+            void router.navigateByUrl('/error-servidor');
+          }
       }
 
       return throwError(() => error);

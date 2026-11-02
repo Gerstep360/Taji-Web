@@ -21,4 +21,11 @@ describe('application routes', () => {
     expect(staffRoute?.canActivate?.length).toBe(1);
     expect(staffRoute?.loadComponent).toBeTypeOf('function');
   });
+
+  it('registers CU18 as a permission-protected lazy route', () => {
+    const privateChildren = routes.find((route) => route.path === '')?.children ?? [];
+    const incidentRoute = privateChildren.find((route) => route.path === 'registrar-incidencia');
+    expect(incidentRoute?.canActivate?.length).toBe(1);
+    expect(incidentRoute?.loadComponent).toBeTypeOf('function');
+  });
 });

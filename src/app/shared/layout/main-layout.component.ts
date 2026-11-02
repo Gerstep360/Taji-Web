@@ -388,7 +388,9 @@ export class MainLayoutComponent {
         {
           label: 'Inventario de Activos',
           icon: 'boxes',
-          isAvailable: false,
+          route: '/activos',
+          permissions: ['manage_assets', 'view_general_status', 'maintain_assets'],
+          isAvailable: true,
         },
         {
           label: 'Identificación QR',

@@ -67,3 +67,6 @@ desktop.ini
 *.apk
 public/downloads/
 
+# Herramientas de IA locales (Kilo/OpenCode)
+.agents/
+skills-lock.json

@@ -1,0 +1,183 @@
+<section class="seguimiento-page" aria-labelledby="page-title">
+  <header class="page-heading">
+    <div>
+      <span class="kicker">Incidencias e IA · CU19</span>
+      <h2 id="page-title">Seguimiento e Historial de Incidencias</h2>
+      <p>Tablero de control inteligente para consultar el ciclo de vida, filtros avanzados, evidencias y asignaciones.</p>
+    </div>
+  </header>
+
+  @if (successMessage()) {
+    <div class="notice success" role="status">✓ {{ successMessage() }}</div>
+  }
+  @if (loadError()) {
+    <div class="notice error" role="alert">
+      <span>{{ loadError() }}</span>
+      <button type="button" (click)="loadIncidents()">Reintentar</button>
+    </div>
+  }
+
+  <!-- Resumen superior / métricas de tablero -->
+  <section class="summary-strip" aria-label="Resumen de incidencias">
+    <div class="summary-card">
+      <strong>{{ incidents().length }}</strong>
+      <span>Incidencias en vista actual</span>
+    </div>
+  </section>
+
+  <!-- Filtros del tablero (T091) -->
+  <form class="filters" [formGroup]="filters" aria-label="Filtros de incidencias" (submit)="$event.preventDefault()">
+    <label class="search-field">
+      <span class="sr-only">Buscar incidencia</span>
+      <button type="button" class="search-icon-btn" (click)="loadIncidents()" aria-label="Buscar">
+        <taji-icon name="search" />
+      </button>
+      <input
+        formControlName="search"
+        type="search"
+        placeholder="Buscar por código (ej. INC-001), título o descripción..."
+        (keydown)="onSearchKeydown($event)"
+      />
+    </label>
+
+    <label>
+      <span>Estado</span>
+      <select formControlName="status" (change)="loadIncidents()">
+        <option value="">Todos los estados</option>
+        <option value="REPORTED">Reportada</option>
+        <option value="REVIEWED">Revisada</option>
+        <option value="ASSIGNED">Asignada</option>
+        <option value="IN_PROGRESS">En Proceso</option>
+        <option value="RESOLVED">Resuelta</option>
+        <option value="CLOSED">Cerrada</option>
+        <option value="CANCELLED">Cancelada</option>
+      </select>
+    </label>
+
+    @if (options(); as opts) {
+      <label>
+        <span>Categoría</span>
+        <select formControlName="category" (change)="loadIncidents()">
+          <option [value]="0">Todas las categorías</option>
+          @for (cat of opts.categories; track cat.id) {
+            <option [value]="cat.id">{{ cat.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Prioridad</span>
+        <select formControlName="priority" (change)="loadIncidents()">
+          <option [value]="0">Todas las prioridades</option>
+          @for (prio of opts.priorities; track prio.id) {
+            <option [value]="prio.id">{{ prio.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Sector</span>
+        <select formControlName="sector" (change)="loadIncidents()">
+          <option [value]="0">Todos los sectores</option>
+          @for (sec of opts.sectors; track sec.id) {
+            <option [value]="sec.id">{{ sec.name }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    <button class="primary-btn search-submit-btn" type="button" (click)="loadIncidents()">
+      Buscar
+    </button>
+
+    @if (hasFilters()) {
+      <button class="clear-filter" type="button" (click)="clearFilters()">
+        Limpiar filtros
+      </button>
+    }
+  </form>
+
+  <!-- Listado / Tablero de Incidencias -->
+  <section class="incidents-board" [attr.aria-busy]="loading()">
+    @if (loading()) {
+      <div class="loading-state" role="status">
+        <div class="spinner"></div>
+        <p>Cargando tablero de incidencias…</p>
+      </div>
+    } @else if (!incidents().length) {
+      <div class="empty-state">
+        <span aria-hidden="true">
+          <taji-icon name="alert-triangle" />
+        </span>
+        <h3>{{ hasFilters() ? 'No hay incidencias que coincidan con los filtros' : 'No hay incidencias registradas' }}</h3>
+        <p>Las incidencias reportadas aparecerán aquí para su seguimiento y gestión administrativa.</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="incidents-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Título y Categoría</th>
+              <th>Sector / Unidad</th>
+              <th>Prioridad</th>
+              <th>Estado</th>
+              <th>Reportado por</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (inc of incidents(); track inc.id) {
+              <tr>
+                <td>
+                  <code class="code-badge">{{ inc.public_code }}</code>
+                </td>
+                <td>
+                  <div class="title-cell">
+                    <strong>{{ inc.title }}</strong>
+                    <span>{{ inc.category.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  {{ inc.sector.name }}
+                  @if (inc.unit) {
+                    <span class="unit-pill">Unidad {{ inc.unit.code }}</span>
+                  }
+                </td>
+                <td>
+                  <strong>{{ inc.priority?.name || '—' }}</strong>
+                </td>
+                <td>
+                  <span class="badge" [class]="statusBadgeClass(inc.status)">
+                    {{ statusLabel(inc.status) }}
+                  </span>
+                </td>
+                <td>
+                  {{ inc.reporter?.full_name || 'Anónimo / Sistema' }}
+                </td>
+                <td>
+                  {{ inc.created_at | date: 'shortDate' }}
+                </td>
+                <td>
+                  <button class="action-btn" type="button" (click)="openDetail(inc.id)">
+                    Ver Detalle & Historial
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <!-- Modal de Detalle (T092) -->
+  @if (selectedIncidentId(); as incId) {
+    <taji-incident-detail
+      [incidentId]="incId"
+      (close)="closeDetail()"
+      (updated)="onIncidentUpdated()"
+    />
+  }
+</section>

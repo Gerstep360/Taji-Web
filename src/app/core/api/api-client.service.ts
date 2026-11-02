@@ -1,4 +1,4 @@
-﻿import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+﻿import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, timeout } from 'rxjs';
 
@@ -7,6 +7,7 @@ import { AppConfigService } from './app-config.service';
 export interface ApiRequestOptions {
   headers?: HttpHeaders;
   params?: HttpParams;
+  context?: HttpContext;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -398,7 +398,14 @@ export class MainLayoutComponent {
         {
           label: 'Órdenes de Trabajo',
           icon: 'wrench',
-          isAvailable: false,
+          route: '/mantenimiento-ordenes',
+          permissions: [
+            'manage_maintenance',
+            'view_assigned_work_orders',
+            'update_work_order_status',
+            'attach_work_evidence',
+          ],
+          isAvailable: true,
         },
       ],
     },

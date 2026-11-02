@@ -220,6 +220,20 @@ export const routes: Routes = [
         title: 'Turnos de Seguridad | Taji',
       },
       {
+        path: 'mantenimiento-ordenes',
+        canActivate: [anyPermissionGuard([
+          'manage_maintenance',
+          'view_assigned_work_orders',
+          'update_work_order_status',
+          'attach_work_evidence',
+        ])],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu25_mantenimiento_ordenes/mantenimiento.page').then(
+            (m) => m.MantenimientoPage,
+          ),
+        title: 'Mantenimiento y órdenes de trabajo | Taji',
+      },
+      {
         path: 'novedades-turno',
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
         loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu14_novedades_incidentes/novedades.page').then(m => m.NovedadesPage),

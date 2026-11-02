@@ -21,8 +21,8 @@ export class ApiClient {
     return this.withTimeout(this.http.get<TResponse>(this.appConfig.endpoint(path), options));
   }
 
-  post<TRequest, TResponse>(path: string, body: TRequest, options?: ApiRequestOptions): Observable<TResponse> {
-    return this.withTimeout(this.http.post<TResponse>(this.appConfig.endpoint(path), body, options));
+  post<TRequest, TResponse>(path: string, body: TRequest, options?: ApiRequestOptions, timeoutMs?: number): Observable<TResponse> {
+    return this.withTimeout(this.http.post<TResponse>(this.appConfig.endpoint(path), body, options), timeoutMs);
   }
 
   put<TRequest, TResponse>(path: string, body: TRequest, options?: ApiRequestOptions): Observable<TResponse> {
@@ -37,8 +37,8 @@ export class ApiClient {
     return this.withTimeout(this.http.delete<TResponse>(this.appConfig.endpoint(path), options));
   }
 
-  private withTimeout<T>(request: Observable<T>): Observable<T> {
-    return request.pipe(timeout(this.appConfig.config().requestTimeoutMs));
+  private withTimeout<T>(request: Observable<T>, timeoutMs?: number): Observable<T> {
+    return request.pipe(timeout(timeoutMs ?? this.appConfig.config().requestTimeoutMs));
   }
 
   postBlob<TRequest>(path: string, body: TRequest, options?: ApiRequestOptions): Observable<Blob> {

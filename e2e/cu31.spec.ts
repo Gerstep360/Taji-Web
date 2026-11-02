@@ -1,6 +1,71 @@
 import { expect, test, Page } from '@playwright/test';
 
-test.use({ channel: 'msedge' });
+const executable = process.env['TAJI_BROWSER_EXECUTABLE'];
+test.use({
+  channel: executable ? undefined : 'msedge',
+  launchOptions: executable ? { executablePath: executable } : {},
+});
+test('CU31 graba con RecordRTC sin SpeechRecognition y muestra siempre el selector', async ({
+  page,
+}) => {
+  const api = await setup(page);
+  await page.addInitScript(() => {
+    const w = window as any;
+    w.SpeechRecognition = undefined;
+    w.webkitSpeechRecognition = undefined;
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: async (constraints: any) => {
+          w.audioConstraints = constraints;
+          const context = new AudioContext();
+          const oscillator = context.createOscillator();
+          const destination = context.createMediaStreamDestination();
+          oscillator.connect(destination);
+          oscillator.start();
+          const track = destination.stream.getAudioTracks()[0];
+          const stop = track.stop.bind(track);
+          track.stop = () => {
+            w.trackStopped = true;
+            stop();
+            oscillator.stop();
+            void context.close();
+          };
+          return destination.stream;
+        },
+        enumerateDevices: async () => [
+          { kind: 'audioinput', deviceId: 'usb-mic', label: 'Micrófono USB' },
+        ],
+      },
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/reportes');
+  await expect(page.getByLabel('Micrófono para dictar', { exact: true })).toBeVisible();
+  await page.screenshot({
+    path: 'docs/screenshots/CU31-selector-visible-mobile.png',
+    fullPage: true,
+  });
+  await page.getByRole('button', { name: 'Elegir micrófono', exact: true }).click();
+  await page.getByLabel('Micrófono para dictar', { exact: true }).selectOption('usb-mic');
+  await page.getByRole('button', { name: 'Grabar consulta', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Transcribir grabación', exact: true }),
+  ).toBeVisible();
+  await page.waitForTimeout(1100);
+  expect(api.calls.some((call) => call.path.endsWith('/transcribe/'))).toBe(false);
+  expect(await page.evaluate(() => (window as any).audioConstraints.audio.deviceId.exact)).toBe(
+    'usb-mic',
+  );
+  await page.getByRole('button', { name: 'Transcribir grabación', exact: true }).click();
+  await expect(page.getByLabel('Consulta del reporte', { exact: true })).toHaveValue(
+    'Incidencias pendientes del condominio',
+  );
+  expect(api.calls.some((call) => call.path.endsWith('/voice-query/'))).toBe(false);
+  expect(await page.evaluate(() => (window as any).trackStopped)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'docs/screenshots/CU31-microphone-mobile.png', fullPage: true });
+});
 const columns = [
   { key: 'public_code', label: 'Código', type: 'text', operators: ['eq', 'contains'], choices: [] },
   { key: 'title', label: 'Título', type: 'text', operators: ['contains', 'is_empty'], choices: [] },
@@ -37,8 +102,18 @@ async function setup(page: Page, role = 'administrador') {
   await page.addInitScript(() => localStorage.setItem('taji.auth.has-session', '1'));
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
-    const body = route.request().method() === 'POST' ? route.request().postDataJSON() : null;
+    const body =
+      route.request().method() === 'POST' &&
+      !route.request().headers()['content-type']?.includes('multipart/form-data')
+        ? route.request().postDataJSON()
+        : null;
     calls.push({ path, body });
+    if (path.endsWith('/cu31/transcribe/')) {
+      const bytes = route.request().postDataBuffer()!;
+      expect(bytes.includes(Buffer.from('RIFF'))).toBe(true);
+      expect(bytes.includes(Buffer.from('WAVE'))).toBe(true);
+      return route.fulfill({ json: { text: 'Incidencias pendientes del condominio' } });
+    }
     if (path.endsWith('/auth/me/'))
       return route.fulfill({
         json: {

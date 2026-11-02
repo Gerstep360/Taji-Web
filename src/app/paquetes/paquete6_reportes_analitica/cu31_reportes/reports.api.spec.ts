@@ -6,6 +6,15 @@ import { ReportsApi } from './reports.api';
 import { ReportRequest } from './reports.models';
 
 describe('CU31 ReportsApi', () => {
+  it('transcribe WAV con FormData sin exponer claves ni fijar Content-Type', () => {
+    api.transcribe(new Blob(['RIFF-WAVE'], { type: 'audio/wav' })).subscribe();
+    const [path, form, options, timeout] = client.post.mock.calls[0];
+    expect(path).toBe('/cu31/transcribe/');
+    expect(form).toBeInstanceOf(FormData);
+    expect((form.get('audio_file') as File).name).toBe('consulta.wav');
+    expect(options.headers).toBeUndefined();
+    expect(timeout).toBe(45000);
+  });
   const client = { get: vi.fn(), post: vi.fn(), postBlob: vi.fn() };
   let api: ReportsApi;
   const query: ReportRequest = {

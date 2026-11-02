@@ -28,6 +28,16 @@ export class ReportsApi {
       this.options(),
     );
   }
+  transcribe(audio: Blob) {
+    const form = new FormData();
+    form.append('audio_file', audio, 'consulta.wav');
+    return this.client.post<FormData, { text: string }>(
+      this.root + 'transcribe/',
+      form,
+      this.options(),
+      45000,
+    );
+  }
   narrate(source: string, total: number) {
     return this.client.post<object, { spoken_summary: string }>(
       this.root + 'voice-narrate/',

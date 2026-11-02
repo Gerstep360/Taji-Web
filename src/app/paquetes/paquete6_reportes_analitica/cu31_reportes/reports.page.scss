@@ -204,6 +204,10 @@ button:disabled {
   color: #bc3636;
   border-color: #efb6ab;
 }
+.record-button {
+  flex-shrink: 0;
+  min-width: 6.5rem;
+}
 .text-button {
   padding: 0.3rem 0.45rem;
   border: 0;
@@ -469,4 +473,18 @@ tbody tr:hover {
   .query-strip {
     padding: 1rem;
   }
+}
+.suggestions select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.microphone-control {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+.microphone-control small {
+  color: #64748b;
 }

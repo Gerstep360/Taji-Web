@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
   effect,
@@ -32,6 +33,7 @@ import {
   styleUrl: './reports.page.scss',
 })
 export class ReportsPage {
+  private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly api = inject(ReportsApi);
   readonly voice = inject(ReportVoiceService);
   private readonly auth = inject(AuthService);
@@ -42,6 +44,7 @@ export class ReportsPage {
   readonly error = signal('');
   readonly notice = signal('');
   readonly listening = signal(false);
+  readonly preparingMicrophone = signal(false);
   readonly operators = OPERATOR_LABELS;
   readonly emptyOperator = emptyOperator;
   source: ReportSource | null = null;
@@ -204,22 +207,52 @@ export class ReportsPage {
       this.notice.set('Consulta interpretada. Revisa la fuente y los filtros antes de exportar.');
     });
   }
-  dictate() {
+  async microphones() {
+    try {
+      await this.voice.loadMicrophones();
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'No se pudo acceder al micrófono.');
+    }
+  }
+  async dictate() {
     if (this.listening()) {
-      this.voice.stop();
-      this.listening.set(false);
+      await this.transcribeRecording();
       return;
     }
+    if (this.busy() || this.preparingMicrophone()) return;
     this.error.set('');
-    this.listening.set(true);
-    this.voice.listen(
-      (text) => (this.text = text),
-      () => this.listening.set(false),
-      (message) => {
-        this.listening.set(false);
-        this.error.set(message);
-      },
-    );
+    const version = this.revision;
+    this.preparingMicrophone.set(true);
+    try {
+      const started = await this.voice.begin(() =>
+        this.notice.set(
+          'Grabación pausada a los 30 segundos. Pulsa Transcribir para enviarla o descártala.',
+        ),
+      );
+      if (version === this.revision) this.listening.set(started);
+    } catch (error) {
+      if (version === this.revision) await this.failure(error);
+    } finally {
+      this.preparingMicrophone.set(false);
+    }
+  }
+  cancelRecording() {
+    this.voice.stop();
+    this.listening.set(false);
+    this.notice.set('Grabación descartada. No se envió audio.');
+  }
+  private async transcribeRecording() {
+    if (this.busy() || !this.listening()) return;
+    this.listening.set(false);
+    await this.perform(async (current) => {
+      const audio = await this.voice.finish();
+      if (!current()) return;
+      const response = await firstValueFrom(this.api.transcribe(audio));
+      if (!current()) return;
+      this.text = response.text;
+      this.changeDetector.markForCheck();
+      this.notice.set('Audio transcrito. Revisa el texto y pulsa Consultar cuando esté correcto.');
+    });
   }
   async read() {
     const result = this.result();

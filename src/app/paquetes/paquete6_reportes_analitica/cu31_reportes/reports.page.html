@@ -30,7 +30,7 @@
         <taji-icon name="mic" [size]="22" />
         <div>
           <h2 id="query-title">Pregunta con tus palabras</h2>
-          <p>Escribe o dicta. Tú decides cuándo enviar.</p>
+          <p>Elige tu micrófono, graba y revisa la transcripción antes de consultar.</p>
         </div>
       </div>
       <div class="query-input">
@@ -45,19 +45,45 @@
         ></textarea
         ><button
           type="button"
-          class="icon-button"
+          class="record-button"
           [class.recording]="listening()"
-          [attr.aria-label]="listening() ? 'Detener dictado' : 'Dictar consulta'"
+          [attr.aria-label]="listening() ? 'Transcribir grabación' : 'Grabar consulta'"
           [attr.aria-pressed]="listening()"
-          [disabled]="busy() || !voice.canDictate"
+          [disabled]="busy() || preparingMicrophone() || !voice.canDictate"
           (click)="dictate()"
         >
-          <taji-icon name="mic" [size]="20" /></button
-        ><button class="primary" type="button" [disabled]="busy() || !text.trim()" (click)="ask()">
+          <taji-icon name="mic" [size]="20" />{{ listening() ? 'Transcribir' : 'Grabar' }}</button
+        ><button
+          class="primary"
+          type="button"
+          [disabled]="busy() || listening() || preparingMicrophone() || !text.trim()"
+          (click)="ask()"
+        >
           Consultar
         </button>
       </div>
       <div class="suggestions">
+        <button type="button" [disabled]="busy() || listening()" (click)="microphones()">
+          Elegir micrófono
+        </button>
+        <div class="microphone-control">
+          <label for="dictation-microphone">Micrófono para dictar</label>
+          <select
+            id="dictation-microphone"
+            [(ngModel)]="voice.selectedMicrophone"
+            [disabled]="busy() || listening() || preparingMicrophone()"
+          >
+            <option value="">Micrófono predeterminado</option>
+            @for (device of voice.microphones(); track device.deviceId) {
+              <option [value]="device.deviceId">
+                {{ device.label || 'Micrófono disponible' }}
+              </option>
+            }
+          </select>
+          <small
+            >Actualiza la lista y concede permiso para ver los nombres de tus micrófonos.</small
+          >
+        </div>
         @for (suggestion of c.voice_suggestions; track suggestion) {
           <button type="button" [disabled]="busy()" (click)="text = suggestion">
             {{ suggestion }}
@@ -66,13 +92,23 @@
       </div>
       <p class="privacy">
         @if (listening()) {
-          <strong role="status">Escuchando… Revisa el texto antes de consultar. </strong>
+          <strong role="status"
+            >{{ voice.seconds() >= 30 ? 'Grabación pausada' : 'Grabando' }} {{ voice.seconds() }} /
+            30 s. Pulsa Transcribir al terminar.
+          </strong>
+          <button type="button" (click)="cancelRecording()">Descartar grabación</button>
+        }
+        @if (preparingMicrophone()) {
+          <strong role="status">Esperando permiso del micrófono… </strong>
+        }
+        @if (busy()) {
+          <strong role="status">Procesando tu solicitud… </strong>
         }
         @if (!voice.canDictate) {
           Dictado no disponible: usa un navegador compatible con HTTPS o localhost.
         }
-        El dictado usa el servicio de voz de tu navegador, que puede procesar audio externamente.
-        Taji recibe la transcripción, no una grabación.
+        Al pulsar Transcribir, el audio se envía al servidor de Taji y a NVIDIA para convertirlo en
+        texto. No guardamos la grabación en Taji. También puedes escribir sin usar el micrófono.
       </p>
     </section>
   }

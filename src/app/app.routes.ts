@@ -232,6 +232,15 @@ export const routes: Routes = [
         title: 'Entrega y Recepción de Turno | Taji',
       },
       {
+        path: 'activos',
+        canActivate: [anyPermissionGuard(['manage_assets', 'view_general_status', 'maintain_assets'])],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos').then(
+            (m) => m.ActivosPage,
+          ),
+        title: 'Inventario de Activos | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),

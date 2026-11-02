@@ -15,6 +15,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
       aria-hidden="true"
     >
       @switch (name) {
+        @case ('mic') { <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/> }
+        @case ('volume') { <path d="M11 5L6 9H3v6h3l5 4zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/> }
         @case ('home') {
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
           <polyline points="9 22 9 12 15 12 15 22"></polyline>

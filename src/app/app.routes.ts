@@ -59,6 +59,13 @@ export const routes: Routes = [
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
       {
+        path: 'reportes',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin', 'seguridad', 'operador'], [])],
+        loadComponent: () =>
+          import('./paquetes/paquete6_reportes_analitica/cu31_reportes/reports.page').then(m => m.ReportsPage),
+        title: 'Reportes y consultas | Taji',
+      },
+      {
         path: 'reportar-incidencia',
         canActivate: [anyPermissionGuard(['report_incidents', 'manage_incidents'])],
         loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu18_registrar_incidencia/incident-report.page').then(m => m.IncidentReportPage),

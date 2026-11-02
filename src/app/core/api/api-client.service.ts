@@ -40,4 +40,8 @@ export class ApiClient {
   private withTimeout<T>(request: Observable<T>): Observable<T> {
     return request.pipe(timeout(this.appConfig.config().requestTimeoutMs));
   }
+
+  postBlob<TRequest>(path: string, body: TRequest, options?: ApiRequestOptions): Observable<Blob> {
+    return this.withTimeout(this.http.post(this.appConfig.endpoint(path), body, { ...options, responseType: 'blob' }));
+  }
 }

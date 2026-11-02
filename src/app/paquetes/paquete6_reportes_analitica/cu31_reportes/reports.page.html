@@ -1,0 +1,349 @@
+<header class="page-heading">
+  <div>
+    <span class="eyebrow">Información del condominio</span>
+    <h1>Reportes y consultas</h1>
+    <p>Encuentra lo que necesitas. Revisa los datos antes de compartirlos.</p>
+  </div>
+  <span class="tenant"
+    ><taji-icon name="shield" [size]="16" />{{
+      catalog()?.condominium?.name || 'Condominio activo'
+    }}</span
+  >
+</header>
+@if (error()) {
+  <div class="message error" role="alert">
+    {{ error() }}
+    @if (!catalog()) {
+      <button type="button" (click)="load()">Reintentar</button>
+    }
+  </div>
+}
+@if (notice()) {
+  <p class="message" role="status">{{ notice() }}</p>
+}
+@if (loading()) {
+  <div class="empty" role="status">Cargando fuentes y permisos…</div>
+} @else if (catalog(); as c) {
+  @if (c.voice_enabled) {
+    <section class="query-strip" aria-labelledby="query-title">
+      <div class="query-title">
+        <taji-icon name="mic" [size]="22" />
+        <div>
+          <h2 id="query-title">Pregunta con tus palabras</h2>
+          <p>Escribe o dicta. Tú decides cuándo enviar.</p>
+        </div>
+      </div>
+      <div class="query-input">
+        <label class="sr-only" for="report-query">Consulta del reporte</label
+        ><textarea
+          id="report-query"
+          [(ngModel)]="text"
+          maxlength="500"
+          rows="2"
+          [disabled]="busy()"
+          placeholder="Por ejemplo: incidencias pendientes de esta semana"
+        ></textarea
+        ><button
+          type="button"
+          class="icon-button"
+          [class.recording]="listening()"
+          [attr.aria-label]="listening() ? 'Detener dictado' : 'Dictar consulta'"
+          [attr.aria-pressed]="listening()"
+          [disabled]="busy() || !voice.canDictate"
+          (click)="dictate()"
+        >
+          <taji-icon name="mic" [size]="20" /></button
+        ><button class="primary" type="button" [disabled]="busy() || !text.trim()" (click)="ask()">
+          Consultar
+        </button>
+      </div>
+      <div class="suggestions">
+        @for (suggestion of c.voice_suggestions; track suggestion) {
+          <button type="button" [disabled]="busy()" (click)="text = suggestion">
+            {{ suggestion }}
+          </button>
+        }
+      </div>
+      <p class="privacy">
+        @if (listening()) {
+          <strong role="status">Escuchando… Revisa el texto antes de consultar. </strong>
+        }
+        @if (!voice.canDictate) {
+          Dictado no disponible: usa un navegador compatible con HTTPS o localhost.
+        }
+        El dictado usa el servicio de voz de tu navegador, que puede procesar audio externamente.
+        Taji recibe la transcripción, no una grabación.
+      </p>
+    </section>
+  }
+  <div class="workspace" [attr.aria-busy]="busy()">
+    <section class="configuration" aria-label="Configurar reporte">
+      <div class="section-heading">
+        <h2>Prepara tu reporte</h2>
+        <span class="step-label">01 / Configuración</span>
+      </div>
+      <fieldset [disabled]="busy()">
+        <label for="report-source">¿Qué quieres consultar?</label
+        ><select id="report-source" [ngModel]="source?.key" (ngModelChange)="selectSource($event)">
+          @for (s of c.sources; track s.key) {
+            <option [value]="s.key">{{ s.label }}</option>
+          }
+        </select>
+        <p class="helper">{{ source?.description }}</p>
+        <label for="report-title">Nombre del reporte <span>(opcional)</span></label
+        ><input
+          id="report-title"
+          [(ngModel)]="title"
+          maxlength="120"
+          (ngModelChange)="changed()"
+          placeholder="Usaremos el nombre de la fuente"
+        />
+        <details>
+          <summary>
+            Columnas del reporte <span>{{ columns.length }} seleccionadas</span>
+          </summary>
+          <div class="columns">
+            @for (col of source?.columns; track col.key) {
+              <label
+                ><input
+                  type="checkbox"
+                  [checked]="columns.includes(col.key)"
+                  (change)="toggleColumn(col.key)"
+                />{{ col.label }}</label
+              >
+            }
+          </div>
+        </details>
+        <div class="filter-heading">
+          <h3>Filtros</h3>
+          <button
+            type="button"
+            class="text-button"
+            [disabled]="filters.length >= 8"
+            (click)="addFilter()"
+          >
+            + Agregar filtro
+          </button>
+        </div>
+        @if (!filters.length) {
+          <p class="helper">Sin filtros: consulta todos los registros de esta fuente.</p>
+        }
+        @for (filter of filters; track $index; let i = $index) {
+          <div class="filter-row">
+            <label [for]="'field-' + i">Campo {{ i + 1 }}</label
+            ><select
+              [id]="'field-' + i"
+              [(ngModel)]="filter.field"
+              (ngModelChange)="setFilterField(filter)"
+            >
+              @for (col of source?.columns; track col.key) {
+                <option [value]="col.key">{{ col.label }}</option>
+              }
+            </select>
+            <div class="filter-controls">
+              <select
+                [attr.aria-label]="'Condición ' + (i + 1)"
+                [(ngModel)]="filter.operator"
+                (ngModelChange)="changed()"
+              >
+                @for (op of filterColumn(filter)?.operators; track op) {
+                  <option [value]="op">{{ operators[op] || op }}</option>
+                }</select
+              ><button
+                class="icon-button"
+                type="button"
+                [attr.aria-label]="'Quitar filtro ' + (i + 1)"
+                (click)="removeFilter(i)"
+              >
+                <taji-icon name="x" [size]="18" />
+              </button>
+            </div>
+            @if (!emptyOperator(filter.operator)) {
+              @if (filterColumn(filter)?.type === 'choice') {
+                <select
+                  [attr.aria-label]="'Valor ' + (i + 1)"
+                  [(ngModel)]="filter.value"
+                  (ngModelChange)="changed()"
+                >
+                  <option value="">Seleccionar valor</option>
+                  @for (choice of filterColumn(filter)?.choices; track choice.value) {
+                    <option [value]="choice.value">{{ choice.label }}</option>
+                  }
+                </select>
+              } @else {
+                <input
+                  [attr.aria-label]="'Valor ' + (i + 1)"
+                  [type]="
+                    ['date', 'datetime'].includes(filterColumn(filter)?.type || '')
+                      ? 'date'
+                      : 'text'
+                  "
+                  [attr.inputmode]="filterColumn(filter)?.type === 'number' ? 'numeric' : null"
+                  [(ngModel)]="filter.value"
+                  maxlength="200"
+                  (ngModelChange)="changed()"
+                />
+              }
+            }
+          </div>
+        }
+        <div class="sort-grid">
+          <div>
+            <label for="report-sort">Ordenar por</label
+            ><select id="report-sort" [(ngModel)]="orderField" (ngModelChange)="changed()">
+              @for (col of source?.columns; track col.key) {
+                <option [value]="col.key">{{ col.label }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label for="report-direction">Orden</label
+            ><select id="report-direction" [(ngModel)]="direction" (ngModelChange)="changed()">
+              <option value="asc">Ascendente</option>
+              <option value="desc">Descendente</option>
+            </select>
+          </div>
+        </div>
+        <label for="report-size">Filas por página</label
+        ><select id="report-size" [(ngModel)]="pageSize" (ngModelChange)="changed()">
+          <option [ngValue]="10">10 filas</option>
+          <option [ngValue]="25">25 filas</option>
+          <option [ngValue]="50">50 filas</option></select
+        ><button
+          type="button"
+          class="primary preview-button"
+          [disabled]="!valid() || busy()"
+          (click)="preview()"
+        >
+          <taji-icon name="search" [size]="17" />{{
+            busy() ? 'Procesando…' : 'Generar vista previa'
+          }}
+        </button>
+        @if (!columns.length) {
+          <p class="helper">Selecciona al menos una columna.</p>
+        }
+      </fieldset>
+    </section>
+    <section class="results" aria-label="Resultado del reporte">
+      <div class="section-heading">
+        <h2>Vista previa</h2>
+        <span class="step-label">02 / Revisión y exportación</span>
+      </div>
+      @if (result(); as r) {
+        <div class="result-title">
+          <div>
+            <h3>{{ r.title }}</h3>
+            <p>{{ r.pagination.total }} registros encontrados · solo del condominio activo</p>
+          </div>
+          <span class="count">{{ r.columns.length }} columnas</span>
+        </div>
+        <div class="export-toolbar">
+          <div>
+            <label class="sr-only" for="report-format">Formato de exportación</label
+            ><select id="report-format" [(ngModel)]="format" [disabled]="busy()">
+              @for (f of c.formats; track f) {
+                <option [value]="f">
+                  {{
+                    f === 'xlsx'
+                      ? 'Excel (.xlsx)'
+                      : f === 'csv'
+                        ? 'CSV (.csv)'
+                        : 'HTML para impresión'
+                  }}
+                </option>
+              }</select
+            ><button
+              type="button"
+              class="primary"
+              [disabled]="busy() || !r.can_export"
+              (click)="download()"
+            >
+              <taji-icon name="download" [size]="17" />Descargar reporte
+            </button>
+          </div>
+          <div class="read-controls">
+            <button type="button" [disabled]="busy() || !voice.canSpeak" (click)="read()">
+              <taji-icon name="volume" [size]="17" />Escuchar resumen</button
+            ><button type="button" (click)="voice.stopSpeaking()" aria-label="Detener lectura">
+              Detener
+            </button>
+          </div>
+        </div>
+        @if (!r.can_export) {
+          <p class="message error">
+            El reporte supera el límite de {{ c.export_limit }} filas. Agrega filtros para
+            exportarlo completo.
+          </p>
+        }
+        @if (summary) {
+          <p class="narrative">{{ summary }}</p>
+        }
+        @if (r.rows.length) {
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Tabla de resultados, desplazamiento horizontal"
+          >
+            <table>
+              <caption class="sr-only">
+                {{
+                  r.title
+                }}
+              </caption>
+              <thead>
+                <tr>
+                  @for (col of r.columns; track col.key) {
+                    <th scope="col">{{ col.label }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of r.rows; track $index) {
+                  <tr>
+                    @for (cell of row; track $index) {
+                      <td>{{ cell === null || cell === '' ? '—' : cell }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty">
+            <taji-icon name="search" [size]="32" />
+            <h3>No hay registros con estos criterios</h3>
+            <p>Prueba con menos filtros o selecciona otra fuente.</p>
+          </div>
+        }
+        <nav class="pagination" aria-label="Páginas del reporte">
+          <button
+            [disabled]="busy() || r.pagination.page <= 1"
+            (click)="preview(r.pagination.page - 1)"
+          >
+            Anterior</button
+          ><span>Página {{ r.pagination.page }} de {{ r.pagination.pages }}</span
+          ><button
+            [disabled]="busy() || r.pagination.page >= r.pagination.pages"
+            (click)="preview(r.pagination.page + 1)"
+          >
+            Siguiente
+          </button>
+        </nav>
+        <p class="privacy">
+          La descarga incluye todos los registros filtrados, no solo esta página. Comparte los datos
+          únicamente con personas autorizadas.
+        </p>
+      } @else {
+        <div class="empty initial">
+          <span class="report-symbol"><taji-icon name="file-text" [size]="40" /></span>
+          <h3>De una consulta a un reporte útil</h3>
+          <p>
+            Elige una fuente, ajusta los filtros y genera una vista previa. También puedes preguntar
+            con tus palabras.
+          </p>
+          <small>Tus datos permanecen limitados al condominio activo.</small>
+        </div>
+      }
+    </section>
+  </div>
+}

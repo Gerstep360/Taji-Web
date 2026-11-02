@@ -434,6 +434,18 @@ export class MainLayoutComponent {
         },
       ],
     },
+    {
+      id: 'paquete6',
+      title: 'Reportes y analítica',
+      icon: 'bar-chart',
+      items: [{
+        label: 'Reportes y consultas',
+        icon: 'file-text',
+        route: '/reportes',
+        roles: ['admin', 'administrador', 'superadmin', 'seguridad', 'operador'],
+        isAvailable: true,
+      }],
+    },
   ];
 
   isExpanded(pkgId: string): boolean {

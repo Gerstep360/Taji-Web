@@ -373,7 +373,9 @@ export class MainLayoutComponent {
         {
           label: 'Seguimiento y Ciclo',
           icon: 'git-branch',
-          isAvailable: false,
+          route: '/seguimiento-incidencias',
+          permissions: ['report_incidents', 'manage_incidents'],
+          isAvailable: true,
         },
         {
           label: 'Clasificación con IA',

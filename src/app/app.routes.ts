@@ -241,6 +241,15 @@ export const routes: Routes = [
         title: 'Registrar incidencia | Taji',
       },
       {
+        path: 'seguimiento-incidencias',
+        canActivate: [anyPermissionGuard(['report_incidents', 'manage_incidents'])],
+        loadComponent: () =>
+          import('./paquetes/paquete3_incidencias_ia/cu19_seguimiento_historial').then(
+            (m) => m.SeguimientoIncidenciasPage,
+          ),
+        title: 'Seguimiento e Historial de Incidencias | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),

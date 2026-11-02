@@ -10,17 +10,23 @@ const PUBLIC_AUTH_REQUEST = /\/(login|register|forgot-password|reset-password)\/
 
 /**
  * Marca una petición cuyo 403 y 5xx los muestra la propia pantalla.
- *
- * Sin esto, un formulario con archivos adjuntos (CU18) perdería todo lo cargado
- * al redirigir a `/acceso-denegado` o `/error-servidor`, aunque el fallo sea
- * recuperable (por ejemplo, el almacenamiento de evidencias no disponible).
  */
 export const HANDLE_ERRORS_LOCALLY = new HttpContextToken<boolean>(() => false);
 
-/** Extrae el mensaje que el backend ya devolvió, con un texto por defecto. */
+/** Extrae el mensaje que el backend ya devolvió, de forma segura sin consumir streams ya leídos. */
 function errorMessage(error: HttpErrorResponse, fallback: string): string {
-  const body = error.error as { detail?: string; error?: { message?: string } } | null;
-  return body?.error?.message ?? body?.detail ?? fallback;
+  try {
+    const body = error.error;
+    if (!body) return fallback;
+    if (typeof body === 'string') return body;
+    if (typeof body === 'object') {
+      const errObj = body as { detail?: string; error?: { message?: string } };
+      return errObj.error?.message ?? errObj.detail ?? fallback;
+    }
+  } catch {
+    // Previene TypeError: Failed to execute 'clone' on 'Response' / body already used
+  }
+  return fallback;
 }
 
 export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
@@ -53,22 +59,18 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           if (!request.context.get(HANDLE_ERRORS_LOCALLY)) void router.navigateByUrl('/acceso-denegado');
           break;
         case 404:
-          notices.show('No se encontró el recurso solicitado.', 'warning');
+          // No mostrar avisos intrusivos en peticiones GET (como búsquedas o listados que la UI maneja de forma vacía)
+          if (request.method !== 'GET' && !request.context.get(HANDLE_ERRORS_LOCALLY)) {
+            notices.show('No se encontró el recurso solicitado.', 'warning');
+          }
           break;
         case 429:
-          // No cae en `default` a propósito: el backend ya envía un mensaje
-          // concreto (por ejemplo, cuántos intentos quedan) y redirigir a la
-          // página de error 500 sería engañoso, además de perder el formulario.
           notices.show(
             errorMessage(error, 'Demasiados intentos. Espera unos minutos antes de volver a intentar.'),
             'warning',
           );
           break;
         case 502:
-          // Una dependencia externa falló (por ejemplo, el servidor SMTP al
-          // enviar una invitación). No es una caída de la aplicación, así que
-          // se informa sin sacar al usuario de la página donde está: perder el
-          // contexto justo cuando va a reintentar sería contraproducente.
           notices.show(errorMessage(error, 'Un servicio externo no respondió. Intenta nuevamente.'), 'warning');
           break;
         default:

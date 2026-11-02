@@ -43,7 +43,7 @@ export const API_ENDPOINTS = {
     residentReview: (id: number) => `/roles/residents/${id}/review/`,
   },
 
-  health: '/health/',
+  health: '/api/v1/health/',
   sectors: {
     root: '/sectors/',
     options: '/sectors/options/',
@@ -126,6 +126,9 @@ export const API_ENDPOINTS = {
     options: '/incidents/options/',
     categories: '/incidents/categories/',
     priorities: '/incidents/priorities/',
+    detail: (id: number) => `/incidents/${id}/`,
+    comments: (id: number) => `/incidents/${id}/comments/`,
+    assign: (id: number) => `/incidents/${id}/assign/`,
   },
   handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
 } as const;

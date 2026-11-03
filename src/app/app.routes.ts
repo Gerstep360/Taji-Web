@@ -58,6 +58,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
+      { path: 'registrar-incidencia', redirectTo: 'reportar-incidencia', pathMatch: 'full' },
+      { path: 'seguimiento-incidencias', redirectTo: 'incidencias', pathMatch: 'full' },
+      {
+        path: 'identificar-activo-qr',
+        canActivate: [anyPermissionGuard(['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'])],
+        loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(m => m.AssetQRPage),
+        title: 'Identificar activo mediante QR | Taji',
+      },
       {
         path: 'reportes',
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin', 'seguridad', 'operador'], [])],

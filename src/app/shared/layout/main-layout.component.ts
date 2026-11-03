@@ -398,7 +398,9 @@ export class MainLayoutComponent {
         {
           label: 'Identificación QR',
           icon: 'search',
-          isAvailable: false,
+          route: '/identificar-activo-qr',
+          permissions: ['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'],
+          isAvailable: true,
         },
         {
           label: 'Órdenes de Trabajo',

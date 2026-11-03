@@ -42,7 +42,8 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           }
           break;
         case 403:
-          void router.navigateByUrl('/acceso-denegado');
+          // Integración de manejo local de Eunice, reutilizando el token existente.
+          if (!request.context.get(KEEP_PAGE_ON_SERVER_ERROR)) void router.navigateByUrl('/acceso-denegado');
           break;
         case 404:
           notices.show('No se encontró el recurso solicitado.', 'warning');

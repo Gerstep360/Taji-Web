@@ -1,4 +1,8 @@
 export const API_ENDPOINTS = {
+  assets: {
+    scan: '/assets/scan/',
+    history: (id: number) => `/assets/${id}/history/`,
+  },
   reports: '/cu31/',
   incidents: '/paquete3/incidents/',
   incidentAI: '/paquete3/incident-ai/',

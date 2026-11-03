@@ -61,6 +61,18 @@ export const routes: Routes = [
       { path: 'registrar-incidencia', redirectTo: 'reportar-incidencia', pathMatch: 'full' },
       { path: 'seguimiento-incidencias', redirectTo: 'incidencias', pathMatch: 'full' },
       {
+        path: 'activos',
+        canActivate: [anyPermissionGuard(['manage_assets', 'manage_maintenance', 'view_general_status', 'maintain_assets'])],
+        loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos').then(m => m.ActivosPage),
+        title: 'Inventario de activos | Taji',
+      },
+      {
+        path: 'mantenimiento',
+        canActivate: [anyPermissionGuard(['manage_maintenance', 'view_assigned_work_orders', 'update_work_order_status', 'attach_work_evidence', 'maintain_assets', 'access_assigned_external_orders'])],
+        loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu25_mantenimiento_ordenes/mantenimiento.page').then(m => m.MantenimientoPage),
+        title: 'Órdenes de trabajo | Taji',
+      },
+      {
         path: 'identificar-activo-qr',
         canActivate: [anyPermissionGuard(['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'])],
         loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(m => m.AssetQRPage),

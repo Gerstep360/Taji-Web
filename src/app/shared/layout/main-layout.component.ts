@@ -393,7 +393,9 @@ export class MainLayoutComponent {
         {
           label: 'Inventario de Activos',
           icon: 'boxes',
-          isAvailable: false,
+          route: '/activos',
+          permissions: ['manage_assets', 'manage_maintenance', 'view_general_status', 'maintain_assets'],
+          isAvailable: true,
         },
         {
           label: 'Identificación QR',
@@ -405,7 +407,9 @@ export class MainLayoutComponent {
         {
           label: 'Órdenes de Trabajo',
           icon: 'wrench',
-          isAvailable: false,
+          route: '/mantenimiento',
+          permissions: ['manage_maintenance', 'view_assigned_work_orders', 'update_work_order_status', 'attach_work_evidence', 'maintain_assets', 'access_assigned_external_orders'],
+          isAvailable: true,
         },
       ],
     },

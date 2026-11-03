@@ -131,5 +131,22 @@ export const API_ENDPOINTS = {
     types: '/assets/types/',
     type: (id: number) => `/assets/types/${id}/`,
   },
+  maintenance: {
+    orders: '/maintenance/orders/',
+    order: (id: number) => `/maintenance/orders/${id}/`,
+    assignOrder: (id: number) => `/maintenance/orders/${id}/assign/`,
+    changeOrderStatus: (id: number) => `/maintenance/orders/${id}/status/`,
+    orderCostItems: (id: number) => `/maintenance/orders/${id}/cost-items/`,
+    orderCostItem: (id: number, itemId: number) => `/maintenance/orders/${id}/cost-items/${itemId}/`,
+    orderAttachments: (id: number) => `/maintenance/orders/${id}/attachments/`,
+    downloadAttachment: (id: number, attachmentId: number) =>
+      `/maintenance/orders/${id}/download-attachment/?attachment_id=${attachmentId}`,
+    plans: '/maintenance/plans/',
+    plan: (id: number) => `/maintenance/plans/${id}/`,
+    suppliers: '/maintenance/suppliers/',
+    supplier: (id: number) => `/maintenance/suppliers/${id}/`,
+    assets: '/maintenance/assets/',
+    staff: '/maintenance/staff/',
+    priorities: '/maintenance/priorities/',
+  },
 } as const;
-

@@ -129,7 +129,7 @@ export const API_ENDPOINTS = {
     history: (id: number) => `/assets/${id}/history/`,
     scan: '/assets/scan/',
     types: '/assets/types/',
-    typeDetail: (id: number) => `/assets/types/${id}/`,
+    type: (id: number) => `/assets/types/${id}/`,
   },
 } as const;
 

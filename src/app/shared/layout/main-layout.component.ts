@@ -388,8 +388,8 @@ export class MainLayoutComponent {
         {
           label: 'Inventario de Activos',
           icon: 'boxes',
-          route: '/inventario-activos',
-          permission: 'manage_assets',
+          route: '/activos',
+          permissions: ['manage_assets', 'view_general_status', 'maintain_assets'],
           isAvailable: true,
         },
         {

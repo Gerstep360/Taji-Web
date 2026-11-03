@@ -1,0 +1,447 @@
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Paquete 4 · Activos y Mantenimiento</span>
+      <h1>Mantenimiento y órdenes de trabajo</h1>
+      <p>Programa, asigna y da seguimiento a los trabajos del condominio.</p>
+    </div>
+    @if (canManage() && activeTab() === 'orders') {
+      <button type="button" class="btn-primary" (click)="openCreateOrder()">
+        <taji-icon name="plus" [size]="18" />
+        Nueva orden
+      </button>
+    } @else if (canManage() && activeTab() === 'plans') {
+      <button type="button" class="btn-primary" (click)="openPlanForm()">
+        <taji-icon name="plus" [size]="18" />
+        Nuevo plan
+      </button>
+    } @else if (canManage() && activeTab() === 'suppliers') {
+      <button type="button" class="btn-primary" (click)="openSupplierForm()">
+        <taji-icon name="plus" [size]="18" />
+        Nuevo proveedor
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      <taji-icon name="alert-circle" [size]="18" />
+      <span>{{ errorMessage() }}</span>
+      <button type="button" class="alert-close" aria-label="Cerrar" (click)="errorMessage.set('')">×</button>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert-success" role="status">
+      <taji-icon name="check-circle" [size]="18" />
+      <span>{{ successMessage() }}</span>
+      <button type="button" class="alert-close" aria-label="Cerrar" (click)="successMessage.set('')">×</button>
+    </div>
+  }
+
+  @if (canManage()) {
+    <section class="summary-grid" aria-label="Resumen de mantenimiento">
+      <article class="summary-card">
+        <span class="summary-icon blue"><taji-icon name="wrench" [size]="19" /></span>
+        <div><small>Órdenes abiertas</small><strong>{{ openOrders() }}</strong></div>
+      </article>
+      <article class="summary-card">
+        <span class="summary-icon amber"><taji-icon name="calendar" [size]="19" /></span>
+        <div><small>Planes vencidos</small><strong>{{ overduePlans() }}</strong></div>
+      </article>
+      <article class="summary-card">
+        <span class="summary-icon green"><taji-icon name="boxes" [size]="19" /></span>
+        <div><small>Activos disponibles</small><strong>{{ assets().length }}</strong></div>
+      </article>
+    </section>
+  }
+
+  <nav class="tabs-nav" aria-label="Secciones de mantenimiento">
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'orders'" (click)="activeTab.set('orders')">
+      <taji-icon name="wrench" [size]="16" /> Órdenes
+    </button>
+    @if (canManage()) {
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'plans'" (click)="activeTab.set('plans')">
+        <taji-icon name="calendar" [size]="16" /> Planes preventivos
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'suppliers'" (click)="activeTab.set('suppliers')">
+        <taji-icon name="users" [size]="16" /> Proveedores
+      </button>
+    }
+  </nav>
+
+  @if (activeTab() === 'orders') {
+    <section class="tab-content">
+      <div class="filters-bar">
+        <label class="filter-field search-field">
+          <span>Buscar</span>
+          <input type="search" placeholder="Código, activo o descripción" [(ngModel)]="filters.search"
+            (keyup.enter)="applyFilters()" />
+        </label>
+        <label class="filter-field">
+          <span>Estado</span>
+          <select [(ngModel)]="filters.status">
+            <option value="">Todos</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="ASSIGNED">Asignada</option>
+            <option value="IN_PROGRESS">En progreso</option>
+            <option value="PAUSED">Pausada</option>
+            <option value="COMPLETED">Completada</option>
+            <option value="CANCELLED">Cancelada</option>
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>Tipo</span>
+          <select [(ngModel)]="filters.work_type">
+            <option value="">Todos</option>
+            <option value="PREVENTIVE">Preventivo</option>
+            <option value="CORRECTIVE">Correctivo</option>
+            <option value="INSPECTION">Inspección</option>
+          </select>
+        </label>
+        @if (canManage()) {
+          <label class="filter-field">
+            <span>Responsable</span>
+            <select [(ngModel)]="filters.assignee">
+              <option value="">Todos</option>
+              @for (person of staff(); track person.id) {
+                <option [value]="person.id">{{ person.full_name }}</option>
+              }
+            </select>
+          </label>
+        }
+        <label class="filter-field">
+          <span>Desde</span>
+          <input type="date" [(ngModel)]="filters.date_from" />
+        </label>
+        <label class="filter-field">
+          <span>Hasta</span>
+          <input type="date" [(ngModel)]="filters.date_to" />
+        </label>
+        <button type="button" class="btn-secondary filter-submit" (click)="applyFilters()">Aplicar filtros</button>
+      </div>
+
+      @if (loading()) {
+        <div class="state-card"><span class="spinner"></span><span>Cargando órdenes…</span></div>
+      } @else if (orders().length === 0) {
+        <div class="state-card empty-state">
+          <span class="empty-icon"><taji-icon name="wrench" [size]="28" /></span>
+          <h2>No hay órdenes para mostrar</h2>
+          <p>{{ canManage() ? 'Crea una orden o ajusta los filtros.' : 'Cuando te asignen una orden, aparecerá aquí.' }}</p>
+        </div>
+      } @else {
+        <div class="order-grid">
+          @for (order of orders(); track order.id) {
+            <article class="order-card">
+              <div class="order-card-top">
+                <span class="order-code">{{ order.public_code }}</span>
+                <span class="status-badge" [class]="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+              </div>
+              <h2>{{ order.title }}</h2>
+              <p class="asset-label">{{ order.asset_code }} · {{ order.asset_name }}</p>
+              <p class="description">{{ order.description || 'Sin descripción adicional.' }}</p>
+              <div class="order-meta">
+                <span>{{ workTypeLabel(order.work_type) }}</span>
+                @if (order.priority_name) { <span>Prioridad: {{ order.priority_name }}</span> }
+                @if (order.scheduled_for) { <span>{{ order.scheduled_for | date:'dd/MM/yy HH:mm' }}</span> }
+              </div>
+              <div class="order-assignee">
+                <taji-icon name="user" [size]="15" />
+                <span>{{ order.assignee_name || order.supplier_name || 'Sin asignar' }}</span>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn-secondary" (click)="openDetails(order)">Ver detalles</button>
+                @if (canManage() && !['COMPLETED', 'CANCELLED'].includes(order.status)) {
+                  <button type="button" class="btn-link" (click)="openEditOrder(order)">Editar</button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+        @if (totalPages() > 1) {
+          <nav class="pagination" aria-label="Paginación de órdenes">
+            <button type="button" class="btn-secondary" [disabled]="currentPage() <= 1"
+              (click)="changePage(currentPage() - 1)">Anterior</button>
+            <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
+            <button type="button" class="btn-secondary" [disabled]="currentPage() >= totalPages()"
+              (click)="changePage(currentPage() + 1)">Siguiente</button>
+          </nav>
+        }
+      }
+    </section>
+  }
+
+  @if (activeTab() === 'plans' && canManage()) {
+    <section class="tab-content">
+      @if (loading()) {
+        <div class="state-card"><span class="spinner"></span><span>Cargando planes…</span></div>
+      } @else if (plans().length === 0) {
+        <div class="state-card empty-state">
+          <span class="empty-icon"><taji-icon name="calendar" [size]="28" /></span>
+          <h2>Aún no hay planes preventivos</h2>
+          <p>Programa la frecuencia de mantenimiento de tus activos.</p>
+        </div>
+      } @else {
+        <div class="plan-grid">
+          @for (plan of plans(); track plan.id) {
+            <article class="plan-card" [class.inactive]="!plan.is_active">
+              <div class="plan-card-heading">
+                <div><small>{{ plan.asset_code }}</small><h2>{{ plan.name }}</h2></div>
+                <span class="plan-state" [class.inactive-state]="!plan.is_active">
+                  {{ plan.is_active ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+              <p>{{ plan.asset_name }} · cada {{ plan.frequency_days }} días</p>
+              @if (plan.description) { <p class="description">{{ plan.description }}</p> }
+              <div class="plan-dates">
+                <span>Próximo: <strong>{{ plan.next_due_at | date:'dd/MM/yyyy' }}</strong></span>
+                <span>Último: <strong>{{ plan.last_completed_at ? (plan.last_completed_at | date:'dd/MM/yyyy') : 'Sin completar' }}</strong></span>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn-secondary" (click)="openEditOrderForPlan(plan)">Crear orden</button>
+                <button type="button" class="btn-link" (click)="openPlanForm(plan)">Editar plan</button>
+                <button type="button" class="btn-link" (click)="togglePlan(plan)">
+                  {{ plan.is_active ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (activeTab() === 'suppliers' && canManage()) {
+    <section class="tab-content">
+      @if (loading()) {
+        <div class="state-card"><span class="spinner"></span><span>Cargando proveedores…</span></div>
+      } @else if (suppliers().length === 0) {
+        <div class="state-card empty-state">
+          <span class="empty-icon"><taji-icon name="users" [size]="28" /></span>
+          <h2>No hay proveedores registrados</h2>
+          <p>Registra proveedores externos para asignarles órdenes de trabajo.</p>
+        </div>
+      } @else {
+        <div class="supplier-grid">
+          @for (supplier of suppliers(); track supplier.id) {
+            <article class="supplier-card">
+              <div class="plan-card-heading">
+                <div><h2>{{ supplier.name }}</h2><small>{{ supplier.specialty || 'Especialidad no indicada' }}</small></div>
+                <span class="plan-state" [class.inactive-state]="supplier.status !== 'ACTIVE'">
+                  {{ supplier.status === 'ACTIVE' ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+              <p>{{ supplier.contact_name || 'Sin contacto' }}</p>
+              <p>{{ supplier.phone || 'Sin teléfono' }} <span aria-hidden="true">·</span> {{ supplier.email || 'Sin correo' }}</p>
+              <button type="button" class="btn-link" (click)="toggleSupplier(supplier)">
+                {{ supplier.status === 'ACTIVE' ? 'Desactivar proveedor' : 'Activar proveedor' }}
+              </button>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (orderFormOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="orderFormOpen.set(false)">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="order-form-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div><span class="eyebrow">CU25</span><h2 id="order-form-title">{{ editingOrder() ? 'Editar orden' : 'Nueva orden de trabajo' }}</h2></div>
+        <button type="button" class="close-button" aria-label="Cerrar" (click)="orderFormOpen.set(false)">×</button>
+      </header>
+      <form class="form-grid" (ngSubmit)="saveOrder()">
+        <label class="wide-field"><span>Título *</span><input name="title" required maxlength="160" [(ngModel)]="orderForm.title" /></label>
+        <label><span>Tipo de trabajo *</span>
+          <select name="work_type" [(ngModel)]="orderForm.work_type">
+            <option value="PREVENTIVE">Preventivo</option><option value="CORRECTIVE">Correctivo</option><option value="INSPECTION">Inspección</option>
+          </select>
+        </label>
+        <label><span>Activo *</span>
+          <select name="asset_id" required [(ngModel)]="orderForm.asset_id">
+            <option value="">Selecciona un activo</option>
+            @for (asset of assets(); track asset.id) { <option [value]="asset.id">{{ asset.code }} · {{ asset.name }}</option> }
+          </select>
+        </label>
+        <label><span>Plan preventivo</span>
+          <select name="maintenance_plan_id" [ngModel]="orderForm.maintenance_plan_id" (ngModelChange)="selectPlan($event)">
+            <option value="">Sin plan asociado</option>
+            @for (plan of plans(); track plan.id) { @if (plan.is_active) { <option [value]="plan.id">{{ plan.name }} · {{ plan.asset_code }}</option> } }
+          </select>
+        </label>
+        <label><span>Prioridad</span>
+          <select name="priority_id" [(ngModel)]="orderForm.priority_id">
+            <option value="">Sin prioridad</option>
+            @for (priority of priorities(); track priority.id) { <option [value]="priority.id">{{ priority.name }}</option> }
+          </select>
+        </label>
+        <label><span>Programada para</span><input name="scheduled_for" type="datetime-local" [(ngModel)]="orderForm.scheduled_for" /></label>
+        <label><span>Costo estimado (Bs)</span><input name="estimated_cost" type="number" min="0" step="0.01" [(ngModel)]="orderForm.estimated_cost" /></label>
+        <label class="wide-field"><span>Descripción</span><textarea name="description" rows="3" maxlength="4000" [(ngModel)]="orderForm.description"></textarea></label>
+        <footer class="modal-actions wide-field">
+          <button type="button" class="btn-secondary" (click)="orderFormOpen.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar orden' }}</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (planFormOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="planFormOpen.set(false)">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="plan-form-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div><span class="eyebrow">CU25</span><h2 id="plan-form-title">{{ editingPlan() ? 'Editar plan preventivo' : 'Nuevo plan preventivo' }}</h2></div>
+        <button type="button" class="close-button" aria-label="Cerrar" (click)="planFormOpen.set(false)">×</button>
+      </header>
+      <form class="form-grid" (ngSubmit)="savePlan()">
+        <label class="wide-field"><span>Activo *</span>
+          <select name="asset_id" required [(ngModel)]="planForm.asset_id">
+            <option value="">Selecciona un activo</option>
+            @for (asset of assets(); track asset.id) { <option [value]="asset.id">{{ asset.code }} · {{ asset.name }}</option> }
+          </select>
+        </label>
+        <label class="wide-field"><span>Nombre del plan *</span><input name="name" required maxlength="140" [(ngModel)]="planForm.name" /></label>
+        <label><span>Frecuencia (días) *</span><input name="frequency_days" type="number" min="1" step="1" required [(ngModel)]="planForm.frequency_days" /></label>
+        <label><span>Próxima fecha *</span><input name="next_due_at" type="datetime-local" required [(ngModel)]="planForm.next_due_at" /></label>
+        <label class="wide-field"><span>Descripción</span><textarea name="description" rows="3" [(ngModel)]="planForm.description"></textarea></label>
+        <label class="check-field"><input name="is_active" type="checkbox" [(ngModel)]="planForm.is_active" /><span>Plan activo</span></label>
+        <footer class="modal-actions wide-field">
+          <button type="button" class="btn-secondary" (click)="planFormOpen.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar plan' }}</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (supplierFormOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="supplierFormOpen.set(false)">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="supplier-form-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div><span class="eyebrow">CU25</span><h2 id="supplier-form-title">Registrar proveedor</h2></div>
+        <button type="button" class="close-button" aria-label="Cerrar" (click)="supplierFormOpen.set(false)">×</button>
+      </header>
+      <form class="form-grid" (ngSubmit)="saveSupplier()">
+        <label class="wide-field"><span>Nombre *</span><input name="name" required maxlength="160" [(ngModel)]="supplierForm.name" /></label>
+        <label><span>Contacto</span><input name="contact_name" maxlength="120" [(ngModel)]="supplierForm.contact_name" /></label>
+        <label><span>Especialidad</span><input name="specialty" maxlength="120" [(ngModel)]="supplierForm.specialty" /></label>
+        <label><span>Teléfono</span><input name="phone" type="tel" maxlength="25" [(ngModel)]="supplierForm.phone" /></label>
+        <label><span>Correo</span><input name="email" type="email" maxlength="254" [(ngModel)]="supplierForm.email" /></label>
+        <label class="wide-field"><span>Notas</span><textarea name="notes" rows="3" [(ngModel)]="supplierForm.notes"></textarea></label>
+        <footer class="modal-actions wide-field">
+          <button type="button" class="btn-secondary" (click)="supplierFormOpen.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Registrar proveedor' }}</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (selectedOrder(); as order) {
+  <div class="modal-backdrop detail-backdrop" role="presentation" (click)="closeDetails()">
+    <section class="modal-card detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div><span class="eyebrow">{{ order.public_code }} · {{ workTypeLabel(order.work_type) }}</span><h2 id="detail-title">{{ order.title }}</h2></div>
+        <button type="button" class="close-button" aria-label="Cerrar" (click)="closeDetails()">×</button>
+      </header>
+      <div class="detail-body">
+        <div class="detail-overview">
+          <div><small>Activo</small><strong>{{ order.asset_code }} · {{ order.asset_name }}</strong></div>
+          <div><small>Estado</small><span class="status-badge" [class]="statusClass(order.status)">{{ statusLabel(order.status) }}</span></div>
+          <div><small>Responsable</small><strong>{{ order.assignee_name || order.supplier_name || 'Sin asignar' }}</strong></div>
+          <div><small>Programada</small><strong>{{ order.scheduled_for ? (order.scheduled_for | date:'dd/MM/yyyy HH:mm') : 'Sin fecha' }}</strong></div>
+          <div><small>Costo estimado</small><strong>{{ order.estimated_cost ? (order.estimated_cost | number:'1.2-2') + ' Bs' : 'Sin estimar' }}</strong></div>
+          <div><small>Costo real</small><strong>{{ order.actual_cost ? (order.actual_cost | number:'1.2-2') + ' Bs' : 'Sin registrar' }}</strong></div>
+        </div>
+        <p class="detail-description">{{ order.description || 'Sin descripción adicional.' }}</p>
+
+        @if (canManage() && !['COMPLETED', 'CANCELLED'].includes(order.status)) {
+          <section class="detail-section">
+            <h3>Asignar responsable</h3>
+            <div class="inline-form">
+              <label><span>Técnico</span><select [ngModel]="assignmentForm.staff_id" (ngModelChange)="setAssignmentStaff($event)">
+                <option value="">Selecciona técnico</option>@for (person of staff(); track person.id) { <option [value]="person.id">{{ person.full_name }}</option> }
+              </select></label>
+              <label><span>Proveedor</span><select [ngModel]="assignmentForm.supplier_id" (ngModelChange)="setAssignmentSupplier($event)">
+                <option value="">Selecciona proveedor</option>@for (supplier of suppliers(); track supplier.id) { @if (supplier.status === 'ACTIVE') { <option [value]="supplier.id">{{ supplier.name }}</option> } }
+              </select></label>
+              <label><span>Motivo</span><input maxlength="240" [(ngModel)]="assignmentForm.reason" /></label>
+              <button type="button" class="btn-primary" [disabled]="saving()" (click)="assign(order)">Asignar</button>
+            </div>
+          </section>
+        }
+
+        @if (nextStatuses(order).length && (canManage() || canUpdateStatus())) {
+          <section class="detail-section">
+            <h3>Actualizar estado</h3>
+            <div class="status-actions">
+              <label class="notes-field"><span>Nota de seguimiento</span><input maxlength="500" [(ngModel)]="statusNotes" placeholder="Opcional" /></label>
+              @for (next of allowedStatuses(order); track next) {
+                <button type="button" class="btn-secondary" [disabled]="saving()" (click)="changeStatus(order, next)">
+                  {{ statusActionLabel(next) }}
+                </button>
+              }
+              @if (canManage() && !['COMPLETED', 'CANCELLED'].includes(order.status)) {
+                <button type="button" class="btn-danger" [disabled]="saving()" (click)="cancelOrder(order)">Cancelar orden</button>
+              }
+            </div>
+          </section>
+        }
+
+        @if (canManage()) {
+          <section class="detail-section">
+            <h3>Costos reales</h3>
+            @if (order.cost_items.length) {
+              <div class="cost-list">
+                @for (item of order.cost_items; track item.id) {
+                  <div class="cost-row"><span>{{ item.description }} · {{ item.quantity }} × {{ item.unit_cost }} Bs</span>
+                    <strong>{{ item.total }} Bs</strong><button type="button" class="icon-danger" aria-label="Eliminar partida"
+                      (click)="removeCost(order, item.id)">×</button></div>
+                }
+              </div>
+            } @else { <p class="muted-copy">Todavía no hay partidas de costo.</p> }
+            <div class="inline-form cost-form">
+              <label><span>Descripción</span><input [(ngModel)]="costForm.description" maxlength="160" /></label>
+              <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" [(ngModel)]="costForm.quantity" /></label>
+              <label><span>Costo unitario (Bs)</span><input type="number" min="0" step="0.01" [(ngModel)]="costForm.unit_cost" /></label>
+              <button type="button" class="btn-secondary" [disabled]="saving()" (click)="addCost(order)">Agregar costo</button>
+            </div>
+          </section>
+        }
+
+        @if (canManage() || canAttachEvidence()) {
+          <section class="detail-section">
+            <h3>Evidencias</h3>
+            @if (order.attachments.length) {
+              <ul class="evidence-list">
+                @for (file of order.attachments; track file.id) {
+                  <li><span><strong>{{ file.caption || 'Evidencia' }}</strong><small>{{ file.file_type }} · {{ file.created_at | date:'dd/MM/yyyy HH:mm' }}</small></span>
+                    <button type="button" class="btn-link" (click)="downloadAttachment(order, file.id)">Descargar</button></li>
+                }
+              </ul>
+            } @else { <p class="muted-copy">Aún no se adjuntaron evidencias.</p> }
+            <div class="inline-form evidence-form">
+              <label><span>Archivo (JPG, PNG, WEBP, PDF o MP4 · máximo 20 MB)</span><input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4" (change)="onFileSelected($event)" /></label>
+              <label><span>Descripción</span><input maxlength="200" [ngModel]="attachmentCaption()" (ngModelChange)="attachmentCaption.set($event)" /></label>
+              <button type="button" class="btn-secondary" [disabled]="saving()" (click)="uploadEvidence(order)">Adjuntar evidencia</button>
+            </div>
+          </section>
+        }
+
+        <section class="detail-section">
+          <h3>Historial de la orden</h3>
+          @if (order.status_history.length) {
+            <ol class="timeline">
+              @for (entry of order.status_history; track entry.id) {
+                <li><span class="timeline-dot"></span><div><strong>{{ statusLabel(entry.to_status) }}</strong>
+                  @if (entry.notes) { <p>{{ entry.notes }}</p> }
+                  <small>{{ entry.changed_at | date:'dd/MM/yyyy HH:mm' }} · {{ entry.changed_by_name || 'Sistema' }}</small></div></li>
+              }
+            </ol>
+          } @else { <p class="muted-copy">Sin eventos registrados.</p> }
+        </section>
+      </div>
+    </section>
+  </div>
+}

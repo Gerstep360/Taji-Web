@@ -220,6 +220,20 @@ export const routes: Routes = [
         title: 'Turnos de Seguridad | Taji',
       },
       {
+        path: 'mantenimiento-ordenes',
+        canActivate: [anyPermissionGuard([
+          'manage_maintenance',
+          'view_assigned_work_orders',
+          'update_work_order_status',
+          'attach_work_evidence',
+        ])],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu25_mantenimiento_ordenes/mantenimiento.page').then(
+            (m) => m.MantenimientoPage,
+          ),
+        title: 'Mantenimiento y órdenes de trabajo | Taji',
+      },
+      {
         path: 'novedades-turno',
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
         loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu14_novedades_incidentes/novedades.page').then(m => m.NovedadesPage),
@@ -230,6 +244,24 @@ export const routes: Routes = [
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
         loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu15_entrega_turno/entregas.page').then(m => m.EntregasPage),
         title: 'Entrega y Recepción de Turno | Taji',
+      },
+      {
+        path: 'activos',
+        canActivate: [anyPermissionGuard(['manage_assets', 'view_general_status', 'maintain_assets'])],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos').then(
+            (m) => m.ActivosPage,
+          ),
+        title: 'Inventario de Activos | Taji',
+      },
+      {
+        path: 'identificar-activo-qr',
+        canActivate: [permissionGuard('maintain_assets')],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(
+            (m) => m.AssetQRPage,
+          ),
+        title: 'Identificar Activo mediante QR | Taji',
       },
       {
         path: 'acceso-denegado',

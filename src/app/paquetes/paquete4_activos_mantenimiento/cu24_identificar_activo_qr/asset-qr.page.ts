@@ -289,7 +289,6 @@ export class AssetQRPage implements OnInit {
   }
 
   onLoadHistory(assetId: number): void {
-    this.currentState.set('LOADING_HISTORY');
     this.isLoading.set(true);
     this.error.set(null);
 
@@ -304,6 +303,7 @@ export class AssetQRPage implements OnInit {
         next: (history) => {
           this.assetHistory.set(history);
           this.isShowingHistory.set(true);
+          this.currentState.set('SUCCESS');
         },
         error: (err) => {
           this.handleHistoryError(err);

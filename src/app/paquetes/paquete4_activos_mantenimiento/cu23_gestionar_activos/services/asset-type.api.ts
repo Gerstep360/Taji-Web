@@ -27,7 +27,7 @@ export class AssetTypeApi {
   }
 
   getAssetType(id: number): Observable<AssetType> {
-    return this.api.get<AssetType>(API_ENDPOINTS.assets.typeDetail(id));
+    return this.api.get<AssetType>(API_ENDPOINTS.assets.type(id));
   }
 
   createAssetType(data: Partial<AssetType>): Observable<AssetType> {
@@ -35,10 +35,10 @@ export class AssetTypeApi {
   }
 
   updateAssetType(id: number, data: Partial<AssetType>): Observable<AssetType> {
-    return this.api.patch<Partial<AssetType>, AssetType>(API_ENDPOINTS.assets.typeDetail(id), data);
+    return this.api.patch<Partial<AssetType>, AssetType>(API_ENDPOINTS.assets.type(id), data);
   }
 
   deleteAssetType(id: number): Observable<void> {
-    return this.api.delete<void>(API_ENDPOINTS.assets.typeDetail(id));
+    return this.api.delete<void>(API_ENDPOINTS.assets.type(id));
   }
 }

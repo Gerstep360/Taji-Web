@@ -280,7 +280,9 @@
               @for (f of c.formats; track f) {
                 <option [value]="f">
                   {{
-                    f === 'xlsx'
+                      f === 'pdf'
+                        ? 'PDF (.pdf)'
+                        : f === 'xlsx'
                       ? 'Excel (.xlsx)'
                       : f === 'csv'
                         ? 'CSV (.csv)'

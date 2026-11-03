@@ -388,12 +388,16 @@ export class MainLayoutComponent {
         {
           label: 'Inventario de Activos',
           icon: 'boxes',
-          isAvailable: false,
+          route: '/inventario-activos',
+          permission: 'manage_assets',
+          isAvailable: true,
         },
         {
           label: 'Identificación QR',
           icon: 'search',
-          isAvailable: false,
+          route: '/identificar-activo-qr',
+          permission: 'maintain_assets',
+          isAvailable: true,
         },
         {
           label: 'Órdenes de Trabajo',

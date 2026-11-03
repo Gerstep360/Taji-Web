@@ -232,6 +232,51 @@ export const routes: Routes = [
         title: 'Entrega y Recepción de Turno | Taji',
       },
       {
+        path: 'identificar-activo-qr',
+        canActivate: [permissionGuard('maintain_assets')],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(
+            (m) => m.AssetQRPage,
+          ),
+        title: 'Identificar Activo mediante QR | Taji',
+      },
+      {
+        path: 'inventario-activos',
+        canActivate: [permissionGuard('manage_assets')],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos/components/asset-list.component').then(
+            (m) => m.AssetListComponent,
+          ),
+        title: 'Inventario de Activos | Taji',
+      },
+      {
+        path: 'inventario-activos/nuevo',
+        canActivate: [permissionGuard('manage_assets')],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos/components/asset-form.component').then(
+            (m) => m.AssetFormComponent,
+          ),
+        title: 'Registrar Activo | Taji',
+      },
+      {
+        path: 'inventario-activos/:id',
+        canActivate: [permissionGuard('manage_assets')],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos/components/asset-detail.component').then(
+            (m) => m.AssetDetailComponent,
+          ),
+        title: 'Detalle del Activo | Taji',
+      },
+      {
+        path: 'inventario-activos/:id/editar',
+        canActivate: [permissionGuard('manage_assets')],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos/components/asset-form.component').then(
+            (m) => m.AssetFormComponent,
+          ),
+        title: 'Editar Activo | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),

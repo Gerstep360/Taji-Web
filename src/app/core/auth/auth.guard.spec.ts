@@ -143,6 +143,19 @@ describe('roleOrPermissionGuard', () => {
     expect(TestBed.runInInjectionContext(() => guard({} as any, {} as any)))
       .toEqual({ url: '/acceso-denegado' });
   });
+  it.each(['admin', 'administrador', 'seguridad', 'residente', 'directiva'])(
+    'restricts the report menu and actual route to administrators: %s', (slug) => {
+      authServiceMock.user.mockReturnValue({ is_superuser: false, role: { slug, permissions: ['view_reports'] } });
+      const layout = TestBed.runInInjectionContext(() => new MainLayoutComponent());
+      const item = layout.packages.flatMap(pkg => pkg.items).find(entry => entry.route === '/reportes-personalizables')!;
+      const route = routes.flatMap(entry => entry.children ?? []).find(entry => entry.path === 'reportes-personalizables')!;
+      const guard = route.canActivate![0] as ReturnType<typeof roleOrPermissionGuard>;
+      const allowed = ['admin', 'administrador'].includes(slug);
+      expect(layout.canAccess(item)).toBe(allowed);
+      expect(TestBed.runInInjectionContext(() => guard({} as any, {} as any)))
+        .toEqual(allowed ? true : { url: '/acceso-denegado' });
+    },
+  );
 });
 
 describe('superuserGuard (consola global de la plataforma)', () => {

@@ -1,0 +1,312 @@
+<header class="page-heading">
+  <div>
+    <span class="eyebrow">Configuración de incidencias</span>
+    <h1>Catálogos de incidencias</h1>
+    <p>Organiza las categorías y define la urgencia con la que debe atenderse cada incidencia.</p>
+  </div>
+  <span class="scope"><taji-icon name="building" [size]="16" /> Catálogo de la plataforma</span>
+</header>
+<nav class="catalog-tabs" aria-label="Tipo de catálogo">
+  <button
+    [class.selected]="kind() === 'categories'"
+    [attr.aria-pressed]="kind() === 'categories'"
+    (click)="selectKind('categories')"
+  >
+    <taji-icon name="layout-grid" [size]="17" />Categorías
+    <span>{{ data()?.categories?.length || 0 }}</span></button
+  ><button
+    [class.selected]="kind() === 'priorities'"
+    [attr.aria-pressed]="kind() === 'priorities'"
+    (click)="selectKind('priorities')"
+  >
+    <taji-icon name="alert-triangle" [size]="17" />Prioridades
+    <span>{{ data()?.priorities?.length || 0 }}</span>
+  </button>
+</nav>
+@if (error()) {
+  <p role="alert" class="notice error">
+    {{ error() }}
+    @if (!data()) {
+      <button (click)="load()">Reintentar</button>
+    }
+  </p>
+}
+@if (message()) {
+  <p role="status" class="notice success">
+    <taji-icon name="check-circle" [size]="18" />{{ message() }}
+  </p>
+}
+@if (pendingDisable(); as row) {
+  <section class="disable-confirm" aria-label="Confirmar desactivación">
+    <div>
+      <strong>¿Desactivar «{{ row.name }}»?</strong>
+      <p>
+        No aparecerá en nuevos reportes ni análisis. Las incidencias anteriores conservarán sus
+        datos. Puedes reactivarlo después.
+      </p>
+    </div>
+    <div class="confirm-actions">
+      <button [disabled]="busy()" (click)="pendingDisable.set(null)">Cancelar</button
+      ><button class="danger" [disabled]="busy()" (click)="toggle(row)">
+        Confirmar desactivación
+      </button>
+    </div>
+  </section>
+}
+<div class="catalog-workspace" [class.with-editor]="editing() !== undefined">
+  <section class="catalog-panel" [attr.aria-busy]="loading()">
+    <div class="panel-heading">
+      <div>
+        <h2>{{ kind() === 'categories' ? 'Categorías de incidencia' : 'Niveles de prioridad' }}</h2>
+        <p>{{ activeCount() }} activos · {{ rows().length - activeCount() }} inactivos</p>
+      </div>
+      <taji-button [disabled]="busy() || !data()" (pressed)="edit(null)"
+        ><taji-icon name="plus" [size]="17" />{{
+          kind() === 'categories' ? 'Nueva categoría' : 'Nueva prioridad'
+        }}</taji-button
+      >
+    </div>
+    <div class="toolbar">
+      <label class="search"
+        ><taji-icon name="search" [size]="17" /><input
+          aria-label="Buscar en el catálogo"
+          placeholder="Buscar por nombre, descripción o código"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)" /></label
+      ><select
+        aria-label="Filtrar por estado"
+        [ngModel]="status()"
+        (ngModelChange)="status.set($event)"
+      >
+        <option value="all">Todos los estados</option>
+        <option value="active">Activos</option>
+        <option value="inactive">Inactivos</option>
+      </select>
+    </div>
+    @if (loading()) {
+      <p role="status" class="empty">Cargando catálogo…</p>
+    } @else {
+      <div class="catalog-list">
+        @for (row of filtered(); track row.id) {
+          <article
+            class="catalog-row"
+            [class.current]="editing()?.id === row.id"
+            [class.inactive]="row.is_active === false"
+          >
+            <span class="row-icon"
+              ><taji-icon
+                [name]="kind() === 'categories' ? 'layers' : 'alert-triangle'"
+                [size]="20"
+            /></span>
+            <div class="row-content">
+              <div class="row-title">
+                <h3>{{ row.name }}</h3>
+                <span class="status" [class.off]="row.is_active === false">{{
+                  row.is_active === false ? 'Inactivo' : 'Activo'
+                }}</span>
+              </div>
+              @if (kind() === 'categories') {
+                <p>{{ row.description || 'Sin descripción adicional.' }}</p>
+                <span class="metadata">{{ staffName(row.default_staff_type) }}</span>
+              } @else {
+                <p>Orden de urgencia {{ row.rank }} · {{ targetLabel(row.target_minutes) }}</p>
+                <span class="metadata"
+                  >Puntuación: {{ row.min_score ?? '—' }} – {{ row.max_score ?? '—' }}</span
+                >
+              }
+              <code>{{ row.code }}</code>
+            </div>
+            <div class="row-actions">
+              <button
+                [disabled]="busy()"
+                (click)="edit(row)"
+                [attr.aria-label]="'Editar ' + row.name"
+              >
+                <taji-icon name="edit" [size]="15" />Editar</button
+              ><button
+                [disabled]="busy()"
+                (click)="requestToggle(row)"
+                [attr.aria-label]="
+                  (row.is_active === false ? 'Activar ' : 'Desactivar ') + row.name
+                "
+              >
+                {{ row.is_active === false ? 'Activar' : 'Desactivar' }}
+              </button>
+            </div>
+          </article>
+        } @empty {
+          <div class="empty">
+            <taji-icon name="search" [size]="28" />
+            <h3>No encontramos coincidencias</h3>
+            <p>Prueba otro nombre o cambia el filtro de estado.</p>
+          </div>
+        }
+      </div>
+    }
+    <footer class="list-footer">
+      <taji-icon name="shield-check" [size]="16" /><span
+        >Los cambios quedan auditados. Desactivar no borra el historial.</span
+      >
+    </footer>
+  </section>
+  @if (editing() !== undefined) {
+    <section class="editor" aria-label="Editor de catálogo">
+      <div class="editor-heading">
+        <div>
+          <span class="eyebrow">{{ editing() ? 'Editar catálogo' : 'Agregar al catálogo' }}</span>
+          <h2>
+            {{
+              editing()
+                ? draft.name
+                : kind() === 'categories'
+                  ? 'Nueva categoría'
+                  : 'Nueva prioridad'
+            }}
+          </h2>
+        </div>
+        <button
+          type="button"
+          aria-label="Cerrar editor"
+          [disabled]="busy()"
+          (click)="editing.set(undefined)"
+        >
+          <taji-icon name="x" [size]="18" />
+        </button>
+      </div>
+      <form #form="ngForm" (ngSubmit)="save()">
+        <fieldset [disabled]="busy()">
+          <label for="catalog-name">Nombre visible *</label
+          ><input
+            id="catalog-name"
+            name="name"
+            [(ngModel)]="draft.name"
+            required
+            [maxlength]="kind() === 'categories' ? 100 : 40"
+            placeholder="Un nombre claro y fácil de identificar"
+          />
+          @if (kind() === 'categories') {
+            <label for="catalog-description">Qué incluye</label
+            ><textarea
+              id="catalog-description"
+              name="description"
+              [(ngModel)]="draft.description"
+              maxlength="240"
+              rows="3"
+              placeholder="Describe qué reportes pertenecen a esta categoría"
+            ></textarea
+            ><label for="catalog-team">Equipo responsable predeterminado</label
+            ><select id="catalog-team" name="staff" [(ngModel)]="draft.default_staff_type">
+              <option value="">Por definir al asignar</option>
+              @for (s of data()?.staff_types; track s.code) {
+                <option [value]="s.code">{{ s.name }}</option>
+              }</select
+            ><small
+              >Es una sugerencia para orientar la asignación; no asigna personal
+              automáticamente.</small
+            >
+            <div class="code-hint">
+              <taji-icon name="shield-check" [size]="17" /><span>{{
+                editing()
+                  ? 'Código interno: ' + editing()?.code
+                  : 'El sistema generará el código interno al guardar.'
+              }}</span>
+            </div>
+          } @else {
+            @if (!editing()) {
+              <label for="priority-code">Código *</label
+              ><input
+                id="priority-code"
+                name="code"
+                [(ngModel)]="draft.code"
+                pattern="[A-Za-z_]+"
+                maxlength="20"
+                required
+                placeholder="Ej. ESPECIAL"
+              /><small>No podrá cambiarse después de guardar.</small>
+            }
+            <div class="two-fields">
+              <div>
+                <label for="priority-rank">Orden de urgencia *</label
+                ><input
+                  id="priority-rank"
+                  name="rank"
+                  type="number"
+                  [(ngModel)]="draft.rank"
+                  min="1"
+                  max="32767"
+                  step="1"
+                  required
+                />
+              </div>
+              <div>
+                <label for="priority-minutes">Plazo (minutos)</label
+                ><input
+                  id="priority-minutes"
+                  name="minutes"
+                  type="number"
+                  [(ngModel)]="draft.target_minutes"
+                  min="1"
+                  step="1"
+                  placeholder="Sin plazo"
+                />
+              </div>
+            </div>
+            <small>Un orden mayor significa más urgencia. Cada orden debe ser único.</small>
+            <div class="two-fields">
+              <div>
+                <label for="priority-min">Puntuación mínima</label
+                ><input
+                  id="priority-min"
+                  name="minScore"
+                  type="number"
+                  [(ngModel)]="draft.min_score"
+                  min="0"
+                  max="100"
+                  step=".01"
+                />
+              </div>
+              <div>
+                <label for="priority-max">Puntuación máxima</label
+                ><input
+                  id="priority-max"
+                  name="maxScore"
+                  type="number"
+                  [(ngModel)]="draft.max_score"
+                  min="0"
+                  max="100"
+                  step=".01"
+                />
+              </div>
+            </div>
+          }
+          <div class="editor-actions">
+            <taji-button
+              type="submit"
+              [loading]="busy()"
+              [disabled]="!form.valid || !draft.name.trim()"
+              >{{
+                editing()
+                  ? 'Guardar cambios'
+                  : 'Crear ' + (kind() === 'categories' ? 'categoría' : 'prioridad')
+              }}</taji-button
+            ><button
+              type="button"
+              class="cancel"
+              [disabled]="busy()"
+              (click)="editing.set(undefined)"
+            >
+              Cancelar
+            </button>
+          </div>
+        </fieldset>
+      </form>
+    </section>
+  }
+</div>
+<div class="catalog-context">
+  <taji-icon name="sparkles" [size]="20" />
+  <p>
+    <strong>La IA usa tu catálogo, no una lista fija.</strong> Los valores activos se incorporan al
+    siguiente análisis. No necesitas entrenar otro modelo para agregar una categoría.
+  </p>
+</div>

@@ -1,0 +1,361 @@
+<section class="ai-panel" aria-labelledby="ai-heading" [attr.aria-busy]="loading()">
+  <header class="analysis-heading">
+    <div class="heading-title">
+      <span class="model-icon"><taji-icon name="sparkles" [size]="23" /></span>
+      <div>
+        <span class="eyebrow">Asistencia NVIDIA</span>
+        <h3 id="ai-heading">Análisis de la incidencia</h3>
+      </div>
+    </div>
+    <div class="heading-actions">
+      <button
+        class="icon-button"
+        type="button"
+        aria-label="Actualizar estado del análisis"
+        title="Actualizar estado"
+        [disabled]="loading() || busy()"
+        (click)="refresh()"
+      >
+        <taji-icon name="refresh-cw" [size]="17" />
+      </button>
+      @if (state()?.can_analyze) {
+        <button
+          class="analyze-button"
+          type="button"
+          [disabled]="busy() || waiting()"
+          (click)="analyze()"
+        >
+          <taji-icon name="sparkles" [size]="15" />{{
+            waiting()
+              ? state()?.processor?.available === false
+                ? 'En espera'
+                : 'Analizando…'
+              : latest()
+                ? 'Analizar de nuevo'
+                : 'Analizar con IA'
+          }}
+        </button>
+      }
+    </div>
+  </header>
+  @if (state()?.processor; as processor) {
+    <p class="processor-status" [class.offline]="!processor.available" role="status">
+      <span aria-hidden="true"></span
+      >{{ processor.available ? 'Procesador conectado · texto y fotos' : processor.message }}
+    </p>
+  }
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (loading() && !state()) {
+    <div class="loading-state" role="status">
+      <taji-icon name="loader" [size]="22" />
+      <p>Consultando el análisis guardado…</p>
+    </div>
+  } @else if (waiting()) {
+    <div class="waiting" role="status">
+      <span class="processing-icon"><taji-icon name="clock" [size]="26" /></span>
+      <div>
+        <h4>
+          {{
+            state()?.processor?.available === false
+              ? 'El procesador no está conectado'
+              : latest()?.execution_status === 'QUEUED'
+                ? 'Tu reporte está en la cola de análisis'
+                : 'NVIDIA está revisando el contexto'
+          }}
+        </h4>
+        <p>
+          {{
+            state()?.processor?.available === false
+              ? 'Tu reporte está guardado. No necesitas enviarlo otra vez: el servidor debe iniciar el procesador IA.'
+              : 'Buscamos categorías, peligros y negaciones en el texto y en las fotos compatibles. Puedes seguir usando Taji; el resultado se guarda automáticamente.'
+          }}
+        </p>
+        @if (pollPaused()) {
+          <p>
+            El análisis sigue pendiente. Actualiza el estado para consultarlo sin enviar otra
+            solicitud.
+          </p>
+          <button type="button" (click)="refresh()">Actualizar estado</button>
+        }
+      </div>
+    </div>
+  } @else if (latest(); as a) {
+    @if (a.execution_status === 'FAILED' && !a.review) {
+      <div class="fallback" role="status">
+        <taji-icon name="alert-triangle" [size]="24" />
+        <div>
+          <h4>El análisis necesita revisión manual</h4>
+          <p>
+            {{ failureLabel(a.error_code) }} La incidencia está guardada y el equipo puede
+            clasificarla manualmente.
+          </p>
+          @if ((a.priority?.rank || 0) >= 3) {
+            <p role="alert">
+              <strong>Alerta de seguridad: prioridad {{ a.priority?.name }}.</strong> Detectada por
+              reglas del servidor; pendiente de revisión humana, no de confirmación de NVIDIA.
+            </p>
+            @for (finding of a.safety_findings; track $index) {
+              @if (finding['active']) {
+                <p>{{ finding['name'] }}: «{{ finding['evidence'] }}»</p>
+              }
+            }
+            @for (action of a.recommendations; track $index) {
+              <p>{{ action }}</p>
+            }
+          }
+        </div>
+      </div>
+    }
+    @if (a.execution_status === 'SUCCEEDED' || a.review) {
+      <div class="decision-status" [class.confirmed]="!!a.review">
+        <taji-icon [name]="a.review ? 'check-circle' : 'eye'" [size]="17" /><span>{{
+          a.review ? 'Revisado por ' + a.review.reviewer : 'Propuesta pendiente de revisión'
+        }}</span>
+      </div>
+      <div class="classification">
+        <div class="category-result">
+          <span>{{ a.review ? 'Categoría aplicada' : 'Categoría sugerida' }}</span
+          ><strong>{{ a.category?.name || 'Por revisar' }}</strong>
+        </div>
+        <div class="priority-result" [class.urgent]="(a.priority?.rank || 0) >= 3">
+          <span>Prioridad</span
+          ><strong
+            ><span class="priority-dot" aria-hidden="true"></span
+            >{{ a.priority?.name || 'Por revisar' }}</strong
+          >
+        </div>
+      </div>
+      <p class="summary">{{ a.summary || 'Clasificación realizada por el equipo.' }}</p>
+      @if (a.confidence !== null) {
+        <div class="confidence">
+          <span
+            >Confianza del modelo
+            <strong>{{ confidence(a.confidence) | number: '1.0-0' }}%</strong></span
+          >
+          <div
+            class="confidence-track"
+            role="progressbar"
+            aria-label="Confianza del modelo"
+            [attr.aria-valuenow]="confidence(a.confidence)"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <span [style.width.%]="confidence(a.confidence)"></span>
+          </div>
+          <small
+            >Es una estimación del modelo, no una garantía de que la clasificación sea
+            correcta.</small
+          >
+        </div>
+      }
+      @if (a.confidence !== null && +a.confidence < 0.65) {
+        <p class="caution">
+          La confianza es baja: verifica cuidadosamente la categoría y la prioridad.
+        </p>
+      }
+      <div class="findings-layout">
+        <section class="findings">
+          <h4><taji-icon name="shield" [size]="18" />Peligros y contexto</h4>
+          @for (risk of a.risks; track $index) {
+            <article class="risk-row">
+              <div>
+                <strong>{{ risk.name }}</strong
+                ><span class="context-tag" [class.active]="risk.context === 'present'">{{
+                  contextLabel(risk.context)
+                }}</span>
+              </div>
+              <p>
+                {{
+                  risk.source === 'image'
+                    ? 'Observación visual por verificar · foto #' + risk.attachment_id
+                    : 'Cita del reporte'
+                }}<br />«{{ risk.evidence }}»
+              </p>
+            </article>
+          } @empty {
+            <p class="muted">
+              No se identificaron peligros específicos. Esto no garantiza ausencia de riesgo.
+            </p>
+          }
+        </section>
+        <section class="recommendations">
+          <h4><taji-icon name="check-circle" [size]="18" />Acciones sugeridas</h4>
+          <ol>
+            @for (action of a.recommendations; track $index) {
+              <li>{{ action }}</li>
+            } @empty {
+              <li>Solicita una revisión al equipo responsable.</li>
+            }
+          </ol>
+        </section>
+      </div>
+      @if (a.safety_findings.length) {
+        <details class="technical-details">
+          <summary>Comprobaciones de seguridad · {{ a.safety_findings.length }}</summary>
+          @for (f of a.safety_findings; track $index) {
+            <div class="finding-line">
+              <strong>{{ f.name }}</strong
+              ><span>{{ f.active ? 'Activa' : contextLabel(f.context) }}</span
+              ><small>«{{ f.evidence }}»</small>
+            </div>
+          }
+        </details>
+      }
+      @if (a.media?.length) {
+        <details class="technical-details">
+          <summary>Fotos utilizadas en este análisis</summary>
+          @for (photo of a.media; track photo.attachment_id) {
+            <p>
+              Foto #{{ photo.attachment_id }} ·
+              {{
+                photo.status === 'sent'
+                  ? 'Enviada a NVIDIA, comprimida y sin metadatos EXIF'
+                  : mediaLabel(photo.reason)
+              }}
+            </p>
+          }
+          <small
+            >Las observaciones visuales son propuestas que el equipo debe verificar. Los PDF no se
+            interpretan como fotos.</small
+          >
+        </details>
+      }
+      @if (a.entities.length) {
+        <details class="technical-details">
+          <summary>Qué entendió del reporte</summary>
+          <div class="entities">
+            @for (e of a.entities; track $index) {
+              <span
+                >{{ e.text_value }}<small>{{ contextLabel(e.normalized_value) }}</small></span
+              >
+            }
+          </div>
+        </details>
+      }
+      @if (a.review) {
+        <div class="review-note">
+          <taji-icon name="check-circle" [size]="20" />
+          <div>
+            <strong>Motivo de la revisión</strong>
+            <p>{{ a.review.reason }}</p>
+          </div>
+        </div>
+      }
+    }
+    @if (state()?.can_review && a.review_status === 'PENDING') {
+      <form #reviewForm="ngForm" (ngSubmit)="review()">
+        <fieldset [disabled]="busy()">
+          <div class="review-heading">
+            <span class="review-icon"><taji-icon name="user-check" [size]="23" /></span>
+            <div>
+              <span class="eyebrow">Decisión del equipo</span>
+              <h4>
+                {{
+                  a.execution_status === 'FAILED'
+                    ? 'Clasificar manualmente'
+                    : 'Verificar o corregir la propuesta'
+                }}
+              </h4>
+            </div>
+          </div>
+          <p class="muted">
+            Confirma lo que revisaste. Solo al guardar se actualizará la clasificación oficial; la
+            predicción original se conserva.
+          </p>
+          <div class="form-grid">
+            <label
+              >Categoría<select name="aiCategory" [(ngModel)]="category" required>
+                <option value="">Selecciona una categoría</option>
+                @for (c of catalog()?.categories; track c.id) {
+                  <option [value]="c.id">{{ c.name }}</option>
+                }
+              </select></label
+            ><label
+              >Prioridad<select name="aiPriority" [(ngModel)]="priority" required>
+                <option value="">Selecciona una prioridad</option>
+                @for (p of catalog()?.priorities; track p.id) {
+                  <option [value]="p.id">{{ p.name }}</option>
+                }
+              </select></label
+            >
+          </div>
+          <label
+            >Motivo de la revisión<textarea
+              name="aiReason"
+              [(ngModel)]="reason"
+              minlength="10"
+              maxlength="2000"
+              rows="3"
+              required
+              placeholder="Ej. Verifiqué el lugar con seguridad y confirmé el peligro."
+            ></textarea
+            ><small>Mínimo 10 caracteres. Explica qué verificaste o corregiste.</small></label
+          >
+          <details class="override-details">
+            <summary>Corregir un falso positivo de seguridad</summary>
+            <label class="check"
+              ><input type="checkbox" name="override" [(ngModel)]="overrideSafety" />Confirmo una
+              excepción a las señales de seguridad.</label
+            >
+            <p>
+              Si reduces la urgencia por debajo de las reglas, explica por qué el peligro no está
+              presente (mínimo 20 caracteres). Esta decisión queda auditada.
+            </p>
+          </details>
+          <taji-button
+            type="submit"
+            [loading]="busy()"
+            [disabled]="
+              !reviewForm.valid ||
+              !catalog() ||
+              !category ||
+              !priority ||
+              reason.trim().length < 10 ||
+              (overrideSafety && reason.trim().length < 20)
+            "
+            >Guardar revisión y aplicar clasificación</taji-button
+          >
+        </fieldset>
+      </form>
+    }
+    @if (a.original_prediction) {
+      <details class="technical-details">
+        <summary>Predicción original · solo lectura</summary>
+        <pre>{{ a.original_prediction | json }}</pre>
+      </details>
+    }
+    <footer class="analysis-footer">
+      <span
+        ><taji-icon name="shield-check" [size]="14" />{{ a.model }} · {{ a.model_version }}</span
+      >
+      @if (a.duration_ms !== null) {
+        <span>{{ a.duration_ms / 1000 | number: '1.1-1' }} s de análisis</span>
+      }
+    </footer>
+    @if ((state()?.analyses?.length || 0) > 1) {
+      <details class="technical-details">
+        <summary>Análisis anteriores</summary>
+        @for (old of state()?.analyses?.slice(1); track old.id) {
+          <p>
+            #{{ old.id }} · {{ old.category?.name || 'Sin clasificación' }} ·
+            {{ old.priority?.name || 'Por revisar' }} · {{ reviewLabel(old.review_status) }}
+          </p>
+        }
+      </details>
+    }
+  } @else if (!loading() && !error()) {
+    <div class="empty">
+      <taji-icon name="sparkles" [size]="30" />
+      <h4>Este reporte todavía no tiene análisis</h4>
+      <p>
+        La IA puede sugerir categoría, prioridad y acciones. El equipo conserva siempre la decisión
+        final.
+      </p>
+      @if (!state()?.can_analyze) {
+        <small>El equipo autorizado podrá solicitar el análisis.</small>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,252 @@
+:host {
+  display: block;
+  margin: 1.3rem 0;
+}
+.evidence-gallery {
+  border: 1px solid #e0e8f3;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+.evidence-gallery > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: #52759d;
+}
+h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.35rem;
+  color: #163453;
+}
+.evidence-gallery header p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #7a8ca3;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 1rem;
+}
+.photo-card {
+  overflow: hidden;
+  border: 1px solid #e1e9f3;
+  border-radius: 0.85rem;
+  min-width: 0;
+}
+.thumbnail {
+  aspect-ratio: 4/3;
+  background: #edf2f8;
+  overflow: hidden;
+}
+.photo-open {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  cursor: zoom-in;
+  background: transparent;
+}
+.photo-open img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.expand {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  position: absolute;
+  right: 0.55rem;
+  bottom: 0.55rem;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  color: #153b6a;
+  background: #ffffffed;
+  font-size: 0.67rem;
+}
+.photo-caption {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem;
+}
+.photo-caption strong {
+  color: #43658c;
+  font-size: 0.72rem;
+}
+.photo-caption p {
+  margin: 0.3rem 0 0;
+  font-size: 0.73rem;
+  color: #687e98;
+  overflow-wrap: anywhere;
+}
+.photo-caption a {
+  padding: 0.55rem;
+  border-radius: 0.55rem;
+  background: #f1f6ff;
+  display: grid;
+  place-items: center;
+}
+.image-error {
+  display: grid;
+  height: 100%;
+  align-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  color: #72849c;
+  padding: 1rem;
+  font-size: 0.78rem;
+}
+.image-error button {
+  padding: 0.4rem 0.7rem;
+  color: #165ac0;
+  border: 1px solid #c9d9f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+}
+.document-row {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.9rem 0.2rem;
+  border-top: 1px solid #e8edf5;
+  margin-top: 0.8rem;
+  color: #52749a;
+}
+.document-row div {
+  flex: 1;
+  min-width: 0;
+}
+.document-row strong {
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+.document-row small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #8091a6;
+  font-size: 0.67rem;
+}
+.document-row a {
+  font-size: 0.72rem;
+}
+.empty {
+  color: #8190a4;
+  font-size: 0.78rem;
+  margin: 0.5rem 0;
+}
+.lightbox {
+  border: 0;
+  border-radius: 1rem;
+  padding: 0;
+  width: min(70rem, calc(100vw - 2rem));
+  max-height: 94dvh;
+  color: #153451;
+  background: white;
+  overflow: auto;
+}
+.lightbox[open] {
+  display: flex;
+  flex-direction: column;
+}
+.lightbox::backdrop {
+  background: #10233cd6;
+}
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+.viewer-header span {
+  font-size: 0.72rem;
+  color: #71869f;
+}
+.viewer-header h2 {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.close {
+  display: grid;
+  place-items: center;
+  padding: 0.6rem;
+  border: 0;
+  background: #f1f5fb;
+  border-radius: 0.6rem;
+  color: #395c89;
+  cursor: pointer;
+}
+.viewer-image {
+  background: #102034;
+  min-height: 10rem;
+  display: grid;
+  place-items: center;
+  padding: 0.8rem;
+}
+.viewer-image img {
+  display: block;
+  max-width: 100%;
+  max-height: 70dvh;
+  object-fit: contain;
+}
+.lightbox footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+.viewer-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+.viewer-controls button {
+  font: inherit;
+  font-size: 0.75rem;
+  border: 1px solid #d3dfee;
+  border-radius: 0.6rem;
+  background: white;
+  color: #345a86;
+  padding: 0.65rem 0.8rem;
+  cursor: pointer;
+}
+.viewer-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lightbox footer a {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.74rem;
+}
+:focus-visible {
+  outline: 3px solid #80b2ff;
+  outline-offset: 3px;
+}
+@media (max-width: 500px) {
+  .lightbox {
+    width: calc(100vw - 1rem);
+  }
+  .lightbox footer {
+    flex-wrap: wrap;
+  }
+  .document-row {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+  .photo-grid {
+    grid-template-columns: 1fr;
+  }
+}

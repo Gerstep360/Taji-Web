@@ -15,6 +15,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
       aria-hidden="true"
     >
       @switch (name) {
+        @case ('mic') { <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/> }
+        @case ('volume') { <path d="M11 5L6 9H3v6h3l5 4zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/> }
         @case ('home') {
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -222,6 +224,15 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         }
         @case ('edit-2') {
           <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+        }
+        @case ('edit') {
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+        }
+        @case ('image') {
+          <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+        }
+        @case ('upload') {
+          <path d="M12 16V3m-5 5 5-5 5 5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>
         }
         @case ('copy') {
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>

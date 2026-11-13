@@ -58,6 +58,54 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
+      { path: 'registrar-incidencia', redirectTo: 'reportar-incidencia', pathMatch: 'full' },
+      { path: 'seguimiento-incidencias', redirectTo: 'incidencias', pathMatch: 'full' },
+      {
+        path: 'activos',
+        canActivate: [anyPermissionGuard(['manage_assets', 'manage_maintenance', 'view_general_status', 'maintain_assets'])],
+        loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu23_gestionar_activos').then(m => m.ActivosPage),
+        title: 'Inventario de activos | Taji',
+      },
+      {
+        path: 'mantenimiento',
+        canActivate: [anyPermissionGuard(['manage_maintenance', 'view_assigned_work_orders', 'update_work_order_status', 'attach_work_evidence', 'maintain_assets', 'access_assigned_external_orders'])],
+        loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu25_mantenimiento_ordenes/mantenimiento.page').then(m => m.MantenimientoPage),
+        title: 'Órdenes de trabajo | Taji',
+      },
+      {
+        path: 'identificar-activo-qr',
+        canActivate: [anyPermissionGuard(['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'])],
+        loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(m => m.AssetQRPage),
+        title: 'Identificar activo mediante QR | Taji',
+      },
+      {
+        path: 'reportes',
+        canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin', 'seguridad', 'operador'], [])],
+        loadComponent: () =>
+          import('./paquetes/paquete6_reportes_analitica/cu31_reportes/reports.page').then(m => m.ReportsPage),
+        title: 'Reportes y consultas | Taji',
+      },
+      {
+        path: 'reportar-incidencia',
+        canActivate: [anyPermissionGuard(['report_incidents', 'manage_incidents'])],
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu18_registrar_incidencia/incident-report.page').then(m => m.IncidentReportPage),
+        title: 'Reportar incidencia | Taji',
+      },
+      {
+        path: 'analisis-incidencias',
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu22_analisis_ia/incident-analysis.page').then(m => m.IncidentAnalysisPage),
+        title: 'Análisis de incidencias | Taji',
+      },
+      {
+        path: 'catalogos-incidencias', canActivate: [superuserGuard],
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu22_analisis_ia/ai-catalog.page').then(m => m.AICatalogPage),
+        title: 'Catálogos de incidencias | Taji',
+      },
+      {
+        path: 'incidencias',
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu21_ciclo_atencion/incidents.page').then(m => m.IncidentsPage),
+        title: 'Seguimiento de incidencias | Taji',
+      },
       {
         // Cierre del alta con contraseña temporal. Va antes que el resto porque
         // `authGuard` desvía aquí a cualquier usuario que aún use la clave
@@ -152,6 +200,12 @@ export const routes: Routes = [
             (m) => m.AuditoriaPage,
           ),
         title: 'Auditoría y Bitácora | Taji',
+      },
+      {
+        path: 'reconocimiento-camara',
+        canActivate: [permissionGuard('validate_visits')],
+        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu32_webcam/webcam.page').then(m => m.WebcamPage),
+        title: 'Reconocimiento por cámara | Taji',
       },
       {
         path: 'verificacion-facial',

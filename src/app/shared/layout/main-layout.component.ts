@@ -344,6 +344,13 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
+          label: 'Reconocimiento por cámara',
+          icon: 'scan-face',
+          route: '/reconocimiento-camara',
+          permission: 'validate_visits',
+          isAvailable: true,
+        },
+        {
           label: 'Auditoría y Bitácora',
           icon: 'file-text',
           route: '/auditoria',
@@ -366,18 +373,23 @@ export class MainLayoutComponent {
         {
           label: 'Reportar Incidencia',
           icon: 'alert-triangle',
-          isAvailable: false,
+          route: '/reportar-incidencia',
+          permissions: ['report_incidents', 'manage_incidents'],
+          isAvailable: true,
         },
         {
           label: 'Seguimiento y Ciclo',
           icon: 'git-branch',
-          isAvailable: false,
+          route: '/incidencias',
+          isAvailable: true,
         },
         {
           label: 'Clasificación con IA',
           icon: 'sparkles',
-          isAvailable: false,
+          route: '/analisis-incidencias',
+          isAvailable: true,
         },
+        { label: 'Catálogos de incidencias', icon: 'list', route: '/catalogos-incidencias', isAvailable: true, superuserOnly: true },
       ],
     },
     {
@@ -388,17 +400,23 @@ export class MainLayoutComponent {
         {
           label: 'Inventario de Activos',
           icon: 'boxes',
-          isAvailable: false,
+          route: '/activos',
+          permissions: ['manage_assets', 'manage_maintenance', 'view_general_status', 'maintain_assets'],
+          isAvailable: true,
         },
         {
           label: 'Identificación QR',
           icon: 'search',
-          isAvailable: false,
+          route: '/identificar-activo-qr',
+          permissions: ['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'],
+          isAvailable: true,
         },
         {
           label: 'Órdenes de Trabajo',
           icon: 'wrench',
-          isAvailable: false,
+          route: '/mantenimiento',
+          permissions: ['manage_maintenance', 'view_assigned_work_orders', 'update_work_order_status', 'attach_work_evidence', 'maintain_assets', 'access_assigned_external_orders'],
+          isAvailable: true,
         },
       ],
     },
@@ -435,6 +453,18 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
       ],
+    },
+    {
+      id: 'paquete6',
+      title: 'Reportes y analítica',
+      icon: 'bar-chart',
+      items: [{
+        label: 'Reportes y consultas',
+        icon: 'file-text',
+        route: '/reportes',
+        roles: ['admin', 'administrador', 'superadmin', 'seguridad', 'operador'],
+        isAvailable: true,
+      }],
     },
   ];
 

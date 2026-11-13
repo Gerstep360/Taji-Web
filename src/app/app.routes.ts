@@ -196,6 +196,12 @@ export const routes: Routes = [
         title: 'Auditoría y Bitácora | Taji',
       },
       {
+        path: 'reconocimiento-camara',
+        canActivate: [permissionGuard('validate_visits')],
+        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu32_webcam/webcam.page').then(m => m.WebcamPage),
+        title: 'Reconocimiento por cámara | Taji',
+      },
+      {
         path: 'verificacion-facial',
         loadComponent: () =>
           import('./paquetes/paquete2_seguridad_accesos/cu17_verificacion_facial').then(

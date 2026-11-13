@@ -344,6 +344,13 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
+          label: 'Reconocimiento por cámara',
+          icon: 'scan-face',
+          route: '/reconocimiento-camara',
+          permission: 'validate_visits',
+          isAvailable: true,
+        },
+        {
           label: 'Auditoría y Bitácora',
           icon: 'file-text',
           route: '/auditoria',

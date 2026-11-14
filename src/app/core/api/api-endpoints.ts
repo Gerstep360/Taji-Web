@@ -34,6 +34,18 @@ export const API_ENDPOINTS = {
     export: '/reports/export/',
   },
   visitConsultation: '/security/cu12/visits/',
+  community: {
+    // CU26: gestión de áreas comunes, horarios y bloqueos.
+    areas: '/community/areas/',
+    area: (id: number) => `/community/areas/${id}/`,
+    areaSchedules: '/community/area-schedules/',
+    areaSchedule: (id: number) => `/community/area-schedules/${id}/`,
+    areaBlocks: '/community/area-blocks/',
+    areaBlock: (id: number) => `/community/area-blocks/${id}/`,
+    // CU27: reservas. El calendario las consume en modo solo lectura.
+    reservations: '/community/reservations/',
+    reservation: (id: number) => `/community/reservations/${id}/`,
+  },
   auth: {
     login: '/auth/login/',
     register: '/auth/register/',

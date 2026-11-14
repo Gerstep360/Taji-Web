@@ -442,7 +442,9 @@ export class MainLayoutComponent {
         {
           label: 'Áreas Comunes y Reservas',
           icon: 'calendar',
-          isAvailable: false,
+          route: '/calendario-reservas',
+          permissions: ['manage_reservations', 'reserve_areas'],
+          isAvailable: true,
         },
         {
           label: 'Comunicados y Avisos',

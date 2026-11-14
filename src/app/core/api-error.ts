@@ -86,5 +86,17 @@ function fieldLabel(field: string): string {
     status_not_allowed: 'Visita',
     visit_window_ended: 'Visita',
     ttl_minutes: 'Vigencia del QR',
+    // CU26/CU27: áreas comunes, horarios, bloqueos y reservas.
+    status: 'Estado',
+    common_area: 'Área',
+    weekday: 'Día',
+    opens_at: 'Apertura',
+    closes_at: 'Cierre',
+    blocked_from: 'Inicio',
+    blocked_until: 'Fin',
+    reason: 'Motivo',
+    capacity: 'Capacidad',
+    name: 'Nombre',
+    requires_approval: 'Aprobación',
   }[field] ?? 'Datos';
 }

@@ -41,6 +41,9 @@ export class AppConfigService {
     const baseUrl = this.state().apiBaseUrl;
     if (!baseUrl) throw new Error('La configuración de la API todavía no está disponible.');
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    if (normalizedPath.startsWith('/api/v1/') && baseUrl.endsWith('/api/v1')) {
+      return `${baseUrl.slice(0, -7)}${normalizedPath}`;
+    }
     return `${baseUrl}${normalizedPath}`;
   }
 

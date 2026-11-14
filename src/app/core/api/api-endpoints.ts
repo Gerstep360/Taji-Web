@@ -34,6 +34,18 @@ export const API_ENDPOINTS = {
     export: '/reports/export/',
   },
   visitConsultation: '/security/cu12/visits/',
+  community: {
+    // CU26: gestión de áreas comunes, horarios y bloqueos.
+    areas: '/community/areas/',
+    area: (id: number) => `/community/areas/${id}/`,
+    areaSchedules: '/community/area-schedules/',
+    areaSchedule: (id: number) => `/community/area-schedules/${id}/`,
+    areaBlocks: '/community/area-blocks/',
+    areaBlock: (id: number) => `/community/area-blocks/${id}/`,
+    // CU27: reservas. El calendario las consume en modo solo lectura.
+    reservations: '/community/reservations/',
+    reservation: (id: number) => `/community/reservations/${id}/`,
+  },
   auth: {
     login: '/auth/login/',
     register: '/auth/register/',
@@ -72,7 +84,7 @@ export const API_ENDPOINTS = {
     residentReview: (id: number) => `/roles/residents/${id}/review/`,
   },
 
-  health: '/health/',
+  health: '/api/v1/health/',
   sectors: {
     root: '/sectors/',
     options: '/sectors/options/',
@@ -149,6 +161,16 @@ export const API_ENDPOINTS = {
     historial: '/paquete2/turnos/historial/',
   },
   shiftLogs: { root: '/paquete2/novedades-turno/' },
+  incidentReports: {
+    // CU18: alta multipart con evidencias y catálogos del formulario.
+    root: '/incidents/',
+    options: '/incidents/options/',
+    categories: '/incidents/categories/',
+    priorities: '/incidents/priorities/',
+    detail: (id: number) => `/incidents/${id}/`,
+    comments: (id: number) => `/incidents/${id}/comments/`,
+    assign: (id: number) => `/incidents/${id}/assign/`,
+  },
   handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
 } as const;
 

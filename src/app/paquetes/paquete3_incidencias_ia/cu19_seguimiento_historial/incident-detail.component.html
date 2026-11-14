@@ -1,0 +1,301 @@
+<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-card">
+    <header class="modal-header">
+      <div>
+        <span class="kicker">Detalle de Incidencia</span>
+        <h3 id="modal-title">
+          @if (incident()) {
+            <code>{{ incident()?.public_code }}</code> – {{ incident()?.title }}
+          } @else {
+            Cargando incidencia…
+          }
+        </h3>
+      </div>
+      <button class="close-btn" type="button" (click)="close.emit()" aria-label="Cerrar modal">
+        ✕
+      </button>
+    </header>
+
+    @if (successMessage()) {
+      <div class="notice success" role="status">✓ {{ successMessage() }}</div>
+    }
+    @if (errorMessage()) {
+      <div class="notice error" role="alert"><span>{{ errorMessage() }}</span></div>
+    }
+
+    @if (loading()) {
+      <div class="loading-state" role="status">
+        <div class="spinner"></div>
+        <p>Cargando información completa…</p>
+      </div>
+    } @else if (incident(); as inc) {
+      <div class="modal-body">
+        <!-- Resumen General -->
+        <section class="incident-summary-card">
+          <div class="meta-grid">
+            <div>
+              <span class="label">Estado actual</span>
+              <span class="badge" [class]="statusBadgeClass(inc.status)">
+                {{ statusLabel(inc.status) }}
+              </span>
+            </div>
+            <div>
+              <span class="label">Prioridad</span>
+              <strong>{{ inc.priority?.name || 'No asignada' }}</strong>
+            </div>
+            <div>
+              <span class="label">Categoría</span>
+              <strong>{{ inc.category.name }}</strong>
+            </div>
+            <div>
+              <span class="label">Sector / Ubicación</span>
+              <strong>{{ inc.sector.name }} @if (inc.unit) { (Unidad {{ inc.unit.code }}) }</strong>
+            </div>
+            <div>
+              <span class="label">Reportado por</span>
+              <strong>{{ inc.reporter?.full_name || 'Sistema / Anónimo' }}</strong>
+            </div>
+            <div>
+              <span class="label">Fecha de registro</span>
+              <strong>{{ inc.created_at | date: 'medium' }}</strong>
+            </div>
+          </div>
+
+          <div class="description-box">
+            <span class="label">Descripción</span>
+            <p>{{ inc.description }}</p>
+          </div>
+        </section>
+
+        <!-- Cambio rápido de estado -->
+        <form class="status-change-form" (submit)="submitStatusChange($event)">
+          <h4>Actualizar Estado y Gestión</h4>
+          <div class="form-row">
+            <label>
+              <span>Nuevo Estado</span>
+              <select [(ngModel)]="newStatus" name="newStatus">
+                <option value="REPORTED">Reportada</option>
+                <option value="REVIEWED">Revisada</option>
+                <option value="ASSIGNED">Asignada</option>
+                <option value="IN_PROGRESS">En Proceso</option>
+                <option value="RESOLVED">Resuelta</option>
+                <option value="CLOSED">Cerrada</option>
+                <option value="CANCELLED">Cancelada</option>
+              </select>
+            </label>
+            <label class="grow">
+              <span>Nota / Comentario del cambio</span>
+              <input
+                type="text"
+                [(ngModel)]="statusComment"
+                name="statusComment"
+                placeholder="Motivo o avance del cambio de estado..."
+              />
+            </label>
+            <button class="primary-btn" type="submit" [disabled]="statusSubmitting()">
+              @if (statusSubmitting()) { Actualizando… } @else { Cambiar Estado }
+            </button>
+          </div>
+        </form>
+
+        <!-- Pestañas de detalle: Historial, Evidencias, Comentarios, Asignaciones -->
+        <div class="tabs-nav" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeTab() === 'historial'"
+            [class.active]="activeTab() === 'historial'"
+            (click)="setTab('historial')"
+          >
+            Historial de Estados ({{ inc.history?.length || 0 }})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeTab() === 'evidencias'"
+            [class.active]="activeTab() === 'evidencias'"
+            (click)="setTab('evidencias')"
+          >
+            Evidencias ({{ inc.evidences?.length || 0 }})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeTab() === 'comentarios'"
+            [class.active]="activeTab() === 'comentarios'"
+            (click)="setTab('comentarios')"
+          >
+            Comentarios ({{ inc.comments?.length || 0 }})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="activeTab() === 'asignaciones'"
+            [class.active]="activeTab() === 'asignaciones'"
+            (click)="setTab('asignaciones')"
+          >
+            Asignaciones ({{ inc.assignments?.length || 0 }})
+          </button>
+        </div>
+
+        <div class="tab-content">
+          <!-- 1. HISTORIAL -->
+          @if (activeTab() === 'historial') {
+            <div class="timeline-list">
+              @if (!inc.history?.length) {
+                <p class="empty-hint">No hay registros de historial de cambios para esta incidencia.</p>
+              } @else {
+                @for (h of inc.history; track h.id) {
+                  <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                      <div class="timeline-header">
+                        <span class="badge" [class]="statusBadgeClass(h.to_status)">
+                          {{ statusLabel(h.to_status) }}
+                        </span>
+                        <span class="date">{{ h.changed_at | date: 'medium' }}</span>
+                      </div>
+                      @if (h.comment) {
+                        <p class="comment-text">{{ h.comment }}</p>
+                      }
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          <!-- 2. EVIDENCIAS -->
+          @if (activeTab() === 'evidencias') {
+            <div class="evidences-grid">
+              @if (!inc.evidences?.length) {
+                <p class="empty-hint">No se adjuntaron evidencias multimedia o documentos a esta incidencia.</p>
+              } @else {
+                @for (ev of inc.evidences; track ev.id) {
+                  <div class="evidence-card">
+                    <div class="evidence-icon">
+                      <taji-icon name="file-text" />
+                    </div>
+                    <div class="evidence-info">
+                      <strong>{{ ev.file_path.split('/').pop() || 'Archivo adjunto' }}</strong>
+                      <span>{{ ev.file_type }} · {{ ev.created_at | date: 'short' }}</span>
+                      @if (ev.caption) {
+                        <p>{{ ev.caption }}</p>
+                      }
+                    </div>
+                    <a [href]="ev.file_path" target="_blank" rel="noopener noreferrer" class="download-link">
+                      Ver / Descargar
+                    </a>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          <!-- 3. COMENTARIOS -->
+          @if (activeTab() === 'comentarios') {
+            <div class="comments-section">
+              <form class="comment-form" (submit)="submitComment($event)">
+                <div class="form-row">
+                  <select [(ngModel)]="newCommentVisibility" name="newCommentVisibility">
+                    <option value="PUBLIC">Público (Visible para residentes)</option>
+                    <option value="INTERNAL">Interno (Solo administración/staff)</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <textarea
+                    [(ngModel)]="newCommentBody"
+                    name="newCommentBody"
+                    rows="3"
+                    placeholder="Escribe un comentario o actualización de seguimiento..."
+                    required
+                  ></textarea>
+                </div>
+                <div class="form-actions">
+                  <button class="primary-btn" type="submit" [disabled]="commentSubmitting()">
+                    @if (commentSubmitting()) { Publicando… } @else { Agregar Comentario }
+                  </button>
+                </div>
+              </form>
+
+              <div class="comments-list">
+                @if (!inc.comments?.length) {
+                  <p class="empty-hint">No hay comentarios en esta incidencia todavía.</p>
+                } @else {
+                  @for (c of inc.comments; track c.id) {
+                    <div class="comment-item" [class.internal]="c.visibility === 'INTERNAL'">
+                      <div class="comment-meta">
+                        <strong>Usuario #{{ c.author_user_id || 'Sistema' }}</strong>
+                        <span class="badge" [class.internal-badge]="c.visibility === 'INTERNAL'">
+                          {{ c.visibility === 'INTERNAL' ? 'Interno' : 'Público' }}
+                        </span>
+                        <span class="date">{{ c.created_at | date: 'medium' }}</span>
+                      </div>
+                      <p>{{ c.body }}</p>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          }
+
+          <!-- 4. ASIGNACIONES -->
+          @if (activeTab() === 'asignaciones') {
+            <div class="assignments-section">
+              <form class="assignment-form" (submit)="submitAssignment($event)">
+                <h4>Asignar Personal Responsable</h4>
+                <div class="form-row">
+                  <label class="grow">
+                    <span>ID del Personal (Staff ID)</span>
+                    <input
+                      type="number"
+                      [(ngModel)]="newAssigneeId"
+                      name="newAssigneeId"
+                      placeholder="Ej. 3 (ID de técnico o guardia)"
+                      required
+                    />
+                  </label>
+                  <label class="grow">
+                    <span>Motivo de asignación</span>
+                    <input
+                      type="text"
+                      [(ngModel)]="assignReason"
+                      name="assignReason"
+                      placeholder="Ej. Asignado para revisión técnica y reparación..."
+                      required
+                    />
+                  </label>
+                  <button class="primary-btn" type="submit" [disabled]="assignSubmitting()">
+                    @if (assignSubmitting()) { Asignando… } @else { Asignar Personal }
+                  </button>
+                </div>
+              </form>
+
+              <div class="assignments-list">
+                <h4>Historial de Asignaciones</h4>
+                @if (!inc.assignments?.length) {
+                  <p class="empty-hint">No hay registros de asignación para esta incidencia.</p>
+                } @else {
+                  @for (asg of inc.assignments; track asg.id) {
+                    <div class="assignment-item">
+                      <div>
+                        <strong>Personal Asignado ID: {{ asg.assigned_to_staff_id }}</strong>
+                        <p>{{ asg.reason }}</p>
+                      </div>
+                      <div class="assignment-dates">
+                        <span>Asignado: {{ asg.assigned_at | date: 'short' }}</span>
+                        @if (asg.ended_at) {
+                          <span>Finalizado: {{ asg.ended_at | date: 'short' }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

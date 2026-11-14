@@ -1,0 +1,555 @@
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Paquete 5 · Servicios y Comunidad</span>
+      <h1>Calendario de áreas comunes y reservas</h1>
+      <p>Configura las áreas del condominio, sus horarios semanales y los bloqueos temporales (por ejemplo, mantenimientos).</p>
+    </div>
+    @if (canManage() && activeTab() === 'areas') {
+      <button type="button" class="btn-primary" (click)="openCreateArea()">
+        <taji-icon name="plus" [size]="18" />
+        Nueva área
+      </button>
+    } @else if (canManage() && activeTab() === 'schedules') {
+      <button type="button" class="btn-primary" (click)="openCreateSchedule()" [disabled]="areas().length === 0">
+        <taji-icon name="plus" [size]="18" />
+        Nuevo horario
+      </button>
+    } @else if (canManage() && (activeTab() === 'blocks' || activeTab() === 'calendar')) {
+      <button type="button" class="btn-primary" (click)="openCreateBlock()" [disabled]="areas().length === 0">
+        <taji-icon name="plus" [size]="18" />
+        Nuevo bloqueo
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      <taji-icon name="alert-triangle" [size]="18" />
+      <span>{{ errorMessage() }}</span>
+      <button type="button" class="alert-close" aria-label="Cerrar" (click)="errorMessage.set('')">✕</button>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert-success" role="status">
+      <taji-icon name="check-circle" [size]="18" />
+      <span>{{ successMessage() }}</span>
+      <button type="button" class="alert-close" aria-label="Cerrar" (click)="successMessage.set('')">✕</button>
+    </div>
+  }
+
+  <section class="summary-grid" aria-label="Resumen de áreas comunes">
+    <article class="summary-card">
+      <span class="summary-icon blue"><taji-icon name="building" [size]="19" /></span>
+      <div>
+        <small>Áreas disponibles</small>
+        <strong>{{ areasDisponibles() }} <span class="summary-muted">/ {{ areas().length }}</span></strong>
+      </div>
+    </article>
+    <article class="summary-card">
+      <span class="summary-icon green"><taji-icon name="clock" [size]="19" /></span>
+      <div>
+        <small>Horarios configurados</small>
+        <strong>{{ horariosConfigurados() }}</strong>
+      </div>
+    </article>
+    <article class="summary-card">
+      <span class="summary-icon amber"><taji-icon name="ban" [size]="19" /></span>
+      <div>
+        <small>Bloqueos próximos</small>
+        <strong>{{ bloqueosProximos() }}</strong>
+      </div>
+    </article>
+    <article class="summary-card">
+      <span class="summary-icon violet"><taji-icon name="calendar" [size]="19" /></span>
+      <div>
+        <small>Reservas del mes</small>
+        <strong>{{ reservasDelMes().length }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <nav class="tabs-nav" aria-label="Secciones del calendario">
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'calendar'" (click)="activeTab.set('calendar')">
+      <taji-icon name="calendar" [size]="16" /> Calendario
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'areas'" (click)="activeTab.set('areas')">
+      <taji-icon name="building" [size]="16" /> Áreas comunes
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'schedules'" (click)="activeTab.set('schedules')">
+      <taji-icon name="clock" [size]="16" /> Horarios
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab() === 'blocks'" (click)="activeTab.set('blocks')">
+      <taji-icon name="ban" [size]="16" /> Bloqueos
+    </button>
+  </nav>
+
+  @if (loading()) {
+    <div class="state-card"><span class="spinner"></span><span>Cargando datos del condominio…</span></div>
+  } @else {
+
+    <!-- ===================== TAB CALENDARIO (solo lectura) ===================== -->
+    @if (activeTab() === 'calendar') {
+      <section class="tab-content calendar-layout">
+        <div class="calendar-panel">
+          <div class="calendar-toolbar">
+            <label class="filter-field calendar-filter">
+              <span>Área</span>
+              <select [value]="calendarArea() === null ? '' : calendarArea()" (change)="setCalendarArea($any($event.target).value)">
+                <option value="">Todas las áreas</option>
+                @for (area of areas(); track area.id) {
+                  <option [value]="area.id">{{ area.name }}</option>
+                }
+              </select>
+            </label>
+            <div class="month-nav" role="group" aria-label="Navegar meses">
+              <button type="button" class="icon-btn" (click)="previousMonth()" aria-label="Mes anterior">
+                <taji-icon name="chevron-left" [size]="18" />
+              </button>
+              <strong class="month-label">{{ monthLabel() }}</strong>
+              <button type="button" class="icon-btn" (click)="nextMonth()" aria-label="Mes siguiente">
+                <taji-icon name="chevron-right" [size]="18" />
+              </button>
+              <button type="button" class="btn-secondary btn-today" (click)="goToToday()">Hoy</button>
+            </div>
+          </div>
+
+          <div class="calendar-grid" role="table" aria-label="Calendario mensual">
+            @for (day of weekdayShort; track day) {
+              <div class="calendar-weekday" role="columnheader">{{ day }}</div>
+            }
+            @for (week of weeks(); track $index) {
+              @for (day of week; track day.iso) {
+                <div class="calendar-cell"
+                     [class.outside]="!day.inCurrentMonth"
+                     [class.today]="day.isToday"
+                     role="cell">
+                  <div class="cell-head"><span class="cell-day">{{ day.dayOfMonth }}</span></div>
+                  <div class="cell-events">
+                    @for (event of day.events.slice(0, 3); track event.id) {
+                      <button type="button" class="event-chip" [class.event-block]="event.kind === 'block'"
+                              [class.event-confirmed]="event.status === 'CONFIRMED'"
+                              [class.event-pending]="event.status === 'PENDING'"
+                              [class.event-completed]="event.status === 'COMPLETED'"
+                              (click)="openEventDetail(event)" [title]="event.title">
+                        <span class="event-dot" aria-hidden="true"></span>
+                        <span class="event-text">{{ event.title }}</span>
+                      </button>
+                    }
+                    @if (day.events.length > 3) {
+                      <span class="more-events">+{{ day.events.length - 3 }} más</span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="calendar-legend" aria-label="Leyenda">
+            <span><i class="legend-dot confirmed"></i> Reserva confirmada</span>
+            <span><i class="legend-dot pending"></i> Reserva pendiente</span>
+            <span><i class="legend-dot completed"></i> Reserva completada</span>
+            <span><i class="legend-dot blocked"></i> Área bloqueada</span>
+          </div>
+          <p class="helper calendar-note">
+            Las reservas son de solo lectura y se administran desde el módulo de reservas (CU27).
+            Los bloqueos provienen de la API real y se gestionan en la pestaña «Bloqueos».
+          </p>
+        </div>
+
+        <aside class="calendar-side" aria-label="Próximos bloqueos">
+          <div class="side-header">
+            <taji-icon name="ban" [size]="17" />
+            <h2>Próximos bloqueos</h2>
+          </div>
+          @if (upcomingBlocks().length === 0) {
+            <p class="helper">No hay bloqueos próximos. Cuando registres uno, aparecerá aquí y en el calendario.</p>
+          } @else {
+            <ul class="side-list">
+              @for (block of upcomingBlocks(); track block.id) {
+                <li>
+                  <div class="side-item-top">
+                    <strong>{{ areaName(block.common_area) }}</strong>
+                    <span class="status-badge status-blocked">Bloqueada</span>
+                  </div>
+                  <p class="side-reason">{{ block.reason }}</p>
+                  <small>{{ formatDateTime(block.blocked_from) }} → {{ formatDateTime(block.blocked_until) }}</small>
+                </li>
+              }
+            </ul>
+          }
+
+          <div class="side-header side-header-secondary">
+            <taji-icon name="calendar" [size]="17" />
+            <h2>Reservas del mes</h2>
+          </div>
+          @if (reservasVisibles().length === 0) {
+            <p class="helper">No hay reservas para este mes y filtro.</p>
+          } @else {
+            <ul class="side-list">
+              @for (reservation of reservasVisibles().slice(0, 6); track reservation.id) {
+                <li>
+                  <div class="side-item-top">
+                    <strong>{{ reservation.common_area_name }}</strong>
+                    <span class="status-badge" [class.status-confirmed]="reservation.status === 'APPROVED'"
+                          [class.status-pending]="reservation.status === 'PENDING'"
+                          [class.status-completed]="reservation.status === 'COMPLETED'">
+                      {{ reservation.status === 'APPROVED' ? 'Confirmada' : reservation.status === 'PENDING' ? 'Pendiente' : 'Completada' }}
+                    </span>
+                  </div>
+                  <p class="side-reason">{{ reservation.resident_name }}{{ reservation.purpose ? ' · ' + reservation.purpose : '' }}</p>
+                  <small>{{ formatDateTime(reservation.start_at) }} → {{ formatDateTime(reservation.end_at) }}</small>
+                </li>
+              }
+            </ul>
+          }
+        </aside>
+      </section>
+    }
+
+    <!-- ===================== TAB ÁREAS COMUNES ===================== -->
+    @if (activeTab() === 'areas') {
+      <section class="tab-content">
+        @if (areas().length === 0) {
+          <div class="state-card empty-state">
+            <span class="empty-icon"><taji-icon name="building" [size]="28" /></span>
+            <h2>Aún no hay áreas comunes</h2>
+            <p>{{ canManage() ? 'Crea la primera área (piscina, SUM, cancha, etc.) para empezar a gestionar horarios y bloqueos.' : 'Cuando el administrador registre áreas, aparecerán aquí.' }}</p>
+            @if (canManage()) {
+              <button type="button" class="btn-primary" (click)="openCreateArea()">
+                <taji-icon name="plus" [size]="18" />
+                Crear primera área
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Área</th>
+                  <th scope="col">Capacidad</th>
+                  <th scope="col">Requiere aprobación</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Descripción</th>
+                  <th scope="col" class="col-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (area of paginatedAreas(); track area.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ area.name }}</strong>
+                      @if (area.sector_name) {
+                        <small class="cell-sub">{{ area.sector_name }}</small>
+                      }
+                    </td>
+                    <td>{{ area.capacity === null || area.capacity === undefined ? '—' : area.capacity + ' personas' }}</td>
+                    <td>{{ area.requires_approval ? 'Sí' : 'No' }}</td>
+                    <td>
+                      <span class="status-badge"
+                            [class.status-available]="area.status === 'AVAILABLE'"
+                            [class.status-unavailable]="area.status === 'UNAVAILABLE'"
+                            [class.status-maintenance]="area.status === 'MAINTENANCE'"
+                            [class.status-inactive]="area.status === 'INACTIVE'">
+                        {{ areaStatusLabel(area.status) }}
+                      </span>
+                    </td>
+                    <td class="cell-description">{{ area.description || '—' }}</td>
+                    <td class="cell-actions">
+                      @if (canManage()) {
+                        <button type="button" class="icon-btn" (click)="openEditArea(area)" [attr.aria-label]="'Editar ' + area.name">
+                          <taji-icon name="edit-2" [size]="16" />
+                        </button>
+                        <button type="button" class="icon-btn" (click)="toggleAreaStatus(area)"
+                                [attr.aria-label]="area.status === 'INACTIVE' ? 'Activar ' + area.name : 'Desactivar ' + area.name"
+                                [title]="area.status === 'INACTIVE' ? 'Activar' : 'Desactivar'">
+                          <taji-icon [name]="area.status === 'INACTIVE' ? 'check-circle' : 'ban'" [size]="16" />
+                        </button>
+                      } @else {
+                        <span class="helper">Solo lectura</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span class="helper">{{ areas().length }} área(s) · página {{ currentPage() }} de {{ areasTotalPages() }}</span>
+            <div class="pagination-buttons">
+              <button type="button" class="btn-secondary" [disabled]="currentPage() === 1" (click)="changePage(currentPage() - 1)">Anterior</button>
+              <button type="button" class="btn-secondary" [disabled]="currentPage() === areasTotalPages()" (click)="changePage(currentPage() + 1)">Siguiente</button>
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ===================== TAB HORARIOS ===================== -->
+    @if (activeTab() === 'schedules') {
+      <section class="tab-content">
+        <div class="filters-bar">
+          <label class="filter-field">
+            <span>Área</span>
+            <select [value]="selectedScheduleArea() === null ? '' : selectedScheduleArea()" (change)="setSelectedScheduleArea($any($event.target).value)">
+              <option value="">Selecciona un área</option>
+              @for (area of areas(); track area.id) {
+                <option [value]="area.id">{{ area.name }}</option>
+              }
+            </select>
+          </label>
+          @if (canManage()) {
+            <button type="button" class="btn-secondary filter-submit" (click)="openCreateSchedule()" [disabled]="areas().length === 0">
+              <taji-icon name="plus" [size]="16" />
+              Agregar horario
+            </button>
+          }
+        </div>
+
+        @if (areas().length === 0) {
+          <div class="state-card empty-state">
+            <span class="empty-icon"><taji-icon name="building" [size]="28" /></span>
+            <h2>Primero registra un área</h2>
+            <p>Los horarios se asocian a un área. Crea un área en la pestaña «Áreas comunes» y vuelve aquí.</p>
+          </div>
+        } @else if (selectedScheduleArea() === null) {
+          <div class="state-card empty-state">
+            <span class="empty-icon"><taji-icon name="clock" [size]="28" /></span>
+            <h2>Selecciona un área</h2>
+            <p>Elige el área para ver y administrar sus días y horas de disponibilidad.</p>
+          </div>
+        } @else if (schedulesForArea().length === 0) {
+          <div class="state-card empty-state">
+            <span class="empty-icon"><taji-icon name="clock" [size]="28" /></span>
+            <h2>Este área aún no tiene horarios</h2>
+            <p>{{ canManage() ? 'Agrega los días y horas en que estará disponible.' : 'El administrador aún no configuró horarios para esta área.' }}</p>
+          </div>
+        } @else {
+          <ul class="schedule-list">
+            @for (schedule of schedulesForArea(); track schedule.id) {
+              <li class="schedule-item" [class.schedule-inactive]="!schedule.is_active">
+                <div class="schedule-day">{{ weekdayLabel(schedule.weekday) }}</div>
+                <div class="schedule-times">
+                  <strong>{{ timeLabel(schedule.opens_at) }} – {{ timeLabel(schedule.closes_at) }}</strong>
+                  <span class="status-badge" [class.status-active]="schedule.is_active" [class.status-inactive]="!schedule.is_active">
+                    {{ schedule.is_active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+                @if (canManage()) {
+                  <div class="cell-actions">
+                    <button type="button" class="icon-btn" (click)="openEditSchedule(schedule)" aria-label="Editar horario">
+                      <taji-icon name="edit-2" [size]="16" />
+                    </button>
+                    <button type="button" class="icon-btn danger" (click)="deleteSchedule(schedule)" aria-label="Desactivar horario" title="Desactivar horario">
+                      <taji-icon name="ban" [size]="16" />
+                    </button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+          <p class="helper schedule-note">Los horarios definen la disponibilidad semanal del área para reservas. Un día puede tener varios tramos horarios. Desactivar un horario lo oculta de la disponibilidad sin borrarlo.</p>
+        }
+      </section>
+    }
+
+    <!-- ===================== TAB BLOQUEOS ===================== -->
+    @if (activeTab() === 'blocks') {
+      <section class="tab-content">
+        @if (sortedBlocks().length === 0) {
+          <div class="state-card empty-state">
+            <span class="empty-icon"><taji-icon name="ban" [size]="28" /></span>
+            <h2>No hay bloqueos registrados</h2>
+            <p>{{ canManage() ? 'Bloquea un área temporalmente (por ejemplo, por mantenimiento o un evento privado).' : 'Cuando el administrador registre bloqueos, aparecerán aquí.' }}</p>
+            @if (canManage()) {
+              <button type="button" class="btn-primary" (click)="openCreateBlock()" [disabled]="areas().length === 0">
+                <taji-icon name="plus" [size]="18" />
+                Crear bloqueo
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Área</th>
+                  <th scope="col">Desde</th>
+                  <th scope="col">Hasta</th>
+                  <th scope="col">Motivo</th>
+                  <th scope="col" class="col-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (block of sortedBlocks(); track block.id) {
+                  <tr>
+                    <td><strong>{{ areaName(block.common_area) }}</strong></td>
+                    <td>{{ formatDateTime(block.blocked_from) }}</td>
+                    <td>{{ formatDateTime(block.blocked_until) }}</td>
+                    <td class="cell-description">{{ block.reason }}</td>
+                    <td class="cell-actions">
+                      @if (canManage()) {
+                        <button type="button" class="icon-btn" (click)="openEditBlock(block)" aria-label="Editar bloqueo">
+                          <taji-icon name="edit-2" [size]="16" />
+                        </button>
+                        <button type="button" class="icon-btn danger" (click)="deleteBlock(block)" aria-label="Eliminar bloqueo">
+                          <taji-icon name="trash-2" [size]="16" />
+                        </button>
+                      } @else {
+                        <span class="helper">Solo lectura</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  }
+
+  <!-- ===================== MODAL ÁREA ===================== -->
+  @if (areaFormOpen()) {
+    <div class="modal-backdrop" role="presentation" (click)="areaFormOpen.set(false)">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="area-form-title" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div><span class="eyebrow">CU26</span><h2 id="area-form-title">{{ editingArea() ? 'Editar área' : 'Nueva área común' }}</h2></div>
+          <button type="button" class="close-button" aria-label="Cerrar" (click)="areaFormOpen.set(false)">✕</button>
+        </header>
+        <form class="form-grid" (ngSubmit)="saveArea()">
+          <label class="wide-field"><span>Nombre del área *</span>
+            <input name="name" required maxlength="120" [(ngModel)]="areaForm.name" placeholder="Ej. Sala de usos múltiples" />
+          </label>
+          <label><span>Capacidad (personas)</span>
+            <input name="capacity" type="number" min="1" step="1" [(ngModel)]="areaForm.capacity" placeholder="Ej. 40" />
+          </label>
+          <label><span>Estado</span>
+            <select name="status" [(ngModel)]="areaForm.status">
+              <option value="AVAILABLE">Disponible</option>
+              <option value="UNAVAILABLE">No disponible</option>
+              <option value="MAINTENANCE">Mantenimiento</option>
+              <option value="INACTIVE">Inactiva</option>
+            </select>
+          </label>
+          <label class="check-field">
+            <input name="requires_approval" type="checkbox" [(ngModel)]="areaForm.requires_approval" />
+            <span>Requiere aprobación del administrador para reservar</span>
+          </label>
+          <label class="wide-field"><span>Descripción</span>
+            <textarea name="description" rows="3" [(ngModel)]="areaForm.description" placeholder="Reglas, equipamiento, ubicación…"></textarea>
+          </label>
+          <footer class="modal-actions wide-field">
+            <button type="button" class="btn-secondary" (click)="areaFormOpen.set(false)">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar área' }}</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  }
+
+  <!-- ===================== MODAL HORARIO ===================== -->
+  @if (scheduleFormOpen()) {
+    <div class="modal-backdrop" role="presentation" (click)="scheduleFormOpen.set(false)">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="schedule-form-title" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div><span class="eyebrow">CU26 · Disponibilidad semanal</span><h2 id="schedule-form-title">{{ editingSchedule() ? 'Editar horario' : 'Nuevo horario' }}</h2></div>
+          <button type="button" class="close-button" aria-label="Cerrar" (click)="scheduleFormOpen.set(false)">✕</button>
+        </header>
+        <form class="form-grid" (ngSubmit)="saveSchedule()">
+          <label class="wide-field"><span>Área *</span>
+            <select name="common_area" required [(ngModel)]="scheduleForm.common_area">
+              <option value="">Selecciona un área</option>
+              @for (area of areas(); track area.id) {
+                <option [value]="area.id">{{ area.name }}</option>
+              }
+            </select>
+          </label>
+          <label><span>Día de la semana *</span>
+            <select name="weekday" [(ngModel)]="scheduleForm.weekday">
+              @for (label of weekdayLabels; track $index) {
+                <option [value]="$index">{{ label }}</option>
+              }
+            </select>
+          </label>
+          <label class="check-field">
+            <input name="is_active" type="checkbox" [(ngModel)]="scheduleForm.is_active" />
+            <span>Horario activo</span>
+          </label>
+          <label><span>Hora de apertura *</span>
+            <input name="opens_at" type="time" required [(ngModel)]="scheduleForm.opens_at" />
+          </label>
+          <label><span>Hora de cierre *</span>
+            <input name="closes_at" type="time" required [(ngModel)]="scheduleForm.closes_at" />
+          </label>
+          <footer class="modal-actions wide-field">
+            <button type="button" class="btn-secondary" (click)="scheduleFormOpen.set(false)">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar horario' }}</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  }
+
+  <!-- ===================== MODAL BLOQUEO ===================== -->
+  @if (blockFormOpen()) {
+    <div class="modal-backdrop" role="presentation" (click)="blockFormOpen.set(false)">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="block-form-title" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div><span class="eyebrow">CU26 · Bloqueo temporal</span><h2 id="block-form-title">{{ editingBlock() ? 'Editar bloqueo' : 'Nuevo bloqueo' }}</h2></div>
+          <button type="button" class="close-button" aria-label="Cerrar" (click)="blockFormOpen.set(false)">✕</button>
+        </header>
+        <form class="form-grid" (ngSubmit)="saveBlock()">
+          <label class="wide-field"><span>Área *</span>
+            <select name="common_area" required [(ngModel)]="blockForm.common_area">
+              <option value="">Selecciona un área</option>
+              @for (area of areas(); track area.id) {
+                <option [value]="area.id">{{ area.name }}</option>
+              }
+            </select>
+          </label>
+          <label><span>Desde *</span>
+            <input name="blocked_from" type="datetime-local" required [(ngModel)]="blockForm.blocked_from" />
+          </label>
+          <label><span>Hasta *</span>
+            <input name="blocked_until" type="datetime-local" required [(ngModel)]="blockForm.blocked_until" />
+          </label>
+          <label class="wide-field"><span>Motivo *</span>
+            <textarea name="reason" rows="3" required maxlength="240" [(ngModel)]="blockForm.reason" placeholder="Ej. Mantenimiento de piscina, fumigación, evento privado…"></textarea>
+          </label>
+          <footer class="modal-actions wide-field">
+            <button type="button" class="btn-secondary" (click)="blockFormOpen.set(false)">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar bloqueo' }}</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  }
+
+  <!-- ===================== MODAL DETALLE DE EVENTO ===================== -->
+  @if (eventDetail(); as event) {
+    <div class="modal-backdrop" role="presentation" (click)="eventDetail.set(null)">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="event-detail-title" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div>
+            <span class="eyebrow">{{ event.kind === 'block' ? 'Bloqueo de área' : 'Reserva' }}</span>
+            <h2 id="event-detail-title">{{ event.areaName }}</h2>
+          </div>
+          <button type="button" class="close-button" aria-label="Cerrar" (click)="eventDetail.set(null)">✕</button>
+        </header>
+        <dl class="event-detail">
+          <div><dt>Fecha</dt><dd>{{ event.date }}</dd></div>
+          <div><dt>{{ event.kind === 'block' ? 'Motivo' : 'Detalle' }}</dt><dd>{{ event.subtitle }}</dd></div>
+          <div><dt>Estado</dt><dd><span class="status-badge" [class.status-confirmed]="event.status === 'CONFIRMED'" [class.status-pending]="event.status === 'PENDING'" [class.status-completed]="event.status === 'COMPLETED'" [class.status-blocked]="event.status === 'BLOCKED'">{{ eventStatusLabel(event.status) }}</span></dd></div>
+        </dl>
+        @if (event.kind === 'reservation') {
+          <p class="helper">Las reservas se administran en el módulo de reservas (CU27). Aquí solo se visualizan.</p>
+        }
+        <footer class="modal-actions">
+          <button type="button" class="btn-primary" (click)="eventDetail.set(null)">Entendido</button>
+        </footer>
+      </section>
+    </div>
+  }
+</div>

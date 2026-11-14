@@ -378,9 +378,23 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
+          label: 'Registrar Incidencia',
+          icon: 'alert-triangle',
+          route: '/registrar-incidencia',
+          permissions: ['report_incidents', 'manage_incidents'],
+          isAvailable: true,
+        },
+        {
           label: 'Seguimiento y Ciclo',
           icon: 'git-branch',
           route: '/incidencias',
+          isAvailable: true,
+        },
+        {
+          label: 'Seguimiento e Historial',
+          icon: 'git-branch',
+          route: '/seguimiento-incidencias',
+          permissions: ['report_incidents', 'manage_incidents'],
           isAvailable: true,
         },
         {
@@ -428,7 +442,9 @@ export class MainLayoutComponent {
         {
           label: 'Áreas Comunes y Reservas',
           icon: 'calendar',
-          isAvailable: false,
+          route: '/calendario-reservas',
+          permissions: ['manage_reservations', 'reserve_areas'],
+          isAvailable: true,
         },
         {
           label: 'Comunicados y Avisos',

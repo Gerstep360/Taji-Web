@@ -33,6 +33,12 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         @case ('chevron-down') {
           <polyline points="6 9 12 15 18 9"></polyline>
         }
+        @case ('chevron-left') {
+          <polyline points="15 18 9 12 15 6"></polyline>
+        }
+        @case ('chevron-right') {
+          <polyline points="9 18 15 12 9 6"></polyline>
+        }
         @case ('users') {
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
           <circle cx="9" cy="7" r="4"></circle>

@@ -58,8 +58,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./shared/layout/main-layout.component').then((m) => m.MainLayoutComponent),
     children: [
-      { path: 'registrar-incidencia', redirectTo: 'reportar-incidencia', pathMatch: 'full' },
-      { path: 'seguimiento-incidencias', redirectTo: 'incidencias', pathMatch: 'full' },
       {
         path: 'activos',
         canActivate: [anyPermissionGuard(['manage_assets', 'manage_maintenance', 'view_general_status', 'maintain_assets'])],
@@ -126,6 +124,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./core/saas/platform-tenants.page').then((m) => m.PlatformTenantsPage),
         title: 'Todos los condominios | Taji',
+      },
+      {
+        path: 'calendario-reservas',
+        canActivate: [anyPermissionGuard(['manage_reservations', 'reserve_areas'])],
+        loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/cu26_areas_comunes/calendario.page').then(m => m.CalendarioPage),
+        title: 'Áreas Comunes y Reservas | Taji',
       },
       {
         path: 'reportes-personalizables',
@@ -284,6 +288,24 @@ export const routes: Routes = [
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'directiva', 'directorio', 'seguridad', 'guardia', 'security'], ['manage_security_shifts', 'operate_security_shifts', 'view_security_shifts'])],
         loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu15_entrega_turno/entregas.page').then(m => m.EntregasPage),
         title: 'Entrega y Recepción de Turno | Taji',
+      },
+      {
+        path: 'registrar-incidencia',
+        canActivate: [anyPermissionGuard(['report_incidents', 'manage_incidents'])],
+        loadComponent: () =>
+          import('./paquetes/paquete3_incidencias_ia/cu18_registrar_incidencia').then(
+            (m) => m.RegistrarIncidenciaPage,
+          ),
+        title: 'Registrar incidencia | Taji',
+      },
+      {
+        path: 'seguimiento-incidencias',
+        canActivate: [anyPermissionGuard(['report_incidents', 'manage_incidents'])],
+        loadComponent: () =>
+          import('./paquetes/paquete3_incidencias_ia/cu19_seguimiento_historial').then(
+            (m) => m.SeguimientoIncidenciasPage,
+          ),
+        title: 'Seguimiento e Historial de Incidencias | Taji',
       },
       {
         path: 'acceso-denegado',

@@ -1,0 +1,127 @@
+<section class="visual" aria-labelledby="visual-heading">
+  <header class="visual-header">
+    <div><span class="kicker">Memoria del condominio</span><h2 id="visual-heading">Observaciones de cámara</h2>
+      <p>Revisa lo observado y compáralo con incidencias existentes. La detección local sigue siendo independiente.</p></div>
+    <button type="button" (click)="toggle()" [attr.aria-expanded]="expanded()" aria-controls="visual-content">
+      {{ expanded() ? 'Cerrar observaciones' : 'Abrir observaciones' }}
+    </button>
+  </header>
+  @if (expanded()) {
+    <div id="visual-content" class="visual-content">
+      <div class="session-card">
+        <div class="line"><h3>Análisis visual</h3><span class="pill" role="status">{{ state() }}</span></div>
+        @if (config(); as settings) {
+          @if (mode() === 'image') {
+            <p class="notice"><strong>Modo captura fija.</strong> No confirma movimientos, acciones ni lo ocurrido entre capturas.</p>
+          } @else if (mode() === 'video') {
+            <p class="notice"><strong>Modo ventanas breves.</strong> Solo se analiza una parte de lo que ve esta cámara.</p>
+          } @else {
+            <p class="notice">No hay un formato de análisis disponible en este navegador. Puedes consultar el historial.</p>
+          }
+          @if (!settings.worker_ready) { <p>El trabajador de análisis aún no está listo. <button class="link" type="button" (click)="refreshConfig()">Comprobar de nuevo</button></p> }
+          <div class="controls">
+            <label>Sector de la cámara<select #sector [disabled]="!!session() || starting()">
+              <option value="">Sin sector asignado</option>
+              @for (item of settings.sectors; track item.id) { <option [value]="item.id">{{ item.name }}</option> }
+            </select></label>
+            <label class="check"><input #keep type="checkbox" [disabled]="!!session() || starting()"> Conservar evidencia de observaciones guardadas</label>
+          </div>
+          <p class="fine">Con tu permiso se envían capturas sin audio a NVIDIA cuando hay cambios, con una pausa de al menos {{ settings.interval }} s.
+            La revisión general se espacia entre {{ settings.periodic }} y {{ settings.idle }} s. No cubre cada segundo.</p>
+          <p class="fine">Hasta {{ settings.session_burst }} solicitudes en cinco minutos. La evidencia es opcional y el historial se conserva hasta {{ settings.retention_days }} días.</p>
+          @if (session()) {
+            <button type="button" (click)="stop()">Pausar análisis</button>
+          } @else {
+            <button type="button" class="primary" (click)="start(sector.value, keep.checked)"
+              [disabled]="!cameraActive() || !mode() || !settings.worker_ready || starting()">
+              {{ starting() ? 'Activando…' : 'Activar análisis visual' }}</button>
+            @if (!cameraActive()) { <p class="fine">Inicia la cámara para activar el análisis.</p> }
+          }
+        } @else if (!actionError()) { <p>Consultando disponibilidad…</p> }
+        @if (actionError()) { <p class="issue" role="alert">{{ actionError() }}</p><button type="button" (click)="refreshConfig()">Reintentar conexión</button> }
+      </div>
+
+      <div class="history">
+        <div class="line"><h3>Línea temporal</h3><button class="link" type="button" (click)="loadHistory()">Actualizar</button></div>
+        <form (submit)="$event.preventDefault(); filter(query.value, filterSector.value, review.value, since.value, until.value, relevance.value, openRelated.checked)">
+          <div class="filters">
+            <label>Buscar<input #query placeholder="Ej. automóvil rojo" maxlength="100"></label>
+            <label>Sector<select #filterSector>
+              <option value="">Todos los sectores</option>
+              @for (sector of config()?.sectors ?? []; track sector.id) { <option [value]="sector.id">{{ sector.name }}</option> }
+            </select></label>
+            <label>Revisión<select #review><option value="">Todas</option>
+              @for (item of reviewOptions; track item) {
+                <option [value]="item">{{ reviewLabels[item] }}</option>
+              }
+            </select></label>
+            <label>Desde<input #since type="date"></label><label>Hasta<input #until type="date"></label>
+            <label>Relevancia<select #relevance><option value="">Todas</option><option value="human_review">Sugerida para revisión</option><option value="record">Registro</option></select></label>
+            <button type="submit">Filtrar</button>
+          </div>
+          <label class="check"><input #openRelated type="checkbox"> Solo con antecedentes abiertos</label>
+        </form>
+        @if (historyError()) { <p class="issue" role="alert">{{ historyError() }}</p> }
+        @if (historyBusy()) { <p role="status">Cargando observaciones…</p> }
+        @if (!items().length && !historyBusy() && !historyError()) { <p class="empty">Todavía no hay observaciones para estos filtros.</p> }
+        <ol class="timeline">
+          @for (item of items(); track item.id) {
+            <li><button type="button" class="entry" (click)="open(item)" [attr.aria-current]="selected()?.id === item.id ? 'true' : null">
+              <span class="meta"><time [attr.datetime]="item.observed_until">{{ item.observed_until | date:'d MMM, HH:mm:ss' }}</time>
+                <span>{{ item.sector?.name ?? 'Sin sector' }}</span></span>
+              <strong>{{ item.description }}</strong>
+              <span class="meta">{{ reviewLabels[item.review_status ?? 'pending'] }} @if (item.prediction?.suggested_action === 'human_review') { · Sugerida para revisión }</span>
+            </button></li>
+          }
+        </ol>
+        @if (more()) { <button type="button" (click)="loadHistory(undefined, true)" [disabled]="historyBusy()">Ver más observaciones</button> }
+      </div>
+
+      @if (selected(); as item) {
+        <article class="detail" aria-label="Detalle de la observación">
+          <div class="line"><h3>Detalle de la observación</h3><button class="link" type="button" (click)="closeDetail()">Cerrar detalle</button></div>
+          <p class="meta">{{ item.sector?.name ?? 'Sin sector' }} · {{ item.observed_until | date:'medium' }} · {{ item.mode === 'image' ? 'Captura fija' : 'Ventana de video' }}</p>
+          @if (item.model_id) { <p class="fine">Modelo: {{ item.model_id }}</p> }
+          <dl>
+            <div><dt>Descripción de la IA</dt><dd>{{ item.description }}</dd></div>
+            @if (item.prediction?.new_or_changed) { <div><dt>Cambio observado</dt><dd>{{ item.prediction?.new_or_changed }}</dd></div> }
+            @if (item.prediction?.interpretation) { <div><dt>Posible interpretación</dt><dd>{{ item.prediction?.interpretation }}</dd></div> }
+            <div><dt>Límites de la evidencia</dt><dd>{{ item.prediction?.uncertainty || 'No se indicó incertidumbre adicional.' }}</dd></div>
+            <div><dt>Por qué se guardó</dt><dd>{{ item.prediction?.relevance_reason }}</dd></div>
+            @if (item.review_text) { <div><dt>Nota de revisión humana</dt><dd>{{ item.review_text }}</dd></div> }
+            @if (item.prediction?.prior_review; as prior) { <div><dt>Revisión de una observación similar</dt><dd>{{ reviewLabels[prior] }} · No confirma que sea el mismo evento.</dd></div> }
+          </dl>
+          @if (detailBusy()) { <p role="status">Buscando antecedentes autorizados…</p> }
+          @if (item.context_matches?.length) {
+            <h4>Posibles relaciones con incidencias</h4><p class="fine">Una similitud no confirma identidad ni relación con el caso.</p>
+            <ul class="matches">
+              @for (match of item.context_matches; track match.code) {
+                <li><a routerLink="/incidencias" [queryParams]="{ codigo: match.code }">{{ match.code }}</a> · {{ match.reason }} · {{ match.open ? 'Abierta' : 'Cerrada' }}</li>
+              }
+            </ul>
+          }
+          @if (item.has_evidence) {
+            @if (evidence()) {
+              @if (item.mode === 'image') { <img [src]="evidence()" alt="Captura protegida asociada a la observación"> }
+              @else { <video [src]="evidence()" controls playsinline aria-label="Evidencia de la observación"></video> }
+            } @else { <button type="button" (click)="showEvidence(item)">Ver evidencia</button> }
+          } @else { <p class="fine">No se guardó evidencia de esta observación.</p> }
+          @if (config()?.can_review && !detailBusy()) {
+            <form class="review-form" (submit)="$event.preventDefault(); saveReview(item)">
+              <h4>Revisión humana · {{ reviewLabels[item.review_status ?? 'pending'] }}</h4>
+              <p class="fine">Proponer no crea ni modifica una incidencia oficial.</p>
+              <label>Decisión<select #decision [value]="reviewChoice()" (change)="reviewChoice.set($any(decision.value))">
+                <option value="confirmed">Confirmar observación</option><option value="corrected">Corregir</option>
+                <option value="dismissed">Descartar</option><option value="proposed">Proponer incidencia</option>
+              </select></label>
+              <label>{{ reviewChoice() === 'confirmed' ? 'Nota opcional' : 'Motivo o corrección' }}
+                <textarea #note rows="2" maxlength="320" [value]="reviewNote()" (input)="reviewNote.set(note.value)"></textarea></label>
+              <button class="primary" type="submit" [disabled]="reviewBusy()">{{ reviewBusy() ? 'Guardando…' : 'Guardar revisión' }}</button>
+            </form>
+          }
+          @if (detailError()) { <p class="issue" role="alert">{{ detailError() }}</p> }
+        </article>
+      }
+    </div>
+  }
+</section>

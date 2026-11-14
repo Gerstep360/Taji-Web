@@ -6,12 +6,13 @@ import type { ObjectDetection } from '@tensorflow-models/coco-ssd';
 import { ApiClient, KEEP_PAGE_ON_SERVER_ERROR } from '../../../core/api/api-client.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { coversGuide, Detection, EventCooldown, guide, labels, loadDetector, PlateConsensus } from './vision';
+import { VisualPanel } from './visual-panel';
 
 type Vehicle = { plate: string; description: string };
 
 @Component({
   selector: 'app-webcam-demo',
-  imports: [DatePipe, PercentPipe],
+  imports: [DatePipe, PercentPipe, VisualPanel],
   templateUrl: './webcam.page.html',
   styleUrl: './webcam.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +21,8 @@ type Vehicle = { plate: string; description: string };
 export class WebcamPage {
   private readonly api = inject(ApiClient);
   private readonly video = viewChild<ElementRef<HTMLVideoElement>>('video');
+  private readonly visual = viewChild(VisualPanel);
+  readonly cameraActive = signal(false);
   readonly state = signal('Apagada');
   readonly error = signal('');
   readonly boxes = signal<Detection[]>([]);
@@ -93,6 +96,7 @@ export class WebcamPage {
       video.srcObject = stream;
       await video.play();
       if (run !== this.epoch) return;
+      this.cameraActive.set(true);
       this.ratio.set(video.videoWidth + ' / ' + video.videoHeight);
       this.state.set('Cargando IA');
       if (!this.detector) {
@@ -118,6 +122,8 @@ export class WebcamPage {
 
   stop() {
     ++this.epoch;
+    this.cameraActive.set(false);
+    this.visual()?.stop();
     clearTimeout(this.timer);
     this.stream?.getTracks().forEach(track => track.stop());
     this.stream = undefined;
@@ -213,7 +219,7 @@ export class WebcamPage {
       const form = new FormData();
       form.append('image', blob, 'placa.jpg');
       const options = { context: new HttpContext().set(KEEP_PAGE_ON_SERVER_ERROR, true) };
-      this.request = this.api.post<FormData, {plate: string | null}>('/security/cu32/plate/read/', form, options, 15_000)
+      this.request = this.api.post<FormData, {plate: string | null}>('/paquete3/cu32/plate/read/', form, options, 15_000)
         .subscribe({
           next: ({ plate }) => {
             this.request = undefined;
@@ -224,7 +230,7 @@ export class WebcamPage {
               this.plate.set(confirmed);
               this.log('plate', 'Placa confirmada por dos lecturas');
               this.request = this.api.post<{plate: string}, {registered: boolean; vehicle: Vehicle | null}>(
-                '/security/cu32/plate/lookup/', { plate: confirmed }, options).subscribe({
+                '/paquete3/cu32/plate/lookup/', { plate: confirmed }, options).subscribe({
                   next: result => {
                     this.vehicle.set(result.vehicle);
                     this.plateState.set(result.registered ? 'Placa detectada' : 'Vehículo no registrado');

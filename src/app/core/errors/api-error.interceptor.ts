@@ -1,17 +1,22 @@
-import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 
 import { AuthService } from '../auth/auth.service';
 import { GlobalNoticeService } from './global-notice.service';
+import { KEEP_PAGE_ON_SERVER_ERROR } from '../api/api-client.service';
 
 const PUBLIC_AUTH_REQUEST = /\/(login|register|forgot-password|reset-password)\//;
 
 /**
  * Marca una petición cuyo 403 y 5xx los muestra la propia pantalla.
+ *
+ * Es un alias del token compartido en `api-client.service`: así el marcado
+ * local funciona indistintamente con `HANDLE_ERRORS_LOCALLY` o con
+ * `KEEP_PAGE_ON_SERVER_ERROR`, sin duplicar la comprobación.
  */
-export const HANDLE_ERRORS_LOCALLY = new HttpContextToken<boolean>(() => false);
+export const HANDLE_ERRORS_LOCALLY = KEEP_PAGE_ON_SERVER_ERROR;
 
 /** Extrae el mensaje que el backend ya devolvió, de forma segura sin consumir streams ya leídos. */
 function errorMessage(error: HttpErrorResponse, fallback: string): string {
@@ -56,11 +61,13 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           }
           break;
         case 403:
-          if (!request.context.get(HANDLE_ERRORS_LOCALLY)) void router.navigateByUrl('/acceso-denegado');
+          // Manejo local de errores: si la pantalla marca la petición, no se
+          // expulsa al usuario a la página de acceso denegado.
+          if (!request.context.get(KEEP_PAGE_ON_SERVER_ERROR)) void router.navigateByUrl('/acceso-denegado');
           break;
         case 404:
           // No mostrar avisos intrusivos en peticiones GET (como búsquedas o listados que la UI maneja de forma vacía)
-          if (request.method !== 'GET' && !request.context.get(HANDLE_ERRORS_LOCALLY)) {
+          if (request.method !== 'GET' && !request.context.get(KEEP_PAGE_ON_SERVER_ERROR)) {
             notices.show('No se encontró el recurso solicitado.', 'warning');
           }
           break;
@@ -74,7 +81,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           notices.show(errorMessage(error, 'Un servicio externo no respondió. Intenta nuevamente.'), 'warning');
           break;
         default:
-          if (error.status >= 500 && !request.context.get(HANDLE_ERRORS_LOCALLY)) {
+          if (error.status >= 500 && !request.context.get(KEEP_PAGE_ON_SERVER_ERROR)) {
             void router.navigateByUrl('/error-servidor');
           }
       }

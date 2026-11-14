@@ -12,7 +12,7 @@ export class RegistrarIncidenciaApi {
   private readonly api = inject(ApiClient);
 
   options(): Observable<IncidentReportOptions> {
-    return this.api.get<IncidentReportOptions>(API_ENDPOINTS.incidents.options, { context: localErrors() });
+    return this.api.get<IncidentReportOptions>(API_ENDPOINTS.incidentReports.options, { context: localErrors() });
   }
 
   /**
@@ -30,7 +30,7 @@ export class RegistrarIncidenciaApi {
     if (draft.asset !== null) body.append('asset', String(draft.asset));
     for (const file of draft.evidences) body.append('evidences', file, file.name);
 
-    return this.api.post<FormData, IncidentReport>(API_ENDPOINTS.incidents.root, body, {
+    return this.api.post<FormData, IncidentReport>(API_ENDPOINTS.incidentReports.root, body, {
       context: localErrors(),
     });
   }

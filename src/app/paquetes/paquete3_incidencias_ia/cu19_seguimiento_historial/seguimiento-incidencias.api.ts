@@ -38,38 +38,38 @@ export class SeguimientoIncidenciasApi {
       }
     }
 
-    return this.api.get<any>(API_ENDPOINTS.incidents.root, {
+    return this.api.get<any>(API_ENDPOINTS.incidentReports.root, {
       params: httpParams,
       context: localErrors(),
     });
   }
 
   detail(id: number): Observable<IncidentDetailModel> {
-    return this.api.get<IncidentDetailModel>(API_ENDPOINTS.incidents.detail(id), {
+    return this.api.get<IncidentDetailModel>(API_ENDPOINTS.incidentReports.detail(id), {
       context: localErrors(),
     });
   }
 
   options(): Observable<IncidentReportOptions> {
-    return this.api.get<IncidentReportOptions>(API_ENDPOINTS.incidents.options, {
+    return this.api.get<IncidentReportOptions>(API_ENDPOINTS.incidentReports.options, {
       context: localErrors(),
     });
   }
 
   addComment(id: number, body: string, visibility: 'PUBLIC' | 'INTERNAL' = 'PUBLIC'): Observable<any> {
-    return this.api.post<any, any>(API_ENDPOINTS.incidents.comments(id), { body, visibility }, {
+    return this.api.post<any, any>(API_ENDPOINTS.incidentReports.comments(id), { body, visibility }, {
       context: localErrors(),
     });
   }
 
   assignStaff(id: number, staff_id: number, reason: string): Observable<any> {
-    return this.api.post<any, any>(API_ENDPOINTS.incidents.assign(id), { staff_id, reason }, {
+    return this.api.post<any, any>(API_ENDPOINTS.incidentReports.assign(id), { staff_id, reason }, {
       context: localErrors(),
     });
   }
 
   updateStatus(id: number, status: string, comment?: string): Observable<any> {
-    return this.api.patch<any, any>(API_ENDPOINTS.incidents.detail(id), { status, comment }, {
+    return this.api.patch<any, any>(API_ENDPOINTS.incidentReports.detail(id), { status, comment }, {
       context: localErrors(),
     });
   }

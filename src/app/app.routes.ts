@@ -128,6 +128,12 @@ export const routes: Routes = [
         title: 'Todos los condominios | Taji',
       },
       {
+        path: 'calendario-reservas',
+        canActivate: [anyPermissionGuard(['manage_reservations', 'reserve_areas'])],
+        loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/cu26_areas_comunes/calendario.page').then(m => m.CalendarioPage),
+        title: 'Áreas Comunes y Reservas | Taji',
+      },
+      {
         path: 'reportes-personalizables',
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin'], [])],
         loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/reportes/reportes.page').then(m => m.ReportsPage),

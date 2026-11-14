@@ -204,7 +204,7 @@ export const routes: Routes = [
       {
         path: 'reconocimiento-camara',
         canActivate: [permissionGuard('validate_visits')],
-        loadComponent: () => import('./paquetes/paquete2_seguridad_accesos/cu32_webcam/webcam.page').then(m => m.WebcamPage),
+        loadComponent: () => import('./paquetes/paquete3_incidencias_ia/cu32_webcam/webcam.page').then(m => m.WebcamPage),
         title: 'Reconocimiento por cámara | Taji',
       },
       {

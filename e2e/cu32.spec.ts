@@ -1,4 +1,5 @@
 import { expect, Page, test } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
 
 test.use({ channel: 'msedge' });
 
@@ -73,7 +74,7 @@ test('salir del módulo libera la pista sin enviar imágenes', async ({ page }) 
   await setup(page);
   const images: string[] = [];
   page.on('request', request => {
-    if (request.url().includes('/security/cu32/')) images.push(request.url());
+    if (request.url().includes('/cu32/')) images.push(request.url());
   });
   await page.goto('/reconocimiento-camara');
   await page.getByRole('button', { name: 'Iniciar cámara' }).click();
@@ -90,7 +91,7 @@ test('el modelo real analiza una fuente sintética sin enviar fotogramas', async
   page.on('console', message => { if (message.type() === 'warning' || message.type() === 'error') console.log(message.text()); });
   const uploads: string[] = [];
   page.on('request', request => {
-    if (request.url().includes('/security/cu32/')) uploads.push(request.url());
+    if (request.url().includes('/cu32/')) uploads.push(request.url());
   });
   await page.goto('/reconocimiento-camara');
   await page.getByRole('button', { name: 'Iniciar cámara' }).click();
@@ -100,4 +101,90 @@ test('el modelo real analiza una fuente sintética sin enviar fotogramas', async
   await expect(page.getByText('0 visibles')).toBeVisible();
   await page.getByRole('button', { name: 'Detener cámara' }).click();
   expect(uploads).toEqual([]);
+});
+
+test('visión opt-in, una sola ventana, revisión y apagado en ancho móvil', async ({ page }) => {
+  await setup(page);
+  let uploads = 0, stops = 0, reviewed = false;
+  const base = { id: 'visual-demo', mode: 'image', sector: { id: 9, name: 'Acceso principal' },
+    observed_from: '2026-11-13T22:12:00Z', observed_until: '2026-11-13T22:12:00Z' };
+  const record = () => ({ ...base, status: 'succeeded', description: 'automóvil rojo',
+    review_status: reviewed ? 'confirmed' : 'pending', has_evidence: false,
+    prediction: { uncertainty: 'La captura no confirma movimientos.', suggested_action: 'human_review',
+      relevance_reason: 'Revisión visual recomendada.' },
+    context_matches: [{ code: 'DEMO-001', reason: 'Similitud de descripción y mismo sector', open: true }] });
+  await page.route('**/paquete3/cu32/vision/**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/settings/')) return route.fulfill({ json: { modes: ['image'], worker_ready: true,
+      can_review: true, sectors: [base.sector], interval: 40, periodic: 150, idle: 240,
+      session_burst: 3, retention_days: 30, image_max_bytes: 200000 } });
+    if (path.endsWith('/sessions/')) return route.fulfill({ status: 201, json: { id: 'session-demo',
+      expires_at: new Date(Date.now() + 600000).toISOString() } });
+    if (path.endsWith('/windows/')) {
+      uploads++;
+      expect(route.request().postDataBuffer()?.includes(Buffer.from('captura.jpg'))).toBe(true);
+      return route.fulfill({ status: 202, json: { ...base, status: 'queued' } });
+    }
+    if (path.endsWith('/stop/')) { stops++; return route.fulfill({ status: 204 }); }
+    if (path.endsWith('/review/')) { reviewed = true; return route.fulfill({ json: record() }); }
+    if (path.endsWith('/observations/')) return route.fulfill({ json: { results: uploads ? [record()] : [], next: null } });
+    return route.fulfill({ json: record() });
+  });
+  await page.goto('/reconocimiento-camara');
+  await page.getByRole('button', { name: 'Abrir observaciones' }).click();
+  const activate = page.getByRole('button', { name: 'Activar análisis visual' });
+  await expect(activate).toBeDisabled();
+  await expect(page.getByText('Modo captura fija.')).toBeVisible();
+  await page.getByRole('button', { name: 'Iniciar cámara' }).click();
+  await expect(activate).toBeEnabled();
+  expect(uploads).toBe(0);
+  await page.getByLabel('Sector de la cámara').selectOption('9');
+  await activate.click();
+  await page.getByRole('button', { name: /automóvil rojo/ }).click({ timeout: 15000 });
+  await expect(page.getByRole('link', { name: 'DEMO-001' })).toBeVisible();
+  await page.getByRole('button', { name: 'Guardar revisión' }).click();
+  await expect(page.getByText('Revisión humana · Confirmada')).toBeVisible();
+  await page.screenshot({ path: '../.sprint3-work/vision-desktop.png', fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('heading', { name: 'Línea temporal' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '../.sprint3-work/vision-390.png', fullPage: true, animations: 'disabled' });
+  await page.getByRole('button', { name: 'Detener cámara' }).click();
+  await expect.poll(() => stops).toBe(1);
+  expect(uploads).toBe(1);
+  expect(await page.evaluate(() => Reflect.get(window, 'cameraStopped'))).toBe(true);
+});
+
+test('Edge captura una ventana MP4 sin audio desde el búfer local', async ({ page }) => {
+  await setup(page);
+  await page.route('**/paquete3/cu32/vision/**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/settings/')) return route.fulfill({ json: { modes: ['image', 'video'], worker_ready: true,
+      can_review: false, sectors: [], interval: 40, periodic: 150, idle: 240, session_burst: 3,
+      retention_days: 30, image_max_bytes: 200000, video_max_bytes: 900000 } });
+    if (path.endsWith('/sessions/')) return route.fulfill({ status: 201, json: { id: 'session-demo',
+      expires_at: new Date(Date.now() + 600000).toISOString() } });
+    if (path.endsWith('/windows/')) return route.fulfill({ status: 202, json: { id: 'clip-demo', status: 'skipped' } });
+    return route.fulfill({ json: { results: [], next: null } });
+  });
+  await page.goto('/reconocimiento-camara');
+  await page.getByRole('button', { name: 'Iniciar cámara' }).click();
+  await page.getByRole('button', { name: 'Abrir observaciones' }).click();
+  const supports = await page.evaluate(() => MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42001f'));
+  test.skip(!supports, 'Este Edge no ofrece MediaRecorder MP4/H.264; el modo fijo se verifica por separado.');
+  await expect(page.getByText('Modo ventanas breves.')).toBeVisible();
+  const window = page.waitForRequest('**/paquete3/cu32/vision/sessions/*/windows/');
+  await page.getByRole('button', { name: 'Activar análisis visual' }).click();
+  const upload = (await window).postDataBuffer();
+  expect(upload?.includes(Buffer.from('ventana.mp4'))).toBe(true);
+  expect(upload?.includes(Buffer.from('ftyp'))).toBe(true);
+  expect(upload?.includes(Buffer.from('soun'))).toBe(false);
+  if (process.env['TAJI_TEST_MP4_OUTPUT'] && upload) {
+    const headers = upload.indexOf(Buffer.from('Content-Type: video/mp4'));
+    const start = upload.indexOf(Buffer.from('\r\n\r\n'), headers) + 4;
+    const end = upload.lastIndexOf(Buffer.from('\r\n--'));
+    expect(headers >= 0 && end > start).toBe(true);
+    writeFileSync(process.env['TAJI_TEST_MP4_OUTPUT'], upload.subarray(start, end));
+  }
+  await page.getByRole('button', { name: 'Detener cámara' }).click();
 });

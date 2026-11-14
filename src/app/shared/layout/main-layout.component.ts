@@ -344,13 +344,6 @@ export class MainLayoutComponent {
           isAvailable: true,
         },
         {
-          label: 'Reconocimiento por cámara',
-          icon: 'scan-face',
-          route: '/reconocimiento-camara',
-          permission: 'validate_visits',
-          isAvailable: true,
-        },
-        {
           label: 'Auditoría y Bitácora',
           icon: 'file-text',
           route: '/auditoria',
@@ -364,6 +357,13 @@ export class MainLayoutComponent {
       title: 'Incidencias e IA',
       icon: 'sparkles',
       items: [
+        {
+          label: 'Reconocimiento por cámara',
+          icon: 'scan-face',
+          route: '/reconocimiento-camara',
+          permission: 'validate_visits',
+          isAvailable: true,
+        },
         {
           label: 'Reconocimiento Facial',
           icon: 'scan-face',

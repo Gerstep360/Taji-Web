@@ -9,6 +9,7 @@ export interface ApiRequestOptions {
   context?: HttpContext;
   headers?: HttpHeaders;
   params?: HttpParams;
+  keepalive?: boolean;
 }
 export const KEEP_PAGE_ON_SERVER_ERROR = new HttpContextToken<boolean>(() => false);
 
@@ -43,5 +44,9 @@ export class ApiClient {
 
   postBlob<TRequest>(path: string, body: TRequest, options?: ApiRequestOptions): Observable<Blob> {
     return this.withTimeout(this.http.post(this.appConfig.endpoint(path), body, { ...options, responseType: 'blob' }));
+  }
+
+  getBlob(path: string, options?: ApiRequestOptions): Observable<Blob> {
+    return this.withTimeout(this.http.get(this.appConfig.endpoint(path), { ...options, responseType: 'blob' }));
   }
 }

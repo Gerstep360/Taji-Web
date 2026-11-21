@@ -452,7 +452,8 @@ export class MainLayoutComponent {
         {
           label: 'Comunicados y Avisos',
           icon: 'bell',
-          isAvailable: false,
+          route: '/comunicados',
+          isAvailable: true,
         },
         {
           label: 'Asambleas y Acuerdos',

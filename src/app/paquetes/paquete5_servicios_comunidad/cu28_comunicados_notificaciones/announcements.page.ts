@@ -14,6 +14,7 @@ import {
   AnnouncementsApi,
   CreateAnnouncementDto,
 } from './announcements.api';
+import { AuthService } from '../../../core/auth/auth.service';
 import {
   AnnouncementAudience,
   AnnouncementPriority,
@@ -36,9 +37,11 @@ import {
         </p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" (click)="openCreateModal()">
-          <span class="icon">+</span> Nuevo Comunicado
-        </button>
+        @if (canManage()) {
+          <button class="btn btn-primary" (click)="openCreateModal()">
+            <span class="icon">+</span> Nuevo Comunicado
+          </button>
+        }
       </div>
     </header>
 
@@ -158,7 +161,7 @@ import {
                   Por: {{ item.created_by_name || 'Administración' }}
                 </span>
                 <div class="card-actions">
-                  @if (item.status === 'DRAFT') {
+                  @if (canManage() && item.status === 'DRAFT') {
                     <button class="btn btn-outline-success btn-xs" (click)="publishItem(item)">
                       Publicar
                     </button>
@@ -166,7 +169,7 @@ import {
                       Editar
                     </button>
                   }
-                  @if (item.status !== 'ARCHIVED') {
+                  @if (canManage() && item.status !== 'ARCHIVED') {
                     <button class="btn btn-outline-danger btn-xs" (click)="archiveItem(item)">
                       Archivar
                     </button>
@@ -281,6 +284,19 @@ import {
 })
 export class AnnouncementsPage implements OnInit {
   private readonly api = inject(AnnouncementsApi);
+  private readonly auth = inject(AuthService);
+
+  readonly canManage = computed(() => {
+    const user = this.auth.user();
+    if (!user) return true;
+    if (user.is_superuser) return true;
+    const permissions = user.role?.permissions ?? [];
+    return (
+      permissions.includes('manage_announcements') ||
+      permissions.includes('manage_settings') ||
+      ['admin', 'administrador'].includes(user.role?.slug ?? '')
+    );
+  });
 
   readonly items = signal<AnnouncementItem[]>([]);
   readonly loading = signal<boolean>(false);

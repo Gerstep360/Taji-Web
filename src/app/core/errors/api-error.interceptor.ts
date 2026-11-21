@@ -5,6 +5,7 @@ import { catchError, throwError } from 'rxjs';
 
 import { AuthService } from '../auth/auth.service';
 import { GlobalNoticeService } from './global-notice.service';
+import { KEEP_PAGE_ON_SERVER_ERROR } from '../api/api-client.service';
 
 const PUBLIC_AUTH_REQUEST = /\/(login|register|forgot-password|reset-password)\//;
 
@@ -35,6 +36,9 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         return throwError(() => error);
       }
 
+      const shouldKeepPage =
+        request.context.get(HANDLE_ERRORS_LOCALLY) || request.context.get(KEEP_PAGE_ON_SERVER_ERROR);
+
       switch (error.status) {
         case 0:
           notices.show('No fue posible comunicarse con el servidor. Revisa tu conexión.');
@@ -50,7 +54,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           }
           break;
         case 403:
-          if (!request.context.get(HANDLE_ERRORS_LOCALLY)) void router.navigateByUrl('/acceso-denegado');
+          if (!shouldKeepPage) void router.navigateByUrl('/acceso-denegado');
           break;
         case 404:
           notices.show('No se encontró el recurso solicitado.', 'warning');
@@ -72,7 +76,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
           notices.show(errorMessage(error, 'Un servicio externo no respondió. Intenta nuevamente.'), 'warning');
           break;
         default:
-          if (error.status >= 500 && !request.context.get(HANDLE_ERRORS_LOCALLY)) {
+          if (error.status >= 500 && !shouldKeepPage) {
             void router.navigateByUrl('/error-servidor');
           }
       }

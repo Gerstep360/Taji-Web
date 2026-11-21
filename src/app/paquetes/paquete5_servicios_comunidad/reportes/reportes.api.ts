@@ -12,13 +12,13 @@ export class ReportsApi {
   private readonly http = inject(HttpClient);
   private readonly config = inject(AppConfigService);
 
-  catalog() { return this.api.get<ReportCatalog>(API_ENDPOINTS.reports.catalog); }
+  catalog() { return this.api.get<ReportCatalog>(API_ENDPOINTS.customReports.catalog); }
   preview(body: ReportRequest) {
-    return this.api.post<ReportRequest, ReportPreview>(API_ENDPOINTS.reports.preview, body);
+    return this.api.post<ReportRequest, ReportPreview>(API_ENDPOINTS.customReports.preview, body);
   }
   export(body: ReportRequest, format: 'xlsx' | 'html') {
     // HttpClient conserva los interceptores de sesión y tenant también para descargas.
-    return this.http.post(this.config.endpoint(API_ENDPOINTS.reports.export), { ...body, format }, {
+    return this.http.post(this.config.endpoint(API_ENDPOINTS.customReports.export), { ...body, format }, {
       responseType: 'blob',
     }).pipe(timeout(60000));
   }

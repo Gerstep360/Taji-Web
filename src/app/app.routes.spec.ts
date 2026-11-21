@@ -24,7 +24,7 @@ describe('application routes', () => {
 
   it('registers CU18 as a permission-protected lazy route', () => {
     const privateChildren = routes.find((route) => route.path === '')?.children ?? [];
-    const incidentRoute = privateChildren.find((route) => route.path === 'registrar-incidencia');
+    const incidentRoute = privateChildren.find((route) => route.path === 'reportar-incidencia');
     expect(incidentRoute?.canActivate?.length).toBe(1);
     expect(incidentRoute?.loadComponent).toBeTypeOf('function');
   });

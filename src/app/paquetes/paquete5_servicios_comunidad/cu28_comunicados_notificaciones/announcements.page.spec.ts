@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnnouncementsPage } from './announcements.page';
 import { AnnouncementsApi, AnnouncementItem } from './announcements.api';
+import { AuthService } from '../../../core/auth/auth.service';
 
 describe('AnnouncementsPage (CU28 / T097)', () => {
   let component: AnnouncementsPage;
@@ -51,7 +52,10 @@ describe('AnnouncementsPage (CU28 / T097)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AnnouncementsPage],
-      providers: [{ provide: AnnouncementsApi, useValue: apiMock }],
+      providers: [
+        { provide: AnnouncementsApi, useValue: apiMock },
+        { provide: AuthService, useValue: { user: () => ({ is_superuser: true, role: { slug: 'administrador', permissions: ['manage_announcements'] } }) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AnnouncementsPage);

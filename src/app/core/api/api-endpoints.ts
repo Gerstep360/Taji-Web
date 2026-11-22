@@ -150,5 +150,19 @@ export const API_ENDPOINTS = {
   },
   shiftLogs: { root: '/paquete2/novedades-turno/' },
   handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
+  announcements: {
+    root: '/paquete5/cu28/announcements/',
+    detail: (id: number | string) => `/paquete5/cu28/announcements/${id}/`,
+    publish: (id: number | string) => `/paquete5/cu28/announcements/${id}/publish/`,
+    archive: (id: number | string) => `/paquete5/cu28/announcements/${id}/archive/`,
+  },
+  notifications: {
+    root: '/notifications/',
+    detail: (id: number | string) => `/notifications/${id}/`,
+    markRead: (id: number | string) => `/notifications/${id}/mark_read/`,
+    markAllRead: '/notifications/mark_all_read/',
+    unreadCount: '/notifications/unread_count/',
+    devices: '/notifications/devices/',
+  },
 } as const;
 

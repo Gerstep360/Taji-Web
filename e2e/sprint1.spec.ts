@@ -2,7 +2,7 @@ import { expect, test, Page } from '@playwright/test';
 
 test('los formularios públicos conservan los textos en español', async ({ page }) => {
   for (const [path, heading] of [
-    ['/crear-cuenta', 'Crea tu cuenta'],
+    ['/crear-cuenta', 'Crea tu cuenta de Residente'],
     ['/olvide-contrasena', '¿Olvidaste tu contraseña?'],
     ['/restablecer-contrasena', 'Crea una nueva contraseña'],
   ]) {
@@ -27,7 +27,7 @@ test('CU01–CU07 consumen Django y conservan sesión al recargar', async ({ pag
         !response.url().includes('/auth/refresh/')) failures.push(`${response.status()} ${response.url()}`);
   });
   await login(page);
-  for (const path of ['roles-y-permisos', 'condominium/config', 'sectores-unidades',
+  for (const path of ['roles-y-permisos', 'mi-condominio', 'sectores-unidades',
     'residentes-y-copropietarios', 'residentes-unidades', 'personal']) {
     await page.goto(`/${path}`);
     await expect(page).toHaveURL(new RegExp(`/${path}$`));
@@ -39,10 +39,13 @@ test('CU01–CU07 consumen Django y conservan sesión al recargar', async ({ pag
   await page.getByRole('button', { name: /Residentes pendientes/ }).click();
   await page.waitForLoadState('networkidle');
   await page.goto('/condominium/config');
+  await expect(page).toHaveURL(/\/mi-condominio$/);
+  await page.getByRole('button', { name: 'Datos del Condominio' }).click();
   await page.getByLabel('Nombre del Condominio').fill('Taji — verificación Sprint 1');
   await page.getByRole('button', { name: 'Guardar Cambios' }).click();
-  await expect(page.locator('.message-success')).toBeVisible();
+  await expect(page.locator('.notice.success')).toBeVisible();
   await page.reload();
+  await page.getByRole('button', { name: 'Datos del Condominio' }).click();
   await expect(page.getByLabel('Nombre del Condominio')).toHaveValue('Taji — verificación Sprint 1');
   expect(failures).toEqual([]);
 });

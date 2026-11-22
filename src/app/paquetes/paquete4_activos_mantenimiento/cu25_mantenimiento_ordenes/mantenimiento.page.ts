@@ -1,9 +1,9 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subject, takeUntil } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { AppConfigService } from '../../../core/api/app-config.service';
@@ -102,6 +102,25 @@ export class MantenimientoPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly appConfig = inject(AppConfigService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly tenantChanged = new Subject<void>();
+  private tenantId = this.auth.user()?.active_tenant?.id;
+
+  constructor() {
+    effect(() => {
+      const tenantId = this.auth.user()?.active_tenant?.id;
+      if (tenantId === this.tenantId) return;
+      this.tenantId = tenantId;
+      untracked(() => {
+        this.tenantChanged.next();
+        this.orders.set([]); this.plans.set([]); this.suppliers.set([]); this.assets.set([]);
+        this.staff.set([]); this.priorities.set([]); this.selectedOrder.set(null);
+        this.orderFormOpen.set(false); this.planFormOpen.set(false); this.supplierFormOpen.set(false);
+        this.selectedFile.set(null); this.saving.set(false); this.currentPage.set(1);
+        this.errorMessage.set(''); this.successMessage.set('');
+        if (tenantId) { this.refresh(); }
+      });
+    });
+  }
 
   readonly user = this.auth.user;
   readonly canManage = computed(() => {
@@ -168,7 +187,7 @@ export class MantenimientoPage implements OnInit {
       staff: this.api.listStaff(),
       priorities: this.api.listPriorities(),
     })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
           this.plans.set(data.plans.results ?? []);
@@ -190,7 +209,7 @@ export class MantenimientoPage implements OnInit {
     this.loading.set(true);
     this.api
       .listOrders({ ...this.filters, page: this.currentPage() })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.orders.set(response.results ?? []);
@@ -373,7 +392,7 @@ export class MantenimientoPage implements OnInit {
   downloadAttachment(order: MaintenanceWorkOrder, attachmentId: number): void {
     this.api
       .downloadAttachment(order.id, attachmentId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
           const url = URL.createObjectURL(blob);
@@ -581,7 +600,7 @@ export class MantenimientoPage implements OnInit {
     this.saving.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    request.pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (result) => {
         this.saving.set(false);
         this.successMessage.set(success);

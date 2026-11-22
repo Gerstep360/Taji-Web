@@ -9,12 +9,17 @@ import {
 import { CommonModule } from '@angular/common';
 import { NotificationModalService } from '../services/notification-modal.service';
 import { IconComponent } from '../../../../shared/ui/icon.component';
+import { AnnouncementFloatingToastComponent } from './announcement-floating-toast.component';
 
 @Component({
   selector: 'taji-announcement-popup-modal',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, AnnouncementFloatingToastComponent],
   template: `
+    <!-- Notificación flotante superior central independiente -->
+    <taji-announcement-floating-toast />
+
+    <!-- Modal emergente principal con backdrop oscuro -->
     @if (modalService.currentHighPriority(); as item) {
       <div
         class="modal-backdrop"

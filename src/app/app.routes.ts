@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { DASHBOARD_ROLES } from './paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/operational-dashboard.api';
 
 import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard, superuserGuard } from './core/auth/auth.guard';
 
@@ -152,6 +153,14 @@ export const routes: Routes = [
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin'], [])],
         loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/reportes/reportes.page').then(m => m.ReportsPage),
         title: 'Reportes personalizables | Taji',
+      },
+      {
+        path: 'dashboard-reportes',
+        canActivate: [roleOrPermissionGuard(DASHBOARD_ROLES, [])],
+        loadComponent: () =>
+          import('./paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/operational-dashboard.page')
+            .then((module) => module.OperationalDashboardPage),
+        title: 'Dashboard operativo | Taji',
       },
       {
         path: 'inicio',

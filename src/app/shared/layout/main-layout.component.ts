@@ -8,6 +8,7 @@ import { LogoComponent } from '../ui/logo.component';
 import { NotificationBellComponent } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/components/notification-bell.component';
 import { AnnouncementPopupModalComponent } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/components/announcement-popup-modal.component';
 import { NotificationModalService } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/services/notification-modal.service';
+import { DASHBOARD_ROLES } from '../../paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/operational-dashboard.api';
 
 interface SubNavItem {
   label: string;
@@ -486,7 +487,9 @@ export class MainLayoutComponent implements OnInit {
         {
           label: 'Dashboard y Reportes',
           icon: 'bar-chart',
-          isAvailable: false,
+          route: '/dashboard-reportes',
+          roles: DASHBOARD_ROLES,
+          isAvailable: true,
         },
         {
           label: 'Reportes personalizables',

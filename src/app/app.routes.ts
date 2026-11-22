@@ -308,6 +308,17 @@ export const routes: Routes = [
         title: 'Error del servidor | Taji',
       },
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      ...[
+        { path: 'operaciones/garantias', kind: 'warranties', title: 'Garantías' },
+        { path: 'operaciones/cotizaciones', kind: 'quotes', title: 'Cotizaciones' },
+        { path: 'operaciones/inspecciones', kind: 'inspections', title: 'Inspecciones operativas' },
+      ].map(item => ({
+        path: item.path,
+        canActivate: [permissionGuard('manage_settings')],
+        data: { kind: item.kind },
+        title: `${item.title} | Taji`,
+        loadComponent: () => import('./paquetes/paquete7_operaciones/operations.page').then(m => m.OperationsPage),
+      })),
     ],
   },
   {

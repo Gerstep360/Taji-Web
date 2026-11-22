@@ -393,6 +393,16 @@ export class MainLayoutComponent {
       ],
     },
     {
+      id: 'paquete7',
+      title: 'Operaciones',
+      icon: 'file-text',
+      items: [
+        { label: 'Garantías', icon: 'file-text', route: '/operaciones/garantias', permission: 'manage_settings', isAvailable: true },
+        { label: 'Cotizaciones', icon: 'file-text', route: '/operaciones/cotizaciones', permission: 'manage_settings', isAvailable: true },
+        { label: 'Inspecciones', icon: 'search', route: '/operaciones/inspecciones', permission: 'manage_settings', isAvailable: true },
+      ],
+    },
+    {
       id: 'paquete4',
       title: 'Activos y Mantenimiento',
       icon: 'boxes',

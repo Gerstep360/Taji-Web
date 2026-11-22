@@ -57,7 +57,7 @@ test('el residente conserva los controles de acceso de CU02', async ({ page }) =
 test('CU02 de Noelia aprueba una solicitud real de residente', async ({ page }) => {
   const email = `pendiente-${Date.now()}@sprint1.taji.test`;
   const response = await page.request.post('/api/v1/auth/register/', { data: {
-    email, first_name: 'Solicitud', last_name: 'Sprint Uno',
+    email, first_name: 'Solicitud', last_name: 'Sprint Uno', condominium_code: 'sprint1-live',
     password: 'TajiSprint1-Test2026!', password_confirm: 'TajiSprint1-Test2026!',
   }});
   expect(response.status()).toBe(201);

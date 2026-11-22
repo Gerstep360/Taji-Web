@@ -126,3 +126,51 @@ test('CU30: la web consulta el dashboard y el catálogo del condominio real', as
   expect(exportResponse.headers()['content-type']).toContain('text/csv');
   expect(await exportResponse.text()).toContain('Fuga en la bomba');
 });
+
+test('CU33–37: guarda operaciones y la asesoría no altera los registros', async ({ page }) => {
+  await login(page.request);
+  await useLiveApi(page);
+  const date = new Date().toISOString().slice(0, 10);
+  const stamp = Date.now();
+  await page.goto('/operaciones/garantias');
+  await page.getByRole('button', { name: 'Nuevo registro' }).click();
+  await page.getByLabel('Título').fill(`Garantía ${stamp}`);
+  await page.getByLabel('Vencimiento', { exact: true }).fill(date);
+  await page.getByLabel('Garante o proveedor').fill('Proveedor local');
+  await page.getByLabel('Referencia de garantía').fill(`GAR-${stamp}`);
+  await page.getByLabel('Cobertura').fill('Motor');
+  await page.getByRole('button', { name: 'Guardar registro' }).click();
+  await page.getByRole('button', { name: `Editar Garantía ${stamp}` }).click();
+  await page.getByLabel('Título').fill(`Garantía revisada ${stamp}`);
+  await page.getByRole('button', { name: 'Guardar registro' }).click();
+  await expect(page.getByRole('button', { name: `Editar Garantía revisada ${stamp}` })).toBeVisible();
+
+  const quotes = await Promise.all(['560.00', '400.00'].map((amount, index) =>
+    post(page.request, 'operations/quotes/', {
+      title: `Oferta ${index} ${stamp}`, date, status: 'received',
+      details: { provider: 'Proveedor local', request_code: `SOL-${stamp}`, amount, currency: 'BOB',
+        delivery_days: 3, warranty_months: 12, scope: 'Motor' },
+    }, 201),
+  ));
+  const inspection = await post(page.request, 'operations/inspections/', {
+    title: `Inspección ${stamp}`, date, status: 'draft',
+    details: { location: 'Pasillo', notes: '', checks: {
+      lighting: 'attention', signage: 'ok', surfaces: 'ok', drainage: 'not_checked', order: 'ok',
+    } },
+  }, 201);
+  const tabs = page.getByRole('navigation', { name: 'Libro de operaciones' });
+  await tabs.getByRole('link', { name: 'Cotizaciones' }).click();
+  for (const quote of quotes) await page.getByRole('checkbox', { name: `Seleccionar ${quote.title}` }).check();
+  await page.getByRole('button', { name: 'Solicitar análisis' }).click();
+  await expect(page.getByText('Sugerencia local de prueba.')).toBeVisible();
+  await tabs.getByRole('link', { name: 'Inspecciones' }).click();
+  await page.getByRole('checkbox', { name: `Seleccionar ${inspection.title}` }).check();
+  await page.getByRole('button', { name: 'Solicitar análisis' }).click();
+  await expect(page.getByText('Sugerencia local de prueba.')).toBeVisible();
+  await expect(page.getByText('Iluminación: Requiere atención')).toBeVisible();
+  for (const [kind, record] of [...quotes.map(quote => ['quotes', quote] as const), ['inspections', inspection] as const]) {
+    const response = await page.request.get(`${api}/operations/${kind}/${record.id}/`);
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual(record);
+  }
+});

@@ -1,15 +1,16 @@
 import { DatePipe, KeyValuePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { IconComponent } from '../../shared/ui/icon.component';
 import { Analysis, Listing, OperationsApi, OperationsRecord, RecordInput } from './operations-api';
 import { CHECKS, CONDITIONS, Kind, SPECS } from './operations-config';
 
 @Component({
-  imports: [FormsModule, DatePipe, KeyValuePipe, RouterLink],
+  imports: [FormsModule, DatePipe, KeyValuePipe, RouterLink, IconComponent],
   templateUrl: './operations.page.html',
   styleUrl: './operations.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +25,7 @@ export class OperationsPage {
   readonly editing = signal(false);
   readonly editingId = signal<number | undefined>(undefined);
   readonly selected = signal<OperationsRecord[]>([]);
+  readonly activePreview = signal<OperationsRecord | null>(null);
   readonly analysis = signal<Analysis | null>(null);
   readonly pendingDelete = signal<OperationsRecord | null>(null);
   readonly loading = signal(false);
@@ -39,6 +41,33 @@ export class OperationsPage {
   filter = '';
   page = 1;
 
+  readonly kpis = computed(() => {
+    const list = this.entries()?.results ?? [];
+    const total = this.entries()?.count ?? 0;
+
+    if (this.kind === 'warranties') {
+      const vigentes = list.filter(item => item.status === 'active' && !this.expired(item)).length;
+      const enReclamo = list.filter(item => item.status === 'claimed').length;
+      const vencidas = list.filter(item => this.expired(item)).length;
+      return { total, vigentes, enReclamo, vencidas };
+    }
+
+    if (this.kind === 'quotes') {
+      const codes = new Set(list.map(i => String(i.details['request_code'] || ''))).size;
+      const preseleccionadas = list.filter(i => i.status === 'shortlisted').length;
+      const recibidas = list.filter(i => i.status === 'received').length;
+      return { total, solicitudes: codes, preseleccionadas, recibidas };
+    }
+
+    const conAtencion = list.filter(i => {
+      const c = (i.details['checks'] as Record<string, string>) || {};
+      return Object.values(c).some(val => val === 'attention');
+    }).length;
+    const revisadas = list.filter(i => i.status === 'reviewed' || i.status === 'closed').length;
+    const borradores = list.filter(i => i.status === 'draft').length;
+    return { total, conAtencion, revisadas, borradores };
+  });
+
   constructor() {
     const auth = inject(AuthService);
     effect(() => {
@@ -48,6 +77,7 @@ export class OperationsPage {
         this.entries.set(null);
         this.editing.set(false);
         this.selected.set([]);
+        this.activePreview.set(null);
         this.analysis.set(null);
         this.pendingDelete.set(null);
         this.notice.set('');
@@ -84,7 +114,13 @@ export class OperationsPage {
     this.page = page;
     this.loading.set(true);
     this.listRequest = this.api.list(this.kind, page, this.search.trim(), this.filter).subscribe({
-      next: list => { this.entries.set(list); this.loading.set(false); },
+      next: list => {
+        this.entries.set(list);
+        this.loading.set(false);
+        if (list.results.length > 0 && !this.activePreview()) {
+          this.activePreview.set(list.results[0]);
+        }
+      },
       error: err => { this.error.set(this.message(err)); this.loading.set(false); },
     });
   }
@@ -101,7 +137,10 @@ export class OperationsPage {
     this.saving.set(true);
     this.error.set('');
     this.writeRequest = this.api.save(this.kind, this.form, this.editingId()).subscribe({
-      next: () => this.changed('Registro guardado.'),
+      next: saved => {
+        this.activePreview.set(saved);
+        this.changed('Registro guardado.');
+      },
       error: err => { this.error.set(this.message(err)); this.saving.set(false); },
     });
   }
@@ -112,7 +151,10 @@ export class OperationsPage {
     this.saving.set(true);
     this.error.set('');
     this.writeRequest = this.api.remove(this.kind, item.id).subscribe({
-      next: () => this.changed('Registro eliminado.'),
+      next: () => {
+        if (this.activePreview()?.id === item.id) this.activePreview.set(null);
+        this.changed('Registro eliminado.');
+      },
       error: err => { this.error.set(this.message(err)); this.saving.set(false); },
     });
   }
@@ -129,7 +171,12 @@ export class OperationsPage {
     this.reload();
   }
 
+  showPreview(item: OperationsRecord) {
+    this.activePreview.set(item);
+  }
+
   picked(id: number) { return this.selected().some(item => item.id === id); }
+
   select(item: OperationsRecord, checked: boolean) {
     if (this.analyzing()) return;
     this.error.set('');
@@ -171,6 +218,27 @@ export class OperationsPage {
     const localDate = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'),
       String(today.getDate()).padStart(2, '0')].join('-');
     return item.date < localDate;
+  }
+
+  statusColor(item: OperationsRecord): string {
+    if (this.expired(item)) return 'badge-danger';
+    if (item.status === 'active' || item.status === 'shortlisted' || item.status === 'reviewed') return 'badge-success';
+    if (item.status === 'claimed' || item.status === 'closed') return 'badge-warning';
+    return 'badge-neutral';
+  }
+
+  checkBadge(status: string): { label: string; cls: string } {
+    if (status === 'ok') return { label: 'Conforme', cls: 'check-ok' };
+    if (status === 'attention') return { label: 'Requiere atención', cls: 'check-attention' };
+    return { label: 'Sin revisar', cls: 'check-pending' };
+  }
+
+  getCheckStatus(item: OperationsRecord, checkKey: string): string {
+    const checks = item.details['checks'];
+    if (checks && typeof checks === 'object' && !Array.isArray(checks)) {
+      return (checks as Record<string, string>)[checkKey] || 'not_checked';
+    }
+    return 'not_checked';
   }
 
   private message(err: unknown) {

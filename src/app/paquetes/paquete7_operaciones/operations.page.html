@@ -1,161 +1,615 @@
 <main class="ops">
-  <header>
-    <p class="eyebrow">Libro de operaciones · {{ spec.cu }}</p>
-    <h1>{{ spec.title }}</h1>
-    <p>{{ spec.help }}</p>
-  </header>
-  <nav aria-label="Libro de operaciones">
-    <a routerLink="/operaciones/garantias" [attr.aria-current]="kind === 'warranties' ? 'page' : null">Garantías</a>
-    <a routerLink="/operaciones/cotizaciones" [attr.aria-current]="kind === 'quotes' ? 'page' : null">Cotizaciones</a>
-    <a routerLink="/operaciones/inspecciones" [attr.aria-current]="kind === 'inspections' ? 'page' : null">Inspecciones</a>
+  <!-- Navegación por pestañas del Libro de Operaciones -->
+  <nav class="operations-tabs" aria-label="Libro de operaciones">
+    <a routerLink="/operaciones/garantias" [attr.aria-current]="kind === 'warranties' ? 'page' : null">
+      <taji-icon name="shield" [size]="18" />
+      <span>Garantías</span>
+      <small class="tab-subtitle">Pólizas y equipos</small>
+    </a>
+    <a routerLink="/operaciones/cotizaciones" [attr.aria-current]="kind === 'quotes' ? 'page' : null">
+      <taji-icon name="file-text" [size]="18" />
+      <span>Cotizaciones</span>
+      <small class="tab-subtitle">Presupuestos y compras</small>
+    </a>
+    <a routerLink="/operaciones/inspecciones" [attr.aria-current]="kind === 'inspections' ? 'page' : null">
+      <taji-icon name="search" [size]="18" />
+      <span>Inspecciones</span>
+      <small class="tab-subtitle">Rondas de áreas comunes</small>
+    </a>
   </nav>
-  @if (error()) { <p class="banner error" role="alert">{{ error() }}</p> }
-  @if (notice()) { <p class="banner" role="status">{{ notice() }}</p> }
+
+  <!-- Encabezado de la Página orientado a Condominio -->
+  <header class="ops-header">
+    <div class="header-content">
+      <div class="eyebrow-badge">
+        <taji-icon [name]="spec.icon" [size]="14" />
+        <span>Operaciones del Condominio · {{ spec.category }}</span>
+      </div>
+      <h1>{{ spec.fullTitle }}</h1>
+      <p class="header-desc">{{ spec.help }}</p>
+    </div>
+    <div class="header-action">
+      <button class="primary btn-create" type="button" (click)="edit()" [disabled]="saving()">
+        <taji-icon name="plus" [size]="18" />
+        <span>Nuevo registro</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mensajes de estado -->
+  @if (error()) {
+    <div class="banner error" role="alert">
+      <taji-icon name="alert-triangle" [size]="18" />
+      <span>{{ error() }}</span>
+    </div>
+  }
+  @if (notice()) {
+    <div class="banner success" role="status">
+      <taji-icon name="check" [size]="18" />
+      <span>{{ notice() }}</span>
+    </div>
+  }
+
+  <!-- Tarjetas KPI de Resumen del Módulo -->
+  <section class="kpi-grid" aria-label="Resumen operativo">
+    <article class="kpi-card">
+      <div class="kpi-icon blue">
+        <taji-icon [name]="spec.icon" [size]="20" />
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total {{ spec.title }}</span>
+        <strong class="kpi-value">{{ kpis().total }}</strong>
+      </div>
+    </article>
+
+    @if (kind === 'warranties') {
+      <article class="kpi-card">
+        <div class="kpi-icon green"><taji-icon name="check" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Pólizas vigentes</span>
+          <strong class="kpi-value">{{ kpis().vigentes }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-icon amber"><taji-icon name="alert-triangle" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">En reclamo activo</span>
+          <strong class="kpi-value">{{ kpis().enReclamo }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-icon red"><taji-icon name="clock" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Garantías vencidas</span>
+          <strong class="kpi-value">{{ kpis().vencidas }}</strong>
+        </div>
+      </article>
+    } @else if (kind === 'quotes') {
+      <article class="kpi-card">
+        <div class="kpi-icon purple"><taji-icon name="boxes" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Solicitudes / Obras</span>
+          <strong class="kpi-value">{{ kpis().solicitudes }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-icon green"><taji-icon name="check" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Preseleccionadas</span>
+          <strong class="kpi-value">{{ kpis().preseleccionadas }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-icon amber"><taji-icon name="file-text" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Recibidas / Por evaluar</span>
+          <strong class="kpi-value">{{ kpis().recibidas }}</strong>
+        </div>
+      </article>
+    } @else {
+      <article class="kpi-card">
+        <div class="kpi-icon amber"><taji-icon name="alert-triangle" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Con hallazgos a resolver</span>
+          <strong class="kpi-value">{{ kpis().conAtencion }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-icon green"><taji-icon name="check" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Revisadas / Conformes</span>
+          <strong class="kpi-value">{{ kpis().revisadas }}</strong>
+        </div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-icon neutral"><taji-icon name="clock" [size]="20" /></div>
+        <div class="kpi-info">
+          <span class="kpi-label">En borrador</span>
+          <strong class="kpi-value">{{ kpis().borradores }}</strong>
+        </div>
+      </article>
+    }
+  </section>
+
+  <!-- Espacio de Trabajo en 2 Columnas -->
   <div class="workspace">
+    <!-- Columna Izquierda: Listado y Filtros -->
     <section class="ledger" aria-labelledby="ledger-title">
       <div class="section-head">
-        <h2 id="ledger-title">Registros <small>{{ entries()?.count ?? 0 }}</small></h2>
-        <button class="primary" type="button" (click)="edit()" [disabled]="saving()">Nuevo registro</button>
+        <div>
+          <h2 id="ledger-title">Registros del Condominio</h2>
+          <p class="section-subtitle">Listado de {{ spec.title.toLowerCase() }} registradas para este condominio</p>
+        </div>
+        <span class="count-badge">{{ entries()?.count ?? 0 }} registros</span>
       </div>
-      <form class="filters" (ngSubmit)="reload()">
-        <label>Buscar <input name="search" maxlength="100" [(ngModel)]="search" placeholder="Título o referencia"></label>
-        <label>Estado <select name="filter" [(ngModel)]="filter">
-          <option value="">Todos</option>
-          @for (state of spec.states | keyvalue; track state.key) { <option [value]="state.key">{{ state.value }}</option> }
-        </select></label>
-        <button type="submit">Filtrar</button>
+
+      <!-- Barra de Filtros -->
+      <form class="filters-bar" (ngSubmit)="reload()">
+        <div class="filter-input-wrap">
+          <label for="search-input">Buscar</label>
+          <div class="search-field">
+            <taji-icon name="search" [size]="16" />
+            <input id="search-input" name="search" maxlength="100" [(ngModel)]="search" placeholder="Buscar por título, proveedor, código o lugar...">
+          </div>
+        </div>
+
+        <div class="filter-select-wrap">
+          <label for="filter-select">Estado</label>
+          <select id="filter-select" name="filter" [(ngModel)]="filter">
+            <option value="">Todos los estados</option>
+            @for (state of spec.states | keyvalue; track state.key) {
+              <option [value]="state.key">{{ state.value }}</option>
+            }
+          </select>
+        </div>
+
+        <button class="btn-filter" type="submit">
+          <taji-icon name="filter" [size]="16" />
+          <span>Filtrar</span>
+        </button>
       </form>
-      @if (loading()) { <p role="status">Cargando registros…</p> }
-      @else if (entries(); as list) {
-        @if (!list.results.length) { <p class="empty">No hay registros para mostrar. Crea uno o cambia los filtros.</p> }
-        <ul class="records">
+
+      @if (loading()) {
+        <div class="loading-state" role="status">
+          <taji-icon name="refresh-cw" [size]="24" class="spin" />
+          <span>Cargando registros del condominio…</span>
+        </div>
+      } @else if (entries(); as list) {
+        @if (!list.results.length) {
+          <div class="empty-state">
+            <taji-icon name="inbox" [size]="40" />
+            <p class="empty">No hay registros para mostrar. Crea uno o cambia los filtros.</p>
+          </div>
+        }
+
+        <ul class="records-list">
           @for (item of list.results; track item.id) {
-            <li>
-              @if (kind !== 'warranties') {
-                <input #pick type="checkbox" [checked]="picked(item.id)"
-                  [disabled]="analyzing() || (kind === 'quotes' && selected().length >= 5 && !picked(item.id))"
-                  [attr.aria-label]="'Seleccionar ' + item.title"
-                  (change)="select(item, pick.checked); pick.checked = picked(item.id)">
-              }
-              <div class="record-name">
-                <strong>{{ item.title }}</strong>
-                <span>{{ label(item) }}</span>
-                <span>{{ spec.date }}: {{ (item.date + 'T00:00:00Z') | date:'dd/MM/yyyy':'UTC' }} · {{ spec.states[item.status] }}
-                  @if (expired(item)) { <b class="expired">· Vencida</b> }</span>
+            <li class="record-card" [class.selected-preview]="activePreview()?.id === item.id">
+              <div class="record-main-col">
+                <div class="card-top-row">
+                  @if (kind !== 'warranties') {
+                    <label class="checkbox-container">
+                      <input #pick type="checkbox" [checked]="picked(item.id)"
+                        [disabled]="analyzing() || (kind === 'quotes' && selected().length >= 5 && !picked(item.id))"
+                        [attr.aria-label]="'Seleccionar ' + item.title"
+                        (change)="select(item, pick.checked); pick.checked = picked(item.id)">
+                      <span class="custom-checkbox"></span>
+                    </label>
+                  }
+                  <strong class="record-title">{{ item.title }}</strong>
+                  <span class="status-pill {{ statusColor(item) }}">
+                    {{ spec.states[item.status] }}
+                    @if (expired(item)) { <b class="expired">· Vencida</b> }
+                  </span>
+                </div>
+
+                <div class="card-details-grid">
+                  <!-- Información específica según el tipo -->
+                  @if (kind === 'warranties') {
+                    <div class="detail-item">
+                      <span class="detail-label">Proveedor / Garante:</span>
+                      <span class="detail-val">{{ item.details['provider'] }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Póliza / Ref:</span>
+                      <span class="detail-val code-tag">{{ item.details['reference'] }}</span>
+                    </div>
+                    <div class="detail-item full-width">
+                      <span class="detail-label">Cobertura:</span>
+                      <span class="detail-val coverage-text">{{ item.details['coverage'] }}</span>
+                    </div>
+                  } @else if (kind === 'quotes') {
+                    <div class="detail-item">
+                      <span class="detail-label">Solicitud:</span>
+                      <span class="detail-val code-tag highlight">{{ item.details['request_code'] }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Proveedor:</span>
+                      <span class="detail-val">{{ item.details['provider'] }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Importe:</span>
+                      <span class="detail-val price-tag">{{ item.details['amount'] }} {{ item.details['currency'] }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Condiciones:</span>
+                      <span class="detail-val">{{ item.details['delivery_days'] }} días · {{ item.details['warranty_months'] }} meses garantía</span>
+                    </div>
+                  } @else {
+                    <div class="detail-item">
+                      <span class="detail-label">Lugar revisado:</span>
+                      <span class="detail-val highlight-loc"><taji-icon name="building" [size]="14" /> {{ item.details['location'] }}</span>
+                    </div>
+                    @if (item.details['checks']) {
+                      <div class="detail-item full-width">
+                        <span class="detail-label">Checklist operativo:</span>
+                        <div class="mini-chips-row">
+                          @for (chk of checks; track chk[0]) {
+                            @let condition = getCheckStatus(item, chk[0]);
+                            <span class="mini-chip {{ checkBadge(condition).cls }}" [title]="chk[1] + ': ' + checkBadge(condition).label">
+                              {{ chk[1] }}: {{ checkBadge(condition).label }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  }
+
+                  <div class="detail-item date-row">
+                    <span class="detail-label">{{ spec.date }}:</span>
+                    <span class="detail-val"><taji-icon name="calendar" [size]="14" /> {{ (item.date + 'T00:00:00Z') | date:'dd/MM/yyyy':'UTC' }}</span>
+                  </div>
+                </div>
               </div>
+
+              <!-- Acciones de la fila -->
               <div class="row-actions">
-                <button type="button" (click)="edit(item)" [disabled]="saving()" [attr.aria-label]="'Editar ' + item.title">Editar</button>
-                <button type="button" (click)="pendingDelete.set(item)" [disabled]="saving()"
-                  [attr.aria-label]="'Eliminar ' + item.title">Eliminar</button>
+                @if (kind === 'warranties') {
+                  <button type="button" class="btn-sm btn-outline" (click)="showPreview(item)" [attr.aria-label]="'Ver póliza ' + item.title">
+                    <taji-icon name="file-text" [size]="14" />
+                    <span>Ver detalle</span>
+                  </button>
+                }
+                <button type="button" class="btn-sm btn-edit" (click)="edit(item)" [disabled]="saving()" [attr.aria-label]="'Editar ' + item.title">
+                  <span>Editar</span>
+                </button>
+                <button type="button" class="btn-sm btn-delete" (click)="pendingDelete.set(item)" [disabled]="saving()"
+                  [attr.aria-label]="'Eliminar ' + item.title">
+                  <span>Eliminar</span>
+                </button>
               </div>
             </li>
           }
         </ul>
+
         @if (list.previous || list.next) {
-          <div class="row-actions">
-            <button type="button" [disabled]="!list.previous" (click)="reload(page - 1)">Anterior</button>
-            <span>Página {{ page }}</span>
-            <button type="button" [disabled]="!list.next" (click)="reload(page + 1)">Siguiente</button>
+          <div class="pagination-bar">
+            <button type="button" class="btn-sm" [disabled]="!list.previous" (click)="reload(page - 1)">
+              <taji-icon name="chevron-left" [size]="16" /> Anterior
+            </button>
+            <span class="page-indicator">Página {{ page }}</span>
+            <button type="button" class="btn-sm" [disabled]="!list.next" (click)="reload(page + 1)">
+              Siguiente <taji-icon name="chevron-right" [size]="16" />
+            </button>
           </div>
         }
       }
     </section>
+
+    <!-- Columna Derecha: Formulario o Asistente o Ficha Técnica -->
     @if (editing()) {
-      <section class="side" aria-labelledby="editor-title">
-        <h2 id="editor-title">{{ editingId() ? 'Editar' : 'Registrar' }} {{ spec.singular }}</h2>
+      <section class="side editor-panel" aria-labelledby="editor-title">
+        <div class="side-header">
+          <div>
+            <span class="eyebrow">{{ editingId() ? 'Modificación' : 'Alta de registro' }}</span>
+            <h2 id="editor-title">{{ editingId() ? 'Editar' : 'Registrar' }} {{ spec.singular }}</h2>
+          </div>
+          <button type="button" class="btn-close" (click)="editing.set(false)" aria-label="Cerrar formulario">
+            <taji-icon name="x" [size]="18" />
+          </button>
+        </div>
+
         <form #editor="ngForm" (ngSubmit)="save()">
-          <fieldset [disabled]="saving()" class="editor">
-            <label>Título <input required maxlength="120" name="title" [(ngModel)]="form.title"></label>
-            <label>{{ spec.date }} <input type="date" required name="date" [(ngModel)]="form.date"></label>
-            <label>Estado del registro <select name="status" [(ngModel)]="form.status">
-              @for (state of spec.states | keyvalue; track state.key) { <option [value]="state.key">{{ state.value }}</option> }
-            </select></label>
+          <fieldset [disabled]="saving()" class="editor-fields">
+            <div class="form-group">
+              <label for="field-title">Título</label>
+              <input id="field-title" required maxlength="120" name="title" [(ngModel)]="form.title"
+                placeholder="Ej: Ascensor Torre A, Mantenimiento Bombas, Pintura de Fachada">
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="field-date">{{ spec.date }}</label>
+                <input id="field-date" type="date" required name="date" [(ngModel)]="form.date">
+              </div>
+
+              <div class="form-group">
+                <label for="field-status">Estado del registro</label>
+                <select id="field-status" name="status" [(ngModel)]="form.status">
+                  @for (state of spec.states | keyvalue; track state.key) {
+                    <option [value]="state.key">{{ state.value }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
             @for (field of spec.fields; track field.key) {
-              <label>{{ field.label }}
+              <div class="form-group">
+                <label [for]="'field-' + field.key">{{ field.label }}</label>
                 @switch (field.type) {
-                  @case ('long') { <textarea rows="3" [name]="field.key" [required]="!field.optional" [maxlength]="field.max ?? 400"
-                    [(ngModel)]="form.details[field.key]"></textarea> }
-                  @case ('select') { <select [name]="field.key" [(ngModel)]="form.details[field.key]">
-                    @for (option of field.options; track option) { <option [value]="option">{{ option }}</option> }
-                  </select> }
-                  @case ('number') { <input type="number" required min="0" [max]="field.max ?? 0" [step]="field.decimal ? '0.01' : '1'"
-                    [name]="field.key" [(ngModel)]="form.details[field.key]"> }
-                  @default { <input [name]="field.key" [required]="!field.optional" [maxlength]="field.max ?? 100"
-                    [(ngModel)]="form.details[field.key]"> }
+                  @case ('long') {
+                    <textarea [id]="'field-' + field.key" rows="3" [name]="field.key" [required]="!field.optional"
+                      [maxlength]="field.max ?? 400" [placeholder]="field.placeholder ?? ''"
+                      [(ngModel)]="form.details[field.key]"></textarea>
+                  }
+                  @case ('select') {
+                    <select [id]="'field-' + field.key" [name]="field.key" [(ngModel)]="form.details[field.key]">
+                      @for (option of field.options; track option) {
+                        <option [value]="option">{{ option }}</option>
+                      }
+                    </select>
+                  }
+                  @case ('number') {
+                    <input [id]="'field-' + field.key" type="number" required min="0" [max]="field.max ?? 0"
+                      [step]="field.decimal ? '0.01' : '1'" [name]="field.key" [placeholder]="field.placeholder ?? ''"
+                      [(ngModel)]="form.details[field.key]">
+                  }
+                  @default {
+                    <input [id]="'field-' + field.key" [name]="field.key" [required]="!field.optional"
+                      [maxlength]="field.max ?? 100" [placeholder]="field.placeholder ?? ''"
+                      [(ngModel)]="form.details[field.key]">
+                  }
                 }
-              </label>
+                @if (field.hint) {
+                  <small class="field-hint">{{ field.hint }}</small>
+                }
+              </div>
             }
+
             @if (kind === 'inspections') {
-              <h3>Puntos a revisar</h3>
-              @for (check of checks; track check[0]) {
-                <label>{{ check[1] }}
-                  <select [name]="check[0]" [(ngModel)]="inspectionChecks[check[0]]">
-                    @for (condition of conditions | keyvalue; track condition.key) {
-                      <option [value]="condition.key">{{ condition.value }}</option>
-                    }
-                  </select>
-                </label>
-              }
+              <div class="checklist-section">
+                <h3>Puntos a revisar</h3>
+                <p class="checklist-desc">Evalúa visualmente cada punto del recorrido y califica su estado actual:</p>
+
+                <div class="checklist-grid">
+                  @for (check of checks; track check[0]) {
+                    <div class="checklist-card">
+                      <label [for]="'check-' + check[0]">{{ check[1] }}</label>
+                      <select [id]="'check-' + check[0]" [name]="check[0]" [(ngModel)]="inspectionChecks[check[0]]">
+                        @for (condition of conditions | keyvalue; track condition.key) {
+                          <option [value]="condition.key">{{ condition.value }}</option>
+                        }
+                      </select>
+                    </div>
+                  }
+                </div>
+              </div>
             }
-            <div class="row-actions">
-              <button class="primary" type="submit" [disabled]="editor.invalid || saving()">Guardar registro</button>
-              <button type="button" (click)="editing.set(false)">Cancelar</button>
+
+            <div class="form-actions">
+              <button class="primary btn-save" type="submit" [disabled]="editor.invalid || saving()">
+                <taji-icon name="check" [size]="18" />
+                <span>Guardar registro</span>
+              </button>
+              <button type="button" class="btn-cancel" (click)="editing.set(false)">Cancelar</button>
             </div>
           </fieldset>
         </form>
       </section>
     } @else if (kind !== 'warranties') {
-      <section class="side" aria-labelledby="assistant-title">
-        <p class="eyebrow">{{ kind === 'quotes' ? 'CU36' : 'CU37' }} · Análisis bajo demanda</p>
-        <h2 id="assistant-title">{{ kind === 'quotes' ? 'Comparar con IA' : 'Proponer seguimiento con IA' }}</h2>
-        <p>{{ kind === 'quotes'
-          ? 'Selecciona de dos a cinco ofertas de la misma solicitud y moneda. Compara los importes sin autorizar compras.'
-          : 'Selecciona una inspección con hallazgos o puntos sin revisar. La propuesta no genera órdenes de trabajo.' }}</p>
-        <p class="muted">NVIDIA recibe solo importes, moneda, plazos y garantía, o los estados del checklist. No se envían nombres ni notas.</p>
+      <!-- Panel de Asistente de IA (Cotizaciones e Inspecciones) -->
+      <section class="side assistant-panel" aria-labelledby="assistant-title">
+        <div class="side-header">
+          <div>
+            <div class="ai-eyebrow">
+              <taji-icon name="sparkles" [size]="15" />
+              <span>{{ kind === 'quotes' ? 'CU36' : 'CU37' }} · Análisis bajo demanda</span>
+            </div>
+            <h2 id="assistant-title">{{ kind === 'quotes' ? 'Comparar con IA' : 'Proponer seguimiento con IA' }}</h2>
+          </div>
+        </div>
+
+        <div class="ai-intro-card">
+          <p class="ai-instructions">
+            {{ kind === 'quotes'
+              ? 'Selecciona de dos a cinco ofertas de la misma solicitud y moneda. Compara los importes sin autorizar compras.'
+              : 'Selecciona una inspección con hallazgos o puntos sin revisar. La propuesta no genera órdenes de trabajo.' }}
+          </p>
+          <div class="privacy-note">
+            <taji-icon name="shield" [size]="14" />
+            <span>NVIDIA recibe solo importes, moneda, plazos y garantía, o los estados del checklist. No se envían nombres ni notas.</span>
+          </div>
+        </div>
+
         @if (selected().length) {
-          <ul class="selected">
-            @for (item of selected(); track item.id; let i = $index) {
-              <li><span>{{ kind === 'quotes' ? 'Opción ' + 'ABCDE'[i] + ' · ' : '' }}{{ item.title }}</span>
-                <button type="button" [disabled]="analyzing()" (click)="select(item, false)"
-                  [attr.aria-label]="'Quitar ' + item.title">Quitar</button></li>
-            }
-          </ul>
+          <div class="selected-box">
+            <h4 class="selected-heading">Seleccionados para análisis ({{ selected().length }})</h4>
+            <ul class="selected">
+              @for (item of selected(); track item.id; let i = $index) {
+                <li>
+                  <div class="selected-name">
+                    <span class="option-badge">{{ 'ABCDE'[i] }}</span>
+                    <span>{{ kind === 'quotes' ? 'Opción ' + 'ABCDE'[i] + ' · ' : '' }}{{ item.title }}</span>
+                  </div>
+                  <button type="button" class="btn-remove-selected" [disabled]="analyzing()" (click)="select(item, false)"
+                    [attr.aria-label]="'Quitar ' + item.title">
+                    <taji-icon name="x" [size]="14" />
+                  </button>
+                </li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <div class="selection-prompt">
+            <taji-icon name="check" [size]="20" />
+            <p>Marca las casillas en la lista para agregarlas al análisis con IA.</p>
+          </div>
         }
-        <button class="primary" type="button" (click)="analyze()"
-          [disabled]="analyzing() || selected().length < (kind === 'quotes' ? 2 : 1)">Solicitar análisis</button>
-        @if (analyzing()) { <p role="status">Consultando a NVIDIA…</p> }
+
+        <button class="primary btn-analyze" type="button" (click)="analyze()"
+          [disabled]="analyzing() || selected().length < (kind === 'quotes' ? 2 : 1)">
+          <taji-icon name="sparkles" [size]="18" />
+          <span>Solicitar análisis</span>
+        </button>
+
+        @if (analyzing()) {
+          <div class="ai-loading" role="status">
+            <taji-icon name="refresh-cw" [size]="20" class="spin" />
+            <span>Consultando a NVIDIA…</span>
+          </div>
+        }
+
         @if (analysis(); as result) {
           <section class="findings" aria-label="Resultado del análisis" aria-live="polite">
-            <h3>Datos verificados</h3>
+            <div class="findings-header">
+              <taji-icon name="check" [size]="18" />
+              <h3>Datos verificados</h3>
+            </div>
+
             @if (result.facts.options) {
-              <ul>
+              <div class="verified-options-grid">
                 @for (option of result.facts.options; track option.option) {
-                  <li>{{ option.option }}: {{ option.amount }} {{ option.currency }} · {{ option.delivery_days }} días · {{ option.warranty_months }} meses de garantía</li>
+                  <div class="verified-option-card">
+                    <div class="option-tag">Opción {{ option.option }}</div>
+                    <div class="option-details">
+                      <strong>{{ option.amount }} {{ option.currency }}</strong>
+                      <span>{{ option.delivery_days }} días · {{ option.warranty_months }} meses de garantía</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (result.facts.checks; as checklist) {
+              <ul class="verified-checks-list">
+                @for (check of checklist | keyvalue; track check.key) {
+                  <li class="verified-check-item">
+                    <span>{{ check.key }}: {{ conditions[check.value] }}</span>
+                  </li>
                 }
               </ul>
             }
-            @if (result.facts.checks; as checklist) {
-              <ul>
-                @for (check of checklist | keyvalue; track check.key) { <li>{{ check.key }}: {{ conditions[check.value] }}</li> }
-              </ul>
-            }
+
             @if (result.suggestion; as suggestion) {
-              <h3>Sugerencia de IA · revisar antes de actuar</h3>
-              <p>{{ suggestion.summary }}</p>
-              <ol>@for (action of suggestion.actions; track $index) { <li>{{ action }}</li> }</ol>
-            } @else { <p role="status">{{ result.message }}</p> }
+              <div class="suggestion-box">
+                <div class="suggestion-head">
+                  <taji-icon name="sparkles" [size]="16" />
+                  <h3>Sugerencia de IA · revisar antes de actuar</h3>
+                </div>
+                <p class="suggestion-summary">{{ suggestion.summary }}</p>
+                <div class="suggestion-actions">
+                  <h4>Acciones recomendadas:</h4>
+                  <ol>
+                    @for (action of suggestion.actions; track $index) {
+                      <li>{{ action }}</li>
+                    }
+                  </ol>
+                </div>
+              </div>
+            } @else {
+              <div class="ai-fallback-msg" role="status">
+                <taji-icon name="alert-triangle" [size]="18" />
+                <p>{{ result.message }}</p>
+              </div>
+            }
           </section>
+        }
+      </section>
+    } @else {
+      <!-- Panel de Garantías (Ficha Técnica y Guía del Edificio) -->
+      <section class="side warranty-info-panel" aria-labelledby="warranty-info-title">
+        @if (activePreview(); as warranty) {
+          <div class="side-header">
+            <div>
+              <span class="eyebrow">Ficha técnica del equipo</span>
+              <h2 id="warranty-info-title">{{ warranty.title }}</h2>
+            </div>
+            <button type="button" class="btn-sm btn-edit" (click)="edit(warranty)" aria-label="Modificar póliza">
+              <span>Editar</span>
+            </button>
+          </div>
+
+          <div class="warranty-card-preview">
+            <div class="preview-status-banner {{ statusColor(warranty) }}">
+              <taji-icon name="shield" [size]="18" />
+              <span>Estado: <strong>{{ spec.states[warranty.status] }}</strong></span>
+              @if (expired(warranty)) { <b class="expired-tag">· Garantía Vencida</b> }
+            </div>
+
+            <div class="preview-group">
+              <span class="preview-label">Empresa Garante / Proveedor:</span>
+              <p class="preview-value">{{ warranty.details['provider'] }}</p>
+            </div>
+
+            <div class="preview-group">
+              <span class="preview-label">N° de Póliza, Factura o Contrato:</span>
+              <p class="preview-value code-box">{{ warranty.details['reference'] }}</p>
+            </div>
+
+            <div class="preview-group">
+              <span class="preview-label">Fecha Límite de Vencimiento:</span>
+              <p class="preview-value date-box">
+                <taji-icon name="calendar" [size]="16" />
+                <span>{{ (warranty.date + 'T00:00:00Z') | date:'dd/MM/yyyy':'UTC' }}</span>
+              </p>
+            </div>
+
+            <div class="preview-group">
+              <span class="preview-label">Términos y Cobertura:</span>
+              <div class="coverage-box">
+                <p>{{ warranty.details['coverage'] }}</p>
+              </div>
+            </div>
+
+            <div class="condo-advice-card">
+              <taji-icon name="alert-triangle" [size]="16" />
+              <div>
+                <strong>Procedimiento de Reclamo</strong>
+                <p>Si este equipo o instalación presenta averías, documente fotografías y remita el informe técnico al garante antes de que expire la cobertura.</p>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="side-header">
+            <div>
+              <span class="eyebrow">Guía de administración</span>
+              <h2 id="warranty-info-title">Pólizas del Condominio</h2>
+            </div>
+          </div>
+          <div class="condo-guide-card">
+            <taji-icon name="shield" [size]="32" />
+            <h3>¿Por qué registrar las garantías?</h3>
+            <p>Llevar un control estricto de las garantías de ascensores, bombas de agua, portones automáticos y pintura exterior evita dobles cobros a los copropietarios y permite reclamar reparaciones sin costo al fondo común.</p>
+            <button class="primary btn-start-entry" type="button" (click)="edit()">
+              <taji-icon name="plus" [size]="16" />
+              <span>Registrar primera póliza</span>
+            </button>
+          </div>
         }
       </section>
     }
   </div>
+
+  <!-- Diálogo de Confirmación de Eliminación -->
   @if (pendingDelete(); as target) {
-    <section class="banner" aria-label="Confirmar eliminación" aria-live="polite">
-      <strong>¿Eliminar «{{ target.title }}»? No se puede deshacer.</strong>
-      <div class="row-actions">
-        <button class="danger" type="button" (click)="remove()" [disabled]="saving()">Sí, eliminar</button>
-        <button type="button" (click)="pendingDelete.set(null)" [disabled]="saving()">Cancelar eliminación</button>
-      </div>
-    </section>
+    <div class="modal-backdrop">
+      <section class="banner delete-modal" aria-label="Confirmar eliminación" aria-live="polite">
+        <div class="delete-icon">
+          <taji-icon name="alert-triangle" [size]="28" />
+        </div>
+        <div class="delete-content">
+          <strong>¿Eliminar «{{ target.title }}»? No se puede deshacer.</strong>
+          <p>Este registro será removido permanentemente de los registros de operaciones del condominio.</p>
+          <div class="row-actions delete-actions">
+            <button class="danger btn-confirm-delete" type="button" (click)="remove()" [disabled]="saving()">
+              Sí, eliminar
+            </button>
+            <button type="button" class="btn-cancel" (click)="pendingDelete.set(null)" [disabled]="saving()">
+              Cancelar eliminación
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
   }
 </main>

@@ -1,0 +1,125 @@
+<section class="evidence-gallery" aria-label="Evidencias de la incidencia">
+  <header>
+    <div>
+      <h3>Evidencias de la incidencia</h3>
+      <p>{{ photos().length }} fotos · {{ documents().length }} documentos</p>
+    </div>
+    <taji-icon name="image" [size]="20" />
+  </header>
+  <div class="photo-grid">
+    @for (photo of photos(); track photo.id; let index = $index) {
+      <article class="photo-card">
+        <div class="thumbnail">
+          @if (preview(photo); as url) {
+            @if (!failures().has(photo.id)) {
+              <button
+                class="photo-open"
+                type="button"
+                (click)="open(index)"
+                [attr.aria-label]="'Ampliar foto #' + photo.id"
+              >
+                <img
+                  [src]="url"
+                  [alt]="photo.caption || 'Evidencia fotográfica #' + photo.id"
+                  loading="lazy"
+                  decoding="async"
+                  referrerpolicy="no-referrer"
+                  (error)="fail(photo.id)"
+                /><span class="expand"><taji-icon name="search" [size]="16" />Ampliar</span>
+              </button>
+            } @else {
+              <div class="image-error" role="status">
+                <taji-icon name="image" [size]="25" /><span>No se pudo cargar la foto.</span
+                ><button type="button" (click)="retry(photo.id)">Reintentar</button>
+              </div>
+            }
+          } @else {
+            <div class="image-error">
+              <taji-icon name="image" [size]="25" /><span>Vista previa no disponible.</span>
+            </div>
+          }
+        </div>
+        <div class="photo-caption">
+          <div>
+            <strong>Foto #{{ photo.id }}</strong>
+            <p>{{ photo.caption || 'Evidencia adjunta al reporte' }}</p>
+          </div>
+          @if (safeUrl(photo.file_url); as download) {
+            <a
+              [href]="download"
+              [attr.aria-label]="'Descargar foto #' + photo.id"
+              title="Descargar foto"
+              ><taji-icon name="download" [size]="17"
+            /></a>
+          }
+        </div>
+      </article>
+    }
+  </div>
+  @for (file of documents(); track file.id) {
+    <div class="document-row">
+      <taji-icon name="file-text" [size]="22" />
+      <div>
+        <strong>{{ file.caption || file.file_type_display + ' #' + file.id }}</strong
+        ><small>{{ file.file_type_display }}</small>
+      </div>
+      @if (safeUrl(file.file_url); as url) {
+        <a [href]="url" target="_blank" rel="noopener noreferrer">Descargar documento</a>
+      }
+    </div>
+  }
+  @if (!attachments()?.length) {
+    <p class="empty">Sin evidencias adjuntas.</p>
+  }
+</section>
+<dialog
+  #viewer
+  class="lightbox"
+  aria-label="Imagen de evidencia ampliada"
+  (close)="closed()"
+  (keydown)="keydown($event)"
+>
+  @if (selected(); as photo) {
+    <header class="viewer-header">
+      <div>
+        <span
+          >Foto {{ (selectedIndex() || 0) + 1 }} de {{ photos().length }} · #{{ photo.id }}</span
+        >
+        <h2>{{ photo.caption || 'Evidencia de la incidencia' }}</h2>
+      </div>
+      <button
+        type="button"
+        class="close"
+        aria-label="Cerrar imagen ampliada"
+        (click)="close()"
+        autofocus
+      >
+        <taji-icon name="x" [size]="21" />
+      </button>
+    </header>
+    <div class="viewer-image">
+      @if (preview(photo); as url) {
+        <img
+          [src]="url"
+          [alt]="photo.caption || 'Evidencia fotográfica #' + photo.id"
+          referrerpolicy="no-referrer"
+        />
+      }
+    </div>
+    <footer>
+      <div class="viewer-controls">
+        <button type="button" [disabled]="selectedIndex() === 0" (click)="move(-1)">Anterior</button
+        ><button
+          type="button"
+          [disabled]="selectedIndex() === photos().length - 1"
+          (click)="move(1)"
+        >
+          Siguiente
+        </button>
+      </div>
+      @if (safeUrl(photo.file_url); as url) {
+        <a [href]="url"><taji-icon name="download" [size]="16" />Descargar original</a>
+      }
+    </footer>
+  }
+</dialog>

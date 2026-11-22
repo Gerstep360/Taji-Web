@@ -83,6 +83,7 @@ export interface AssetsPage<T> {
 }
 
 export interface AssetFilters {
+  page?: number;
   search?: string;
   status?: AssetStatus | '';
   asset_type?: number | '';

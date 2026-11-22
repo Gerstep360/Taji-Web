@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { debounceTime } from 'rxjs';
+import { debounceTime, Subject, takeUntil } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { apiErrorMessage, apiFieldErrors } from '../../../core/api-error';
@@ -137,6 +137,13 @@ const STATUS_LABELS: Record<string, string> = {
               </tbody>
             </table>
           </div>
+        }
+        @if (totalPages() > 1) {
+          <nav aria-label="Paginación de activos" class="row-actions">
+            <button type="button" [disabled]="loading() || currentPage() <= 1" (click)="changePage(currentPage() - 1)">Anterior</button>
+            <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
+            <button type="button" [disabled]="loading() || currentPage() >= totalPages()" (click)="changePage(currentPage() + 1)">Siguiente</button>
+          </nav>
         }
       </section>
     </section>
@@ -343,6 +350,24 @@ export class ActivosPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly tenantChanged = new Subject<void>();
+  private tenantId = this.auth.user()?.active_tenant?.id;
+
+  constructor() {
+    effect(() => {
+      const tenantId = this.auth.user()?.active_tenant?.id;
+      if (tenantId === this.tenantId) return;
+      this.tenantId = tenantId;
+      untracked(() => {
+        this.tenantChanged.next();
+        this.assets.set([]); this.assetTypes.set([]); this.sectors.set([]);
+        this.editorOpen.set(false); this.typeManagerOpen.set(false); this.selectedAsset.set(null);
+        this.qr.set(null); this.history.set(null); this.saving.set(false); this.savingType.set(false);
+        this.loadError.set(null); this.filters.reset();
+        if (tenantId) { this.loadCatalogs(); this.load(); }
+      });
+    });
+  }
 
   readonly statusOptions = [
     { value: 'ACTIVE', label: 'Activo' },
@@ -351,6 +376,9 @@ export class ActivosPage implements OnInit {
     { value: 'RETIRED', label: 'Retirado' },
   ];
 
+  readonly currentPage = signal(1);
+  readonly totalPages = signal(1);
+  private listRevision = 0;
   readonly assets = signal<Asset[]>([]);
   readonly assetTypes = signal<AssetType[]>([]);
   readonly sectors = signal<SectorOption[]>([]);
@@ -410,8 +438,8 @@ export class ActivosPage implements OnInit {
 
   ngOnInit(): void {
     this.filters.valueChanges
-      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.load());
+      .pipe(debounceTime(300), takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => { this.currentPage.set(1); this.load(); });
     this.loadCatalogs();
     this.load();
   }
@@ -420,21 +448,32 @@ export class ActivosPage implements OnInit {
     return STATUS_LABELS[value] ?? value;
   }
 
+  changePage(page: number): void {
+    if (this.loading() || page < 1 || page > this.totalPages()) return;
+    this.currentPage.set(page);
+    this.load();
+  }
+
   load(): void {
+    const revision = ++this.listRevision;
     this.loading.set(true);
     this.loadError.set(null);
     const raw = this.filters.getRawValue();
     const criteria: AssetFilters = {
+      page: this.currentPage(),
       search: raw.search || undefined,
       status: (raw.status || '') as AssetFilters['status'],
       asset_type: raw.asset_type ? Number(raw.asset_type) : '',
     };
-    this.api.listAssets(criteria).subscribe({
+    this.api.listAssets(criteria).pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (page) => {
+        if (revision !== this.listRevision) return;
         this.assets.set(page.results);
+        this.totalPages.set(Math.max(1, page.pagination?.total_pages ?? 1));
         this.loading.set(false);
       },
       error: (error) => {
+        if (revision !== this.listRevision) return;
         this.loadError.set(apiErrorMessage(error));
         this.loading.set(false);
       },
@@ -442,12 +481,12 @@ export class ActivosPage implements OnInit {
   }
 
   private loadCatalogs(): void {
-    this.api.listAssetTypes().subscribe({
+    this.api.listAssetTypes().pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (page) => this.assetTypes.set(page.results),
       error: () => this.assetTypes.set([]),
     });
     if (this.canManage()) {
-      this.api.listSectors().subscribe({
+      this.api.listSectors().pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (page) => this.sectors.set(page.results),
         error: () => this.sectors.set([]),
       });
@@ -520,7 +559,7 @@ export class ActivosPage implements OnInit {
     const request = editing
       ? this.api.updateAsset(editing.id, payload)
       : this.api.createAsset(payload);
-    request.subscribe({
+    request.pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.saving.set(false);
         this.editorOpen.set(false);
@@ -540,7 +579,7 @@ export class ActivosPage implements OnInit {
 
   retire(asset: Asset): void {
     if (!confirm(`¿Dar de baja el activo ${asset.name}?`)) return;
-    this.api.retireAsset(asset.id).subscribe({
+    this.api.retireAsset(asset.id).pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.load(),
       error: (error) => this.loadError.set(apiErrorMessage(error)),
     });
@@ -563,7 +602,7 @@ export class ActivosPage implements OnInit {
     }
     this.savingType.set(true);
     this.typeFormError.set(null);
-    this.api.createAssetType(this.typeForm.getRawValue()).subscribe({
+    this.api.createAssetType(this.typeForm.getRawValue()).pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (type) => {
         this.savingType.set(false);
         this.assetTypes.set([...this.assetTypes(), type]);
@@ -583,7 +622,7 @@ export class ActivosPage implements OnInit {
     this.qrLoading.set(true);
     this.historyLoading.set(true);
 
-    this.api.getQr(asset.id).subscribe({
+    this.api.getQr(asset.id).pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (qr) => {
         this.qr.set(qr);
         this.qrLoading.set(false);
@@ -591,7 +630,7 @@ export class ActivosPage implements OnInit {
       error: () => this.qrLoading.set(false),
     });
 
-    this.api.getHistory(asset.id).subscribe({
+    this.api.getHistory(asset.id).pipe(takeUntil(this.tenantChanged), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (history) => {
         this.history.set(history);
         this.historyLoading.set(false);

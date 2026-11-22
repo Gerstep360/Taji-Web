@@ -29,9 +29,11 @@ describe('AnnouncementPopupModalComponent', () => {
   beforeEach(async () => {
     modalServiceMock = {
       currentHighPriority: signal<NotificationItem | null>(sampleNotif),
+      currentFloatingToast: signal<NotificationItem | null>(null),
       isProcessing: signal<boolean>(false),
       errorMessage: signal<string | null>(null),
       dismissForSession: vi.fn(),
+      dismissFloatingToast: vi.fn(),
       markAsUnderstood: vi.fn(),
     };
 
@@ -67,10 +69,22 @@ describe('AnnouncementPopupModalComponent', () => {
     expect(modalServiceMock.markAsUnderstood).toHaveBeenCalled();
   });
 
-  it('no debe renderizar nada si no hay aviso de alta prioridad en el servicio', () => {
+  it('no debe renderizar el backdrop del modal si no hay aviso de alta prioridad', () => {
     modalServiceMock.currentHighPriority.set(null);
     fixture.detectChanges();
     const modalBackdrop = fixture.nativeElement.querySelector('.modal-backdrop');
     expect(modalBackdrop).toBeNull();
+  });
+
+  it('renderiza el componente hijo de notificación flotante de forma independiente', () => {
+    modalServiceMock.currentHighPriority.set(null);
+    modalServiceMock.currentFloatingToast.set(sampleNotif);
+    fixture.detectChanges();
+
+    // El backdrop del modal no existe
+    expect(fixture.nativeElement.querySelector('.modal-backdrop')).toBeNull();
+    // La notificación flotante sí está presente
+    const toast = fixture.nativeElement.querySelector('.floating-toast-container');
+    expect(toast).toBeTruthy();
   });
 });

@@ -1,10 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { IconComponent } from '../ui/icon.component';
 import { LogoComponent } from '../ui/logo.component';
+import { NotificationBellComponent } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/components/notification-bell.component';
+import { AnnouncementPopupModalComponent } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/components/announcement-popup-modal.component';
+import { NotificationModalService } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/services/notification-modal.service';
+import { DASHBOARD_ROLES } from '../../paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/operational-dashboard.api';
 
 interface SubNavItem {
   label: string;
@@ -34,8 +38,18 @@ interface PackageDropdown {
 
 @Component({
   selector: 'taji-main-layout',
-  imports: [LogoComponent, IconComponent, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    LogoComponent,
+    IconComponent,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    NotificationBellComponent,
+    AnnouncementPopupModalComponent,
+  ],
   template: `
+    <taji-announcement-popup-modal />
+
     <div class="app-shell">
       @if (isMobileMenuOpen()) {
         <div class="sidebar-backdrop" (click)="closeMobileMenu()" aria-hidden="true"></div>
@@ -153,6 +167,7 @@ interface PackageDropdown {
             </div>
           </div>
           <div class="topbar-right">
+            <taji-notification-bell />
             <a
               routerLink="/mi-condominio"
               class="tenant-pill"
@@ -182,9 +197,11 @@ interface PackageDropdown {
   styleUrl: './main-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly notifService = inject(NotificationModalService);
+
   readonly user = this.auth.user;
   readonly activeTenant = computed(() => this.user()?.active_tenant ?? null);
   readonly isMobileMenuOpen = signal<boolean>(false);
@@ -194,7 +211,12 @@ export class MainLayoutComponent {
       .pipe(filter((e) => e instanceof NavigationEnd))
       .subscribe(() => {
         this.closeMobileMenu();
+        this.notifService.checkPendingHighPriority();
       });
+  }
+
+  ngOnInit(): void {
+    this.notifService.checkPendingHighPriority();
   }
 
   toggleMobileMenu(): void {
@@ -393,6 +415,16 @@ export class MainLayoutComponent {
       ],
     },
     {
+      id: 'paquete7',
+      title: 'Operaciones',
+      icon: 'file-text',
+      items: [
+        { label: 'Garantías', icon: 'file-text', route: '/operaciones/garantias', permission: 'manage_settings', isAvailable: true },
+        { label: 'Cotizaciones', icon: 'file-text', route: '/operaciones/cotizaciones', permission: 'manage_settings', isAvailable: true },
+        { label: 'Inspecciones', icon: 'search', route: '/operaciones/inspecciones', permission: 'manage_settings', isAvailable: true },
+      ],
+    },
+    {
       id: 'paquete4',
       title: 'Activos y Mantenimiento',
       icon: 'boxes',
@@ -426,24 +458,38 @@ export class MainLayoutComponent {
       icon: 'layers',
       items: [
         {
-          label: 'Áreas Comunes y Reservas',
+          label: 'Áreas comunes y horarios',
           icon: 'calendar',
-          isAvailable: false,
+          route: '/calendario-reservas',
+          permissions: ['manage_reservations', 'reserve_areas'],
+          isAvailable: true,
+        },
+        {
+          label: 'Administrar reservas',
+          icon: 'calendar',
+          route: '/reservas-areas',
+          permissions: ['manage_reservations'],
+          isAvailable: true,
         },
         {
           label: 'Comunicados y Avisos',
           icon: 'bell',
-          isAvailable: false,
+          route: '/comunicados',
+          isAvailable: true,
         },
         {
           label: 'Asambleas y Acuerdos',
           icon: 'landmark',
-          isAvailable: false,
+          route: '/asambleas',
+          permissions: ['manage_assemblies', 'track_assembly_decisions', 'view_announcements'],
+          isAvailable: true,
         },
         {
           label: 'Dashboard y Reportes',
           icon: 'bar-chart',
-          isAvailable: false,
+          route: '/dashboard-reportes',
+          roles: DASHBOARD_ROLES,
+          isAvailable: true,
         },
         {
           label: 'Reportes personalizables',

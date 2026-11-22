@@ -18,5 +18,6 @@ export interface DeviceToken {
 export interface Notification {
   id: EntityId; user_id: EntityId; notification_type: string; title: string;
   message: string; resource_type: string | null; resource_id: string | null;
+  priority?: AnnouncementPriority; audience?: AnnouncementAudience; is_read?: boolean;
   sent_at: IsoDateTime | null; read_at: IsoDateTime | null; created_at: IsoDateTime;
 }

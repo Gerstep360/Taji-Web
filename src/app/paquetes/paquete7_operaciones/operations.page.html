@@ -1,0 +1,161 @@
+<main class="ops">
+  <header>
+    <p class="eyebrow">Libro de operaciones · {{ spec.cu }}</p>
+    <h1>{{ spec.title }}</h1>
+    <p>{{ spec.help }}</p>
+  </header>
+  <nav aria-label="Libro de operaciones">
+    <a routerLink="/operaciones/garantias" [attr.aria-current]="kind === 'warranties' ? 'page' : null">Garantías</a>
+    <a routerLink="/operaciones/cotizaciones" [attr.aria-current]="kind === 'quotes' ? 'page' : null">Cotizaciones</a>
+    <a routerLink="/operaciones/inspecciones" [attr.aria-current]="kind === 'inspections' ? 'page' : null">Inspecciones</a>
+  </nav>
+  @if (error()) { <p class="banner error" role="alert">{{ error() }}</p> }
+  @if (notice()) { <p class="banner" role="status">{{ notice() }}</p> }
+  <div class="workspace">
+    <section class="ledger" aria-labelledby="ledger-title">
+      <div class="section-head">
+        <h2 id="ledger-title">Registros <small>{{ entries()?.count ?? 0 }}</small></h2>
+        <button class="primary" type="button" (click)="edit()" [disabled]="saving()">Nuevo registro</button>
+      </div>
+      <form class="filters" (ngSubmit)="reload()">
+        <label>Buscar <input name="search" maxlength="100" [(ngModel)]="search" placeholder="Título o referencia"></label>
+        <label>Estado <select name="filter" [(ngModel)]="filter">
+          <option value="">Todos</option>
+          @for (state of spec.states | keyvalue; track state.key) { <option [value]="state.key">{{ state.value }}</option> }
+        </select></label>
+        <button type="submit">Filtrar</button>
+      </form>
+      @if (loading()) { <p role="status">Cargando registros…</p> }
+      @else if (entries(); as list) {
+        @if (!list.results.length) { <p class="empty">No hay registros para mostrar. Crea uno o cambia los filtros.</p> }
+        <ul class="records">
+          @for (item of list.results; track item.id) {
+            <li>
+              @if (kind !== 'warranties') {
+                <input #pick type="checkbox" [checked]="picked(item.id)"
+                  [disabled]="analyzing() || (kind === 'quotes' && selected().length >= 5 && !picked(item.id))"
+                  [attr.aria-label]="'Seleccionar ' + item.title"
+                  (change)="select(item, pick.checked); pick.checked = picked(item.id)">
+              }
+              <div class="record-name">
+                <strong>{{ item.title }}</strong>
+                <span>{{ label(item) }}</span>
+                <span>{{ spec.date }}: {{ (item.date + 'T00:00:00Z') | date:'dd/MM/yyyy':'UTC' }} · {{ spec.states[item.status] }}
+                  @if (expired(item)) { <b class="expired">· Vencida</b> }</span>
+              </div>
+              <div class="row-actions">
+                <button type="button" (click)="edit(item)" [disabled]="saving()" [attr.aria-label]="'Editar ' + item.title">Editar</button>
+                <button type="button" (click)="pendingDelete.set(item)" [disabled]="saving()"
+                  [attr.aria-label]="'Eliminar ' + item.title">Eliminar</button>
+              </div>
+            </li>
+          }
+        </ul>
+        @if (list.previous || list.next) {
+          <div class="row-actions">
+            <button type="button" [disabled]="!list.previous" (click)="reload(page - 1)">Anterior</button>
+            <span>Página {{ page }}</span>
+            <button type="button" [disabled]="!list.next" (click)="reload(page + 1)">Siguiente</button>
+          </div>
+        }
+      }
+    </section>
+    @if (editing()) {
+      <section class="side" aria-labelledby="editor-title">
+        <h2 id="editor-title">{{ editingId() ? 'Editar' : 'Registrar' }} {{ spec.singular }}</h2>
+        <form #editor="ngForm" (ngSubmit)="save()">
+          <fieldset [disabled]="saving()" class="editor">
+            <label>Título <input required maxlength="120" name="title" [(ngModel)]="form.title"></label>
+            <label>{{ spec.date }} <input type="date" required name="date" [(ngModel)]="form.date"></label>
+            <label>Estado del registro <select name="status" [(ngModel)]="form.status">
+              @for (state of spec.states | keyvalue; track state.key) { <option [value]="state.key">{{ state.value }}</option> }
+            </select></label>
+            @for (field of spec.fields; track field.key) {
+              <label>{{ field.label }}
+                @switch (field.type) {
+                  @case ('long') { <textarea rows="3" [name]="field.key" [required]="!field.optional" [maxlength]="field.max ?? 400"
+                    [(ngModel)]="form.details[field.key]"></textarea> }
+                  @case ('select') { <select [name]="field.key" [(ngModel)]="form.details[field.key]">
+                    @for (option of field.options; track option) { <option [value]="option">{{ option }}</option> }
+                  </select> }
+                  @case ('number') { <input type="number" required min="0" [max]="field.max ?? 0" [step]="field.decimal ? '0.01' : '1'"
+                    [name]="field.key" [(ngModel)]="form.details[field.key]"> }
+                  @default { <input [name]="field.key" [required]="!field.optional" [maxlength]="field.max ?? 100"
+                    [(ngModel)]="form.details[field.key]"> }
+                }
+              </label>
+            }
+            @if (kind === 'inspections') {
+              <h3>Puntos a revisar</h3>
+              @for (check of checks; track check[0]) {
+                <label>{{ check[1] }}
+                  <select [name]="check[0]" [(ngModel)]="inspectionChecks[check[0]]">
+                    @for (condition of conditions | keyvalue; track condition.key) {
+                      <option [value]="condition.key">{{ condition.value }}</option>
+                    }
+                  </select>
+                </label>
+              }
+            }
+            <div class="row-actions">
+              <button class="primary" type="submit" [disabled]="editor.invalid || saving()">Guardar registro</button>
+              <button type="button" (click)="editing.set(false)">Cancelar</button>
+            </div>
+          </fieldset>
+        </form>
+      </section>
+    } @else if (kind !== 'warranties') {
+      <section class="side" aria-labelledby="assistant-title">
+        <p class="eyebrow">{{ kind === 'quotes' ? 'CU36' : 'CU37' }} · Análisis bajo demanda</p>
+        <h2 id="assistant-title">{{ kind === 'quotes' ? 'Comparar con IA' : 'Proponer seguimiento con IA' }}</h2>
+        <p>{{ kind === 'quotes'
+          ? 'Selecciona de dos a cinco ofertas de la misma solicitud y moneda. Compara los importes sin autorizar compras.'
+          : 'Selecciona una inspección con hallazgos o puntos sin revisar. La propuesta no genera órdenes de trabajo.' }}</p>
+        <p class="muted">NVIDIA recibe solo importes, moneda, plazos y garantía, o los estados del checklist. No se envían nombres ni notas.</p>
+        @if (selected().length) {
+          <ul class="selected">
+            @for (item of selected(); track item.id; let i = $index) {
+              <li><span>{{ kind === 'quotes' ? 'Opción ' + 'ABCDE'[i] + ' · ' : '' }}{{ item.title }}</span>
+                <button type="button" [disabled]="analyzing()" (click)="select(item, false)"
+                  [attr.aria-label]="'Quitar ' + item.title">Quitar</button></li>
+            }
+          </ul>
+        }
+        <button class="primary" type="button" (click)="analyze()"
+          [disabled]="analyzing() || selected().length < (kind === 'quotes' ? 2 : 1)">Solicitar análisis</button>
+        @if (analyzing()) { <p role="status">Consultando a NVIDIA…</p> }
+        @if (analysis(); as result) {
+          <section class="findings" aria-label="Resultado del análisis" aria-live="polite">
+            <h3>Datos verificados</h3>
+            @if (result.facts.options) {
+              <ul>
+                @for (option of result.facts.options; track option.option) {
+                  <li>{{ option.option }}: {{ option.amount }} {{ option.currency }} · {{ option.delivery_days }} días · {{ option.warranty_months }} meses de garantía</li>
+                }
+              </ul>
+            }
+            @if (result.facts.checks; as checklist) {
+              <ul>
+                @for (check of checklist | keyvalue; track check.key) { <li>{{ check.key }}: {{ conditions[check.value] }}</li> }
+              </ul>
+            }
+            @if (result.suggestion; as suggestion) {
+              <h3>Sugerencia de IA · revisar antes de actuar</h3>
+              <p>{{ suggestion.summary }}</p>
+              <ol>@for (action of suggestion.actions; track $index) { <li>{{ action }}</li> }</ol>
+            } @else { <p role="status">{{ result.message }}</p> }
+          </section>
+        }
+      </section>
+    }
+  </div>
+  @if (pendingDelete(); as target) {
+    <section class="banner" aria-label="Confirmar eliminación" aria-live="polite">
+      <strong>¿Eliminar «{{ target.title }}»? No se puede deshacer.</strong>
+      <div class="row-actions">
+        <button class="danger" type="button" (click)="remove()" [disabled]="saving()">Sí, eliminar</button>
+        <button type="button" (click)="pendingDelete.set(null)" [disabled]="saving()">Cancelar eliminación</button>
+      </div>
+    </section>
+  }
+</main>

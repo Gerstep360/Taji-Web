@@ -1,0 +1,274 @@
+<main class="dashboard" aria-labelledby="dashboard-title">
+  <!-- Encabezado corporativo de TAJI -->
+  <header class="page-header">
+    <div class="header-main">
+      <span class="eyebrow">Servicios y Comunidad · Módulo Administrativo</span>
+      <h1 id="dashboard-title">Dashboard y Reportes</h1>
+      <div class="header-badges">
+        @if (tenant(); as current) {
+          @if (isSuperuser()) {
+            <label class="badge tenant-badge tenant-select-badge" title="Cambiar condominio activo (Superadmin)">
+              <taji-icon name="building" [size]="15" />
+              <select
+                class="tenant-selector"
+                [disabled]="switchingTenant()"
+                (change)="onTenantChange($any($event.target).value)"
+                aria-label="Seleccionar condominio activo"
+              >
+                @for (t of tenantOptions(); track t.id) {
+                  <option [value]="t.id" [selected]="t.id === current.id">
+                    {{ t.name }}
+                  </option>
+                }
+              </select>
+              <taji-icon name="chevron-down" [size]="12" class="select-chevron" />
+            </label>
+          } @else {
+            <span class="badge tenant-badge">
+              <taji-icon name="building" [size]="15" />
+              <span>{{ data()?.context?.name ?? current.name }}</span>
+            </span>
+          }
+        }
+        @if (data(); as response) {
+          <span class="badge period-badge">
+            <taji-icon name="calendar" [size]="14" />
+            <span>{{ response.period.date_from }} al {{ response.period.date_to }}</span>
+          </span>
+          <span class="badge timezone-badge">
+            <taji-icon name="clock" [size]="14" />
+            <span>Actualizado: {{ lastUpdated() }} · {{ response.context.timezone }}</span>
+          </span>
+        }
+      </div>
+    </div>
+
+    @if (allowed() && tenant() && section() === 'summary') {
+      <div class="header-actions">
+        <button type="button" class="button secondary compact-refresh" (click)="refresh()" [disabled]="loading() || switchingTenant()">
+          <taji-icon name="refresh-cw" [size]="14" />
+          <span>Actualizar</span>
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (switchError(); as errorMsg) {
+    <div class="state alert warning" role="alert">
+      <taji-icon name="alert-triangle" [size]="18" />
+      <p>{{ errorMsg }}</p>
+    </div>
+  }
+
+  @if (!allowed()) {
+    <div class="state alert error" role="status">
+      <taji-icon name="ban" [size]="20" />
+      <p>No tienes acceso al dashboard operativo.</p>
+    </div>
+  } @else if (!tenant()) {
+    <div class="state alert warning" role="status">
+      <taji-icon name="alert-triangle" [size]="20" />
+      <p>Establece un contexto de condominio autorizado desde TAJI para consultar sus indicadores.</p>
+    </div>
+  } @else {
+    <!-- Pestañas de navegación compactas y claras -->
+    <nav class="dashboard-sections" aria-label="Secciones de CU30">
+      <button
+        type="button"
+        class="tab-button"
+        [attr.aria-pressed]="section() === 'summary'"
+        (click)="section.set('summary')"
+      >
+        <taji-icon name="bar-chart" [size]="16" />
+        <span>Resumen operativo</span>
+      </button>
+      <button
+        type="button"
+        class="tab-button"
+        [attr.aria-pressed]="section() === 'reports'"
+        (click)="section.set('reports')"
+      >
+        <taji-icon name="file-text" [size]="16" />
+        <span>Reportes detallados</span>
+      </button>
+    </nav>
+
+    @if (section() === 'reports') {
+      @for (context of reportContexts(); track context) {
+        <taji-cu30-reports [contextKey]="context" [initialDates]="data()?.period ?? {}" />
+      }
+    } @else {
+      <!-- Barra de Filtros del Dashboard -->
+      <section class="filters-card" aria-label="Período del dashboard">
+        <form (submit)="apply($event)" novalidate>
+          <div class="filters-row">
+            <div class="date-fields">
+              <label>Fecha inicial
+                <input
+                  type="date"
+                  [value]="dates().date_from"
+                  (input)="edit('date_from', $event.target.value)"
+                  [attr.aria-invalid]="dateError() ? 'true' : null"
+                  [attr.aria-describedby]="dateError() ? 'period-error' : null"
+                />
+              </label>
+              <label>Fecha final
+                <input
+                  type="date"
+                  [value]="dates().date_to"
+                  (input)="edit('date_to', $event.target.value)"
+                  [attr.aria-invalid]="dateError() ? 'true' : null"
+                  [attr.aria-describedby]="dateError() ? 'period-error' : null"
+                />
+              </label>
+            </div>
+            <button type="submit" class="button primary filter-btn">
+              <taji-icon name="filter" [size]="15" />
+              <span>Aplicar filtros</span>
+            </button>
+          </div>
+        </form>
+
+        @if (dateError(); as validation) {
+          <p id="period-error" class="validation" role="alert">
+            <taji-icon name="alert-triangle" [size]="14" />
+            <span>{{ validation }}</span>
+          </p>
+        }
+
+        @if (data(); as response) {
+          <p class="period">
+            <span>Período consultado {{ response.period.date_from }} al {{ response.period.date_to }}</span>
+            <span>Actualizado {{ lastUpdated() }} · {{ response.context.timezone }}</span>
+          </p>
+        }
+      </section>
+
+      <!-- Indicadores y Gráficos -->
+      <section [attr.aria-busy]="loading()" aria-label="Indicadores del condominio">
+        @if (loading()) {
+          <div class="state loading-state" role="status">
+            <taji-icon name="loader" [size]="20" />
+            <p>Cargando indicadores…</p>
+          </div>
+          <div class="summary-grid" aria-hidden="true">
+            @for (card of [1, 2, 3, 4]; track card) { <div class="skeleton"></div> }
+          </div>
+        } @else if (error(); as message) {
+          <div class="state error">
+            <taji-icon name="alert-triangle" [size]="20" />
+            <p role="alert">{{ message }}</p>
+            <button type="button" class="button secondary" (click)="refresh()">
+              <taji-icon name="refresh-cw" [size]="14" />
+              <span>Reintentar</span>
+            </button>
+          </div>
+        } @else if (data(); as response) {
+          <!-- Tarjetas principales de KPI siempre visibles cuando los dominios están presentes -->
+          @if (panels().length > 0) {
+            <div class="summary-grid">
+              @for (panel of panels(); track panel.title) {
+                <article class="summary-card" [attr.data-domain]="panel.icon">
+                  <header class="summary-card-header">
+                    <span class="metric-icon" [attr.data-domain]="panel.icon">
+                      <taji-icon [name]="panel.icon" [size]="18" />
+                    </span>
+                    <h2>{{ panel.title }}</h2>
+                  </header>
+                  <div class="total">
+                    {{ panel.total }}
+                    <span>registros</span>
+                  </div>
+                  <dl class="metrics-list">
+                    @for (metric of panel.metrics; track metric.label) {
+                      <div class="metric-row">
+                        <dt>{{ metric.label }}</dt>
+                        <dd>{{ metric.value }}</dd>
+                      </div>
+                    }
+                  </dl>
+                </article>
+              }
+            </div>
+          }
+
+          @if (!response.has_data) {
+            <!-- Estado vacío amigable cuando el período no tiene registros -->
+            <div class="empty-dashboard-card" role="status">
+              <span class="empty-icon"><taji-icon name="inbox" [size]="32" /></span>
+              <h3>Sin registros en este período</h3>
+              <p>Sin actividad registrada en el período seleccionado. Puedes ajustar el rango de fechas en los filtros superiores para consultar otros períodos.</p>
+            </div>
+          } @else {
+            <p class="note">Los estados corresponden a la situación actual de los registros del período.</p>
+            <div class="detail-grid">
+              @for (panel of panels(); track panel.title) {
+                @if (panel.total > 0) {
+                  <article class="detail-card">
+                    <header class="detail-card-header">
+                      <span class="detail-icon" [attr.data-domain]="panel.icon">
+                        <taji-icon [name]="panel.icon" [size]="16" />
+                      </span>
+                      <h2>{{ panel.title }}</h2>
+                    </header>
+
+                    @if (peak(panel.daily); as dailyMax) {
+                      <figure class="chart-figure">
+                        <figcaption>Actividad diaria</figcaption>
+                        <div class="daily-plot" aria-hidden="true">
+                          @for (day of panel.daily; track day.date) {
+                            <span
+                              [style.height.%]="100 * day.count / dailyMax"
+                              [title]="day.date + ' · ' + day.count"
+                            ></span>
+                          }
+                        </div>
+                        <div class="axis" aria-hidden="true">
+                          <span>{{ response.period.date_from }}</span>
+                          <span>{{ response.period.date_to }}</span>
+                        </div>
+                        <details class="chart-table-details">
+                          <summary>Ver valores diarios</summary>
+                          <table>
+                            <caption class="sr-only">Actividad diaria de {{ panel.title }}</caption>
+                            <thead><tr><th scope="col">Fecha</th><th scope="col">Registros</th></tr></thead>
+                            <tbody>
+                              @for (day of panel.daily; track day.date) {
+                                <tr><th scope="row">{{ day.date }}</th><td>{{ day.count }}</td></tr>
+                              }
+                            </tbody>
+                          </table>
+                        </details>
+                      </figure>
+                    }
+
+                    @for (group of panel.groups; track group.title) {
+                      @if (peak(group.rows); as groupMax) {
+                        <section class="distribution" [attr.aria-label]="group.title">
+                          <h3>{{ group.title }}</h3>
+                          <ul>
+                            @for (row of group.rows; track row.key) {
+                              <li>
+                                <div class="dist-meta">
+                                  <span>{{ row.label }}</span>
+                                  <strong>{{ row.count }}</strong>
+                                </div>
+                                <div class="track" aria-hidden="true">
+                                  <span [style.width.%]="100 * row.count / groupMax"></span>
+                                </div>
+                              </li>
+                            }
+                          </ul>
+                        </section>
+                      }
+                    }
+                  </article>
+                }
+              }
+            </div>
+          }
+        }
+      </section>
+    }
+  }
+</main>

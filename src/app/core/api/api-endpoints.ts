@@ -8,6 +8,26 @@ export const API_ENDPOINTS = {
     scan: '/assets/scan/',
     history: (id: number) => `/assets/${id}/history/`,
   },
+  assemblies: {
+    root: '/assemblies/',
+    detail: (id: number) => `/assemblies/${id}/`,
+    start: (id: number) => `/assemblies/${id}/start/`,
+    finish: (id: number) => `/assemblies/${id}/finish/`,
+    cancel: (id: number) => `/assemblies/${id}/cancel/`,
+    agreements: (id: number) => `/assemblies/${id}/agreements/`,
+  },
+  agreements: {
+    root: '/agreements/',
+    detail: (id: number) => `/agreements/${id}/`,
+    start: (id: number) => `/agreements/${id}/start/`,
+    complete: (id: number) => `/agreements/${id}/complete/`,
+    cancel: (id: number) => `/agreements/${id}/cancel/`,
+    history: (id: number) => `/agreements/${id}/history/`,
+    responsibles: '/agreements/responsibles/',
+    attachments: (id: number) => `/agreements/${id}/attachments/`,
+    attachment: (id: number, attachmentId: number) => `/agreements/${id}/attachments/${attachmentId}/`,
+    downloadAttachment: (id: number, attachmentId: number) => `/agreements/${id}/attachments/${attachmentId}/download/`,
+  },
   maintenance: {
     orders: '/maintenance/orders/',
     order: (id: number) => `/maintenance/orders/${id}/`,
@@ -34,6 +54,18 @@ export const API_ENDPOINTS = {
     export: '/reports/export/',
   },
   visitConsultation: '/security/cu12/visits/',
+  community: {
+    // CU26: gestión de áreas comunes, horarios y bloqueos.
+    areas: '/community/areas/',
+    area: (id: number) => `/community/areas/${id}/`,
+    areaSchedules: '/community/area-schedules/',
+    areaSchedule: (id: number) => `/community/area-schedules/${id}/`,
+    areaBlocks: '/community/area-blocks/',
+    areaBlock: (id: number) => `/community/area-blocks/${id}/`,
+    // CU27: reservas. El calendario las consume en modo solo lectura.
+    reservations: '/community/reservations/',
+    reservation: (id: number) => `/community/reservations/${id}/`,
+  },
   auth: {
     login: '/auth/login/',
     register: '/auth/register/',
@@ -150,5 +182,19 @@ export const API_ENDPOINTS = {
   },
   shiftLogs: { root: '/paquete2/novedades-turno/' },
   handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
+  announcements: {
+    root: '/paquete5/cu28/announcements/',
+    detail: (id: number | string) => `/paquete5/cu28/announcements/${id}/`,
+    publish: (id: number | string) => `/paquete5/cu28/announcements/${id}/publish/`,
+    archive: (id: number | string) => `/paquete5/cu28/announcements/${id}/archive/`,
+  },
+  notifications: {
+    root: '/notifications/',
+    detail: (id: number | string) => `/notifications/${id}/`,
+    markRead: (id: number | string) => `/notifications/${id}/mark_read/`,
+    markAllRead: '/notifications/mark_all_read/',
+    unreadCount: '/notifications/unread_count/',
+    devices: '/notifications/devices/',
+  },
 } as const;
 

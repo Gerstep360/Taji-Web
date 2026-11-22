@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { DASHBOARD_ROLES } from './paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/operational-dashboard.api';
 
 import { anyPermissionGuard, authGuard, guestGuard, permissionGuard, roleOrPermissionGuard, superuserGuard } from './core/auth/auth.guard';
 
@@ -73,10 +74,24 @@ export const routes: Routes = [
         title: 'Órdenes de trabajo | Taji',
       },
       {
+        path: 'reservas-areas',
+        canActivate: [anyPermissionGuard(['manage_reservations'])],
+        loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/cu27_reservas_areas/reservas.page').then(m => m.ReservasPage),
+        title: 'Reservas de áreas comunes | Taji',
+      },
+      {
         path: 'identificar-activo-qr',
         canActivate: [anyPermissionGuard(['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'])],
         loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(m => m.AssetQRPage),
         title: 'Identificar activo mediante QR | Taji',
+      },
+      {
+        path: 'comunicados',
+        loadComponent: () =>
+          import(
+            './paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/announcements.page'
+          ).then((m) => m.AnnouncementsPage),
+        title: 'Comunicados y Notificaciones | Taji',
       },
       {
         path: 'reportes',
@@ -128,10 +143,24 @@ export const routes: Routes = [
         title: 'Todos los condominios | Taji',
       },
       {
+        path: 'calendario-reservas',
+        canActivate: [anyPermissionGuard(['manage_reservations', 'reserve_areas'])],
+        loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/cu26_areas_comunes/calendario.page').then(m => m.CalendarioPage),
+        title: 'Áreas Comunes y Reservas | Taji',
+      },
+      {
         path: 'reportes-personalizables',
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin'], [])],
         loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/reportes/reportes.page').then(m => m.ReportsPage),
         title: 'Reportes personalizables | Taji',
+      },
+      {
+        path: 'dashboard-reportes',
+        canActivate: [roleOrPermissionGuard(DASHBOARD_ROLES, [])],
+        loadComponent: () =>
+          import('./paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/operational-dashboard.page')
+            .then((module) => module.OperationalDashboardPage),
+        title: 'Dashboard operativo | Taji',
       },
       {
         path: 'inicio',
@@ -286,6 +315,14 @@ export const routes: Routes = [
         title: 'Entrega y Recepción de Turno | Taji',
       },
       {
+        path: 'asambleas',
+        loadComponent: () =>
+          import('./paquetes/paquete5_servicios_comunidad/cu29_asambleas_acuerdos').then(
+            (m) => m.AsambleasPage,
+          ),
+        title: 'Asambleas y Acuerdos | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),
@@ -308,6 +345,17 @@ export const routes: Routes = [
         title: 'Error del servidor | Taji',
       },
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      ...[
+        { path: 'operaciones/garantias', kind: 'warranties', title: 'Garantías' },
+        { path: 'operaciones/cotizaciones', kind: 'quotes', title: 'Cotizaciones' },
+        { path: 'operaciones/inspecciones', kind: 'inspections', title: 'Inspecciones operativas' },
+      ].map(item => ({
+        path: item.path,
+        canActivate: [permissionGuard('manage_settings')],
+        data: { kind: item.kind },
+        title: `${item.title} | Taji`,
+        loadComponent: () => import('./paquetes/paquete7_operaciones/operations.page').then(m => m.OperationsPage),
+      })),
     ],
   },
   {

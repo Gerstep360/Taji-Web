@@ -73,6 +73,12 @@ export const routes: Routes = [
         title: 'Órdenes de trabajo | Taji',
       },
       {
+        path: 'reservas-areas',
+        canActivate: [anyPermissionGuard(['manage_reservations'])],
+        loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/cu27_reservas_areas/reservas.page').then(m => m.ReservasPage),
+        title: 'Reservas de áreas comunes | Taji',
+      },
+      {
         path: 'identificar-activo-qr',
         canActivate: [anyPermissionGuard(['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'])],
         loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(m => m.AssetQRPage),

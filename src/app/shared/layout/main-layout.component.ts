@@ -436,10 +436,17 @@ export class MainLayoutComponent {
       icon: 'layers',
       items: [
         {
-          label: 'Áreas Comunes y Reservas',
+          label: 'Áreas comunes y horarios',
           icon: 'calendar',
           route: '/calendario-reservas',
           permissions: ['manage_reservations', 'reserve_areas'],
+          isAvailable: true,
+        },
+        {
+          label: 'Administrar reservas',
+          icon: 'calendar',
+          route: '/reservas-areas',
+          permissions: ['manage_reservations'],
           isAvailable: true,
         },
         {

@@ -1,10 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { IconComponent } from '../ui/icon.component';
 import { LogoComponent } from '../ui/logo.component';
+import { NotificationBellComponent } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/components/notification-bell.component';
+import { AnnouncementPopupModalComponent } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/components/announcement-popup-modal.component';
+import { NotificationModalService } from '../../paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/services/notification-modal.service';
 
 interface SubNavItem {
   label: string;
@@ -34,8 +37,18 @@ interface PackageDropdown {
 
 @Component({
   selector: 'taji-main-layout',
-  imports: [LogoComponent, IconComponent, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    LogoComponent,
+    IconComponent,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    NotificationBellComponent,
+    AnnouncementPopupModalComponent,
+  ],
   template: `
+    <taji-announcement-popup-modal />
+
     <div class="app-shell">
       @if (isMobileMenuOpen()) {
         <div class="sidebar-backdrop" (click)="closeMobileMenu()" aria-hidden="true"></div>
@@ -153,6 +166,7 @@ interface PackageDropdown {
             </div>
           </div>
           <div class="topbar-right">
+            <taji-notification-bell />
             <a
               routerLink="/mi-condominio"
               class="tenant-pill"
@@ -182,9 +196,11 @@ interface PackageDropdown {
   styleUrl: './main-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly notifService = inject(NotificationModalService);
+
   readonly user = this.auth.user;
   readonly activeTenant = computed(() => this.user()?.active_tenant ?? null);
   readonly isMobileMenuOpen = signal<boolean>(false);
@@ -194,7 +210,12 @@ export class MainLayoutComponent {
       .pipe(filter((e) => e instanceof NavigationEnd))
       .subscribe(() => {
         this.closeMobileMenu();
+        this.notifService.checkPendingHighPriority();
       });
+  }
+
+  ngOnInit(): void {
+    this.notifService.checkPendingHighPriority();
   }
 
   toggleMobileMenu(): void {
@@ -433,7 +454,8 @@ export class MainLayoutComponent {
         {
           label: 'Comunicados y Avisos',
           icon: 'bell',
-          isAvailable: false,
+          route: '/comunicados',
+          isAvailable: true,
         },
         {
           label: 'Asambleas y Acuerdos',

@@ -79,6 +79,14 @@ export const routes: Routes = [
         title: 'Identificar activo mediante QR | Taji',
       },
       {
+        path: 'comunicados',
+        loadComponent: () =>
+          import(
+            './paquetes/paquete5_servicios_comunidad/cu28_comunicados_notificaciones/announcements.page'
+          ).then((m) => m.AnnouncementsPage),
+        title: 'Comunicados y Notificaciones | Taji',
+      },
+      {
         path: 'reportes',
         canActivate: [roleOrPermissionGuard(['admin', 'administrador', 'superadmin', 'seguridad', 'operador'], [])],
         loadComponent: () =>

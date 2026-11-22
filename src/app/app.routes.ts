@@ -306,6 +306,14 @@ export const routes: Routes = [
         title: 'Entrega y Recepción de Turno | Taji',
       },
       {
+        path: 'asambleas',
+        loadComponent: () =>
+          import('./paquetes/paquete5_servicios_comunidad/cu29_asambleas_acuerdos').then(
+            (m) => m.AsambleasPage,
+          ),
+        title: 'Asambleas y Acuerdos | Taji',
+      },
+      {
         path: 'acceso-denegado',
         loadComponent: () =>
           import('./shared/pages/errors/system-error.page').then((m) => m.SystemErrorPage),

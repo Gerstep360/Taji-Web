@@ -479,7 +479,9 @@ export class MainLayoutComponent implements OnInit {
         {
           label: 'Asambleas y Acuerdos',
           icon: 'landmark',
-          isAvailable: false,
+          route: '/asambleas',
+          permissions: ['manage_assemblies', 'track_assembly_decisions', 'view_announcements'],
+          isAvailable: true,
         },
         {
           label: 'Dashboard y Reportes',

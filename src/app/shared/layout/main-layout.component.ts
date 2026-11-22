@@ -335,6 +335,13 @@ export class MainLayoutComponent implements OnInit {
           isAvailable: true,
         },
         {
+          label: 'Vehículos y Placas',
+          icon: 'car',
+          route: '/vehiculos-placas',
+          permissions: ['validate_visits', 'manage_residents', 'register_entry_exit', 'manage_visits'],
+          isAvailable: true,
+        },
+        {
           label: 'Turnos de seguridad',
           icon: 'clock',
           route: '/turnos-seguridad',

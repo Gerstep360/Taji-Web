@@ -1,0 +1,294 @@
+<div class="user-vehicles-container">
+  <!-- Encabezado de la página -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="breadcrumbs">
+        <span>Seguridad y Accesos</span>
+        <span class="sep">/</span>
+        <span class="current">Vehículos y Placas</span>
+      </div>
+      <h1>Vehículos y Placas de Residentes</h1>
+      <p class="subtitle">
+        Gestiona y vincula las placas de vehículos a los residentes del condominio.
+        Permite el reconocimiento automático al detectar carros en la cámara de portería.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a routerLink="/reconocimiento-camara" class="btn-camara-link" title="Ir a la cámara de detección">
+        <taji-icon name="video" [size]="18" />
+        <span>Abrir Cámara en Vivo</span>
+      </a>
+      <button type="button" class="btn-primary" (click)="openCreateModal()">
+        <taji-icon name="plus" [size]="18" />
+        <span>Registrar Placa</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mensajes de feedback -->
+  @if (successMessage()) {
+    <div class="alert alert-success" role="alert">
+      <taji-icon name="check" [size]="18" />
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      <taji-icon name="alert-triangle" [size]="18" />
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Barra de control y búsqueda -->
+  <div class="toolbar">
+    <div class="search-box">
+      <taji-icon name="search" [size]="18" class="search-icon" />
+      <input
+        type="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        placeholder="Buscar por placa, residente, modelo o unidad..."
+        aria-label="Buscar placa o vehículo"
+      />
+      @if (searchTerm()) {
+        <button type="button" class="btn-clear" (click)="searchTerm.set('')" aria-label="Limpiar búsqueda">
+          <taji-icon name="x" [size]="16" />
+        </button>
+      }
+    </div>
+
+    <div class="stats-counter">
+      <span class="counter-badge">
+        <strong>{{ filteredVehicles().length }}</strong> {{ filteredVehicles().length === 1 ? 'vehículo' : 'vehículos' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Estado de carga -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando catálogo de vehículos y residentes...</p>
+    </div>
+  } @else if (filteredVehicles().length === 0) {
+    <!-- Estado vacío -->
+    <div class="empty-state">
+      <div class="empty-icon">🚗</div>
+      @if (searchTerm()) {
+        <h3>No se encontraron vehículos para "{{ searchTerm() }}"</h3>
+        <p>Intenta con otra placa o el nombre del propietario.</p>
+        <button type="button" class="btn-secondary" (click)="searchTerm.set('')">Ver todos los vehículos</button>
+      } @else {
+        <h3>No hay placas ni vehículos registrados aún</h3>
+        <p>Registra las placas de los residentes para que la cámara los identifique de forma automática al ingresar.</p>
+        <button type="button" class="btn-primary" (click)="openCreateModal()">
+          <taji-icon name="plus" [size]="18" />
+          <span>Registrar el Primer Vehículo</span>
+        </button>
+      }
+    </div>
+  } @else {
+    <!-- Grid de tarjetas de vehículos -->
+    <div class="vehicles-grid">
+      @for (v of filteredVehicles(); track v.id) {
+        <article class="vehicle-card">
+          <!-- Placa automotriz estilizada -->
+          <div class="plate-strip">
+            <div class="license-plate">
+              <span class="plate-bolt bolt-left"></span>
+              <span class="plate-text">{{ v.plate }}</span>
+              <span class="plate-bolt bolt-right"></span>
+            </div>
+            <div class="card-menu">
+              <button
+                type="button"
+                class="btn-icon"
+                (click)="openEditModal(v)"
+                title="Editar vehículo"
+                aria-label="Editar vehículo"
+              >
+                <taji-icon name="file-text" [size]="16" />
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-icon-danger"
+                (click)="confirmDelete(v)"
+                title="Eliminar placa"
+                aria-label="Eliminar placa"
+              >
+                <taji-icon name="trash" [size]="16" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Información del Propietario / Residente -->
+          <div class="card-body">
+            <div class="resident-info">
+              <div class="resident-avatar">
+                {{ v.user_name ? (v.user_name.charAt(0) | uppercase) : '?' }}
+              </div>
+              <div class="resident-meta">
+                <span class="label-eyebrow">Propietario / Residente</span>
+                <strong class="resident-name">
+                  {{ v.user_name || 'Sin residente asignado' }}
+                </strong>
+                @if (v.unit_info) {
+                  <span class="unit-badge">
+                    <taji-icon name="home" [size]="12" />
+                    {{ v.unit_info }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Detalles del vehículo -->
+            <div class="vehicle-details">
+              <div class="detail-row">
+                <span class="detail-label">Descripción:</span>
+                <span class="detail-val">{{ v.description || 'Sin descripción adicional' }}</span>
+              </div>
+              @if (v.user_email) {
+                <div class="detail-row">
+                  <span class="detail-label">Contacto:</span>
+                  <span class="detail-val">{{ v.user_email }}</span>
+                </div>
+              }
+              @if (v.user_phone) {
+                <div class="detail-row">
+                  <span class="detail-label">Teléfono:</span>
+                  <span class="detail-val">{{ v.user_phone }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span class="timestamp" title="Fecha de registro">
+              Registrado {{ v.created_at ? (v.created_at | date:'dd/MM/yyyy') : 'previamente' }}
+            </span>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  <!-- Modal Crear / Editar Vehículo -->
+  @if (isModalOpen()) {
+    <div class="modal-backdrop" (click)="closeModal()" aria-hidden="true"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" [attr.aria-labelledby]="'modal-title'">
+      <div class="modal-header">
+        <h2 id="modal-title">{{ editingVehicle() ? 'Editar Vehículo y Placa' : 'Registrar Nueva Placa' }}</h2>
+        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Cerrar modal">
+          <taji-icon name="x" [size]="20" />
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (formError()) {
+          <div class="alert alert-danger" role="alert">
+            <taji-icon name="alert-triangle" [size]="16" />
+            <span>{{ formError() }}</span>
+          </div>
+        }
+
+        <!-- Campo Placa -->
+        <div class="form-group">
+          <label for="plate-input">
+            Placa de Matrícula <span class="req">*</span>
+          </label>
+          <div class="plate-input-wrapper">
+            <input
+              id="plate-input"
+              type="text"
+              class="plate-field"
+              [ngModel]="formPlate()"
+              (ngModelChange)="onPlateInput($event)"
+              placeholder="Ej. ABC-1234"
+              maxlength="20"
+              autocomplete="off"
+            />
+          </div>
+          <span class="field-hint">Se normaliza automáticamente a mayúsculas y caracteres válidos.</span>
+        </div>
+
+        <!-- Campo Residente / Propietario -->
+        <div class="form-group">
+          <label for="user-select">Residente / Propietario Asociado</label>
+          <select
+            id="user-select"
+            class="form-select"
+            [ngModel]="formUserId()"
+            (ngModelChange)="formUserId.set($event)"
+          >
+            <option [ngValue]="null">-- Sin residente asociado (Vehículo general) --</option>
+            @for (m of members(); track m.id) {
+              <option [ngValue]="m.id">
+                {{ m.name }} ({{ m.role || 'Residente' }}) - {{ m.email }}
+              </option>
+            }
+          </select>
+          <span class="field-hint">Al reconocer la placa en portería se mostrará este residente.</span>
+        </div>
+
+        <!-- Campo Descripción -->
+        <div class="form-group">
+          <label for="desc-input">Descripción del Vehículo</label>
+          <input
+            id="desc-input"
+            type="text"
+            class="form-control"
+            [ngModel]="formDescription()"
+            (ngModelChange)="formDescription.set($event)"
+            placeholder="Ej. Toyota Corolla 2023 Blanco, Suzuki Jimny Verde..."
+            maxlength="120"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary" (click)="saveVehicle()" [disabled]="saving()">
+          @if (saving()) {
+            <span>Guardando...</span>
+          } @else {
+            <span>{{ editingVehicle() ? 'Guardar Cambios' : 'Registrar Vehículo' }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Confirmar Eliminación -->
+  @if (isDeleteModalOpen() && deletingVehicle(); as target) {
+    <div class="modal-backdrop" (click)="closeDeleteModal()" aria-hidden="true"></div>
+    <div class="modal-dialog modal-sm" role="alertdialog" aria-modal="true">
+      <div class="modal-header">
+        <h2>Eliminar Vehículo</h2>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()" aria-label="Cerrar modal">
+          <taji-icon name="x" [size]="20" />
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>
+          ¿Estás seguro de que deseas eliminar la placa <strong>{{ target.plate }}</strong>?
+        </p>
+        <p class="text-muted">
+          {{ target.user_name ? 'Asociada a: ' + target.user_name : 'Sin residente asignado.' }}
+          Esta acción no se puede deshacer.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeDeleteModal()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button type="button" class="btn-danger" (click)="executeDelete()" [disabled]="saving()">
+          {{ saving() ? 'Eliminando...' : 'Sí, Eliminar' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

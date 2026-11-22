@@ -1,10 +1,15 @@
 <section class="webcam">
   <header class="heading">
-    <div><p class="eyebrow">Sprint 4 · CU32 · Demostración</p>
-      <h1>Reconocimiento por cámara</h1>
-      <p>Detecta objetos en vivo con una sola webcam. La cámara empieza apagada.</p>
+    <div>
+      <p class="eyebrow">Sprint 4 · CU32 · Detección e IA</p>
+      <h1>Reconocimiento por cámara y matrículas</h1>
+      <p>Detecta vehículos y personas en tiempo real. Al detectar un auto con la lectura habilitada, lee su placa de forma automática.</p>
     </div>
     <div class="actions">
+      <a routerLink="/vehiculos-placas" class="btn-link-vehicles" title="Gestionar placas y residentes">
+        <span>🚗</span>
+        <span>Gestionar Placas de Residentes</span>
+      </a>
       @if (state() === 'Apagada' || state() === 'Error' || state() === 'Sin cámara') {
         <button type="button" class="primary" (click)="start()">Iniciar cámara</button>
       } @else {
@@ -15,48 +20,118 @@
   @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
   <div class="workspace">
     <section class="panel camera" aria-label="Visor de cámara">
-      <div class="bar"><span class="status" role="status"><i [class.active]="state() === 'Reconociendo'"></i>{{ state() }}</span>
-        <span>{{ boxes().length }} visibles</span></div>
+      <div class="bar">
+        <span class="status" role="status"><i [class.active]="state() === 'Reconociendo'"></i>{{ state() }}</span>
+        <span>{{ boxes().length }} visibles</span>
+      </div>
       <div class="monitor" [style.aspect-ratio]="ratio()">
         <video #video playsinline muted aria-label="Vista en vivo de la webcam"></video>
         @if (state() !== 'Reconociendo') {
-          <div class="standby"><span class="target" aria-hidden="true"></span><strong>{{ state() }}</strong>
-            <span>La detección de objetos se realiza en este navegador.</span></div>
-        }
-        @if (ocrEnabled() && state() === 'Reconociendo') {
-          <div class="guide" [style.left.%]="guide.x * 100" [style.top.%]="guide.y * 100"
-            [style.width.%]="guide.w * 100" [style.height.%]="guide.h * 100"><span>Centra la placa aquí</span></div>
+          <div class="standby">
+            <span class="target" aria-hidden="true"></span>
+            <strong>{{ state() }}</strong>
+            <span>La detección de vehículos se ejecuta localmente en el navegador.</span>
+          </div>
         }
         @for (box of boxes(); track $index) {
-          <div class="box" [style.left.%]="box.x * 100" [style.top.%]="box.y * 100"
-            [style.width.%]="box.w * 100" [style.height.%]="box.h * 100">
-            <span>{{ labels[box.kind] }} · {{ box.score | percent:'1.0-0' }}</span>
+          <div
+            class="box"
+            [class.vehicle-active]="isVehicle(box.kind) && ocrEnabled()"
+            [style.left.%]="box.x * 100"
+            [style.top.%]="box.y * 100"
+            [style.width.%]="box.w * 100"
+            [style.height.%]="box.h * 100"
+          >
+            <span class="tag-title">{{ labels[box.kind] }} · {{ box.score | percent:'1.0-0' }}</span>
+            @if (isVehicle(box.kind) && ocrEnabled()) {
+              <span class="tag-ocr">Auto detectado · Leyendo placa</span>
+            }
           </div>
         }
       </div>
       <div class="details">
-        <label><input #ocr type="checkbox" [checked]="ocrEnabled()" (change)="toggleOcr(ocr.checked)"> Habilitar lectura de placas</label>
-        <p>Al habilitarla, Taji envía a NVIDIA recortes puntuales de la guía, sin guardar imágenes ni video. Usa material autorizado de demostración.</p>
+        <label>
+          <input #ocr type="checkbox" [checked]="ocrEnabled()" (change)="toggleOcr(ocr.checked)">
+          Habilitar lectura automática de placas
+        </label>
+        <p>Al activarla, en cuanto la cámara detecta cualquier vehículo en cuadro, Taji lee automáticamente su matrícula sin obligar a centrarlo en una posición fija.</p>
         <h2>Objetos visibles</h2>
         @if (!boxes().length) { <p>Sin detecciones por ahora.</p> }
         <ul class="objects">
-          @for (box of boxes(); track $index) { <li>{{ labels[box.kind] }} <strong>{{ box.score | percent:'1.0-0' }}</strong></li> }
+          @for (box of boxes(); track $index) {
+            <li>{{ labels[box.kind] }} <strong>{{ box.score | percent:'1.0-0' }}</strong></li>
+          }
         </ul>
       </div>
     </section>
+
     <aside class="results">
       <section class="panel details">
-        <h2>Última placa leída</h2>
-        <p role="status">{{ plateState() }}</p>
-        @if (plate()) { <strong class="plate">{{ plate() }}</strong><p>Dos lecturas consecutivas coinciden. Verifica la placa visualmente.</p> }
-        <h2>Datos del vehículo</h2>
-        @if (vehicle(); as match) { <p>{{ match.description || 'Placa registrada en este condominio.' }}</p> }
-        @else { <p>Sin datos de vehículo para mostrar.</p> }
-        <p>Una coincidencia no autoriza el ingreso.</p>
+        <h2>Última matrícula leída</h2>
+        <div class="plate-status-box">
+          <span class="plate-status-badge" [class.badge-success]="plate()" [class.badge-active]="plateState().includes('Leyendo')">
+            {{ plateState() }}
+          </span>
+          @if (plate()) {
+            <button type="button" class="btn-retry" (click)="retryPlateDetection()" title="Escanear otro vehículo">
+              Releer / Nuevo vehículo
+            </button>
+          }
+        </div>
+
+        @if (plate()) {
+          <div class="license-plate-display">
+            <span class="bolt b-l"></span>
+            <strong class="plate-number">{{ plate() }}</strong>
+            <span class="bolt b-r"></span>
+          </div>
+        }
+
+        <h2>Datos del vehículo y residente</h2>
+        @if (vehicle(); as match) {
+          <div class="vehicle-info-card">
+            <div class="info-row">
+              <span class="info-label">Propietario:</span>
+              <strong class="info-val">{{ match.user_name || 'Sin residente asignado' }}</strong>
+            </div>
+            @if (match.unit_info) {
+              <div class="info-row">
+                <span class="info-label">Unidad / Dpto:</span>
+                <span class="info-val badge-unit">{{ match.unit_info }}</span>
+              </div>
+            }
+            @if (match.user_phone) {
+              <div class="info-row">
+                <span class="info-label">Teléfono:</span>
+                <span class="info-val">{{ match.user_phone }}</span>
+              </div>
+            }
+            <div class="info-row">
+              <span class="info-label">Vehículo:</span>
+              <span class="info-val">{{ match.description || 'Registrado en el condominio' }}</span>
+            </div>
+            <div class="card-action">
+              <a routerLink="/vehiculos-placas" class="btn-link-action">
+                Ver en directorio de vehículos →
+              </a>
+            </div>
+          </div>
+        } @else if (plate()) {
+          <div class="vehicle-unregistered-box">
+            <p>Esta placa no está registrada para ningún residente de este condominio.</p>
+            <a [routerLink]="['/vehiculos-placas']" [queryParams]="{ plate: plate() }" class="btn-register-link">
+              + Registrar esta placa a un residente
+            </a>
+          </div>
+        } @else {
+          <p class="placeholder-text">Acerca un vehículo a la cámara para identificarlo.</p>
+        }
+        <p class="disclaimer-text">Una coincidencia vehicular no autoriza automáticamente el ingreso.</p>
       </section>
+
       <section class="panel details">
         <h2>Eventos recientes</h2>
-        <p>Solo durante la sesión de cámara.</p>
+        <p>Solo durante la sesión activa de cámara.</p>
         @if (!events().length) { <p>Todavía no hay eventos.</p> }
         <ul class="timeline">
           @for (event of events(); track $index) {

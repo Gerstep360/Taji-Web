@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { DatePipe, PercentPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import type { ObjectDetection } from '@tensorflow-models/coco-ssd';
 import { ApiClient, KEEP_PAGE_ON_SERVER_ERROR } from '../../../core/api/api-client.service';
@@ -8,11 +9,20 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { coversGuide, Detection, EventCooldown, guide, labels, loadDetector, PlateConsensus } from './vision';
 import { VisualPanel } from './visual-panel';
 
-type Vehicle = { plate: string; description: string };
+export type Vehicle = {
+  id?: number;
+  plate: string;
+  description: string;
+  user?: number | null;
+  user_name?: string;
+  user_email?: string;
+  user_phone?: string;
+  unit_info?: string;
+};
 
 @Component({
   selector: 'app-webcam-demo',
-  imports: [DatePipe, PercentPipe, VisualPanel],
+  imports: [DatePipe, PercentPipe, RouterLink, VisualPanel],
   templateUrl: './webcam.page.html',
   styleUrl: './webcam.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +36,7 @@ export class WebcamPage {
   readonly state = signal('Apagada');
   readonly error = signal('');
   readonly boxes = signal<Detection[]>([]);
+  readonly detectedVehicleBox = signal<Detection | null>(null);
   readonly ratio = signal('16 / 9');
   readonly events = signal<{ label: string; at: number }[]>([]);
   readonly ocrEnabled = signal(false);
@@ -194,25 +205,59 @@ export class WebcamPage {
     if (this.cooldown.accept(key, at)) this.events.update(items => [{ label, at }, ...items].slice(0, 8));
   }
 
+  isVehicle(kind: string): boolean {
+    return ['car', 'truck', 'bus', 'motorcycle'].includes(kind);
+  }
+
+  retryPlateDetection() {
+    this.resetPlate();
+  }
+
   private maybeRead(video: HTMLVideoElement, boxes: Detection[]) {
-    if (boxes.filter(coversGuide).length !== 1) {
-      if (this.wasInGuide) this.resetPlate();
+    const vehicleKinds = ['car', 'truck', 'bus', 'motorcycle'];
+    const vehicleBoxes = boxes.filter(b => vehicleKinds.includes(b.kind) && b.score >= 0.40);
+
+    if (vehicleBoxes.length === 0) {
+      this.detectedVehicleBox.set(null);
+      if (this.wasInGuide && !this.verified) {
+        this.resetPlate();
+      }
       return;
     }
+
+    const target = vehicleBoxes.reduce((prev, curr) => (curr.w * curr.h > prev.w * prev.h ? curr : prev));
+    this.detectedVehicleBox.set(target);
     this.wasInGuide = true;
+
     const now = performance.now();
-    if (this.verified || this.attempts >= 3 || this.request || now - this.lastRead < 11_000 ||
-        video.videoWidth * guide.w < 100 || video.videoHeight * guide.h < 32) return;
+    if (this.verified || this.request || now - this.lastRead < 2200) return;
+
+    const vx = target.x * video.videoWidth;
+    const vy = target.y * video.videoHeight;
+    const vw = target.w * video.videoWidth;
+    const vh = target.h * video.videoHeight;
+
+    if (vw < 60 || vh < 30) return;
+
     this.lastRead = now;
     this.attempts++;
+
+    const cropX = Math.max(0, vx + vw * 0.05);
+    const cropY = Math.max(0, vy + vh * 0.25);
+    const cropW = Math.min(video.videoWidth - cropX, vw * 0.90);
+    const cropH = Math.min(video.videoHeight - cropY, vh * 0.75);
+
+    const scale = Math.min(640 / Math.max(cropW, 1), 360 / Math.max(cropH, 1), 1.0);
+    const finalW = Math.floor(Math.max(120, Math.min(640, cropW * scale)));
+    const finalH = Math.floor(Math.max(48, Math.min(360, cropH * scale)));
+
     const crop = document.createElement('canvas');
-    const w = video.videoWidth * guide.w, h = video.videoHeight * guide.h;
-    crop.width = Math.floor(Math.min(640, w));
-    crop.height = Math.floor(Math.min(360, h));
-    crop.getContext('2d')!.drawImage(video, video.videoWidth * guide.x, video.videoHeight * guide.y,
-      w, h, 0, 0, crop.width, crop.height);
+    crop.width = finalW;
+    crop.height = finalH;
+    crop.getContext('2d')!.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, finalW, finalH);
+
     const run = this.requestEpoch;
-    this.plateState.set('Leyendo');
+    this.plateState.set('Leyendo matrícula...');
     crop.toBlob(blob => {
       if (run !== this.requestEpoch) return;
       if (!blob) { this.plateState.set('Error al preparar recorte'); return; }
@@ -223,24 +268,29 @@ export class WebcamPage {
         .subscribe({
           next: ({ plate }) => {
             this.request = undefined;
-            const confirmed = this.consensus.observe(plate, performance.now());
-            this.plateState.set(confirmed ? 'Placa detectada' : plate ? 'Lectura incierta' : 'Sin placa legible');
-            if (confirmed) {
+            if (plate) {
               this.verified = true;
-              this.plate.set(confirmed);
-              this.log('plate', 'Placa confirmada por dos lecturas');
+              this.plate.set(plate);
+              this.plateState.set(`Matrícula detectada: ${plate}`);
+              this.log('plate', `Matrícula detectada: ${plate}`);
               this.request = this.api.post<{plate: string}, {registered: boolean; vehicle: Vehicle | null}>(
-                '/paquete3/cu32/plate/lookup/', { plate: confirmed }, options).subscribe({
+                '/paquete3/cu32/plate/lookup/', { plate }, options).subscribe({
                   next: result => {
                     this.vehicle.set(result.vehicle);
-                    this.plateState.set(result.registered ? 'Placa detectada' : 'Vehículo no registrado');
-                    this.log('lookup', result.registered ? 'Vehículo registrado' : 'Vehículo no registrado');
+                    this.plateState.set(result.registered ? 'Vehículo registrado' : 'Vehículo no registrado');
+                    this.log('lookup', result.registered ? 'Vehículo registrado en condominio' : 'Vehículo no registrado');
                   },
                   error: () => this.plateState.set('Error al consultar registro'),
                 });
+            } else {
+              this.plateState.set('Vehículo en cuadro · Buscando matrícula...');
             }
           },
-          error: () => { this.request = undefined; this.consensus.reset(); this.plateState.set('Error de lectura'); },
+          error: () => {
+            this.request = undefined;
+            this.consensus.reset();
+            this.plateState.set('Error de lectura');
+          },
         });
     }, 'image/jpeg', .85);
   }

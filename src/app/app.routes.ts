@@ -237,6 +237,19 @@ export const routes: Routes = [
         title: 'Reconocimiento por cámara | Taji',
       },
       {
+        path: 'vehiculos-placas',
+        loadComponent: () =>
+          import(
+            './paquetes/paquete2_seguridad_accesos/vehiculos_placas/user-vehicles.page'
+          ).then((m) => m.UserVehiclesPage),
+        title: 'Vehículos y Placas de Residentes | Taji',
+      },
+      {
+        path: 'seguridad/vehiculos',
+        redirectTo: 'vehiculos-placas',
+        pathMatch: 'full',
+      },
+      {
         path: 'verificacion-facial',
         loadComponent: () =>
           import('./paquetes/paquete2_seguridad_accesos/cu17_verificacion_facial').then(

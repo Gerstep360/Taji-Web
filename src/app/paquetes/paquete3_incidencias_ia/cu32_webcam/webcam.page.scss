@@ -4,10 +4,20 @@ h1 { font-size:clamp(1.55rem, 3vw, 2.25rem); letter-spacing:-.04em; margin:.2rem
 h2 { font-size:1rem; margin:0 0 .5rem; }
 p { color:#52647a; margin:.4rem 0; line-height:1.55; }
 .eyebrow { text-transform:uppercase; font-size:.72rem; letter-spacing:.09em; font-weight:800; color:var(--taji-primary-strong); }
+.actions { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
 button { min-height:44px; border-radius:11px; padding:.65rem 1rem; font-weight:750; cursor:pointer; }
 .primary { color:white; background:var(--taji-primary-strong); border:1px solid transparent; }
 .secondary { color:var(--taji-ink); background:white; border:1px solid var(--taji-border); }
 button:focus-visible,input:focus-visible { outline:3px solid var(--taji-primary); outline-offset:3px; }
+
+.btn-link-vehicles {
+  display:inline-flex; align-items:center; gap:.45rem; min-height:44px; padding:.65rem 1rem;
+  border-radius:11px; font-weight:700; font-size:.88rem; text-decoration:none;
+  background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;
+  transition:all .15s ease;
+  &:hover { background:#e0f2fe; border-color:#7dd3fc; }
+}
+
 .workspace { display:grid; grid-template-columns:minmax(0, 2.25fr) minmax(16rem, 1fr); gap:1rem; align-items:start; }
 .panel { background:white; border:1px solid var(--taji-border); border-radius:16px; overflow:hidden; min-width:0; }
 .bar { display:flex; justify-content:space-between; padding:.75rem 1rem; font-size:.85rem; font-weight:700; }
@@ -18,16 +28,106 @@ button:focus-visible,input:focus-visible { outline:3px solid var(--taji-primary)
 video { display:block; width:100%; height:100%; object-fit:fill; }
 .standby { position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:.5rem; text-align:center; padding:1rem; color:#dcecff; }
 .target { width:3rem; height:2rem; border:2px dashed #8abaff; border-radius:.4rem; }
-.box,.guide { position:absolute; pointer-events:none; border:2px solid #6df7bc; }
-.guide { border:2px dashed #ffd480; z-index:1; }
-.box span,.guide span { position:absolute; top:0; left:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:#10233c; color:white; padding:.15rem .35rem; font-size:.72rem; }
+
+.box {
+  position:absolute; pointer-events:none; border:2px solid #6df7bc;
+  transition:border-color .2s;
+
+  &.vehicle-active {
+    border:2.5px solid #38bdf8;
+    box-shadow:0 0 12px rgba(56, 189, 248, .4);
+    z-index:2;
+  }
+}
+
+.tag-title, .tag-ocr {
+  position:absolute; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  color:white; padding:.2rem .4rem; font-size:.72rem; font-weight:700;
+}
+.tag-title { top:0; left:0; background:#10233c; border-bottom-right-radius:4px; }
+.tag-ocr {
+  bottom:0; left:0; background:#0284c7; border-top-right-radius:4px;
+  animation:pulseTag 1.5s infinite;
+}
+
+@keyframes pulseTag {
+  0%, 100% { opacity:1; }
+  50% { opacity:.75; }
+}
+
 .details { padding:1rem; }
 .details p { font-size:.88rem; }
 .details label { display:flex; align-items:center; gap:.6rem; min-height:44px; font-weight:700; }
 .details input { width:1.1rem; height:1.1rem; accent-color:var(--taji-primary-strong); }
 .details p + h2,.plate + h2 { margin-top:1rem; }
 .results { display:grid; gap:1rem; }
-.plate { display:inline-block; padding:.35rem .65rem; border:1px solid var(--taji-border); font-family:monospace; letter-spacing:.12em; }
+
+/* Estado de Matrícula */
+.plate-status-box {
+  display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.8rem;
+}
+.plate-status-badge {
+  display:inline-block; padding:.35rem .65rem; border-radius:6px; font-size:.8rem; font-weight:700;
+  background:#f1f5f9; color:#475569;
+
+  &.badge-active { background:#e0f2fe; color:#0369a1; }
+  &.badge-success { background:#dcfce7; color:#15803d; }
+}
+.btn-retry {
+  min-height:32px; padding:.2rem .6rem; font-size:.78rem; font-weight:600;
+  background:white; border:1px solid var(--taji-border); border-radius:6px; cursor:pointer;
+  &:hover { background:#f8fafc; }
+}
+
+/* Placa Automotriz en Panel */
+.license-plate-display {
+  position:relative; display:flex; align-items:center; justify-content:center;
+  background:#ffffff; color:#0f172a; border:2.5px solid #0f172a; border-radius:8px;
+  padding:.5rem 1.5rem; margin:.75rem 0 1.25rem;
+  box-shadow:0 3px 6px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.9);
+
+  .plate-number {
+    font-family:'Consolas', 'Courier New', monospace; font-size:1.6rem; font-weight:900;
+    letter-spacing:.15em; text-transform:uppercase;
+  }
+  .bolt {
+    position:absolute; width:7px; height:7px; border-radius:50%; background:#94a3b8; border:1px solid #475569;
+    &.b-l { left:8px; }
+    &.b-r { right:8px; }
+  }
+}
+
+/* Tarjeta de Vehículo Identificado */
+.vehicle-info-card {
+  background:#f8fafc; border:1px solid var(--taji-border); border-radius:10px; padding:.85rem;
+  display:flex; flex-direction:column; gap:.45rem; margin-top:.5rem;
+
+  .info-row { display:flex; justify-content:space-between; font-size:.84rem; gap:.5rem; }
+  .info-label { color:#64748b; font-weight:500; }
+  .info-val { color:#0f172a; font-weight:650; text-align:right; }
+  .badge-unit { color:#0284c7; background:#e0f2fe; padding:.1rem .35rem; border-radius:4px; }
+  .card-action { margin-top:.5rem; padding-top:.5rem; border-top:1px dashed #e2e8f0; }
+}
+
+.btn-link-action {
+  font-size:.82rem; font-weight:700; color:var(--taji-primary-strong); text-decoration:none;
+  &:hover { text-decoration:underline; }
+}
+
+.vehicle-unregistered-box {
+  background:#fffbeb; border:1px solid #fef3c7; border-radius:10px; padding:.85rem;
+  margin-top:.5rem;
+  p { font-size:.82rem; color:#92400e; margin:0 0 .6rem; }
+}
+.btn-register-link {
+  display:inline-block; font-size:.82rem; font-weight:750; color:#b45309; text-decoration:none;
+  background:#fef3c7; padding:.35rem .65rem; border-radius:6px;
+  &:hover { background:#fde68a; }
+}
+
+.placeholder-text { font-size:.85rem; color:#94a3b8; font-style:italic; }
+.disclaimer-text { font-size:.76rem; color:#94a3b8; margin-top:.6rem; }
+
 ul { list-style:none; padding:0; margin:.4rem 0 0; }
 .objects { display:flex; flex-wrap:wrap; gap:.5rem; }
 .objects li { background:var(--taji-primary-soft); padding:.35rem .55rem; border-radius:.4rem; font-size:.82rem; }

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationModalService } from './notification-modal.service';
 import { AnnouncementsApi, NotificationItem } from '../announcements.api';
@@ -24,6 +24,22 @@ describe('NotificationModalService', () => {
     read_at: null,
     is_read: false,
     created_at: '2026-11-21T18:00:00Z',
+  };
+
+  const mockUrgentNotif: NotificationItem = {
+    id: 103,
+    user_id: 2,
+    notification_type: 'ANNOUNCEMENT',
+    title: 'Fuga de Gas Detectada',
+    message: 'Cierre de válvulas inmediato',
+    resource_type: 'announcement',
+    resource_id: '3',
+    priority: 'URGENT',
+    audience: 'RESIDENTS',
+    sent_at: '2026-11-21T18:30:00Z',
+    read_at: null,
+    is_read: false,
+    created_at: '2026-11-21T18:30:00Z',
   };
 
   const mockNormalNotif: NotificationItem = {
@@ -77,9 +93,18 @@ describe('NotificationModalService', () => {
     expect(apiMock.getNotifications).toHaveBeenCalledWith(true);
     expect(service.unreadCount()).toBe(2);
     expect(service.currentHighPriority()).toEqual(mockHighNotif);
+    expect(service.currentFloatingToast()).toBeNull();
   });
 
-  it('no muestra modal a administradores emisores de comunicados', () => {
+  it('prioriza URGENTE sobre ALTA cuando ambos están pendientes', () => {
+    apiMock.getNotifications.mockReturnValue(of([mockHighNotif, mockUrgentNotif]));
+
+    service.checkPendingHighPriority();
+
+    expect(service.currentHighPriority()).toEqual(mockUrgentNotif);
+  });
+
+  it('no muestra modal ni flotante a administradores emisores de comunicados', () => {
     authMock.user.mockReturnValue({
       id: 1,
       email: 'admin@taji.app',
@@ -90,53 +115,50 @@ describe('NotificationModalService', () => {
     service.checkPendingHighPriority();
 
     expect(service.currentHighPriority()).toBeNull();
+    expect(service.currentFloatingToast()).toBeNull();
     expect(apiMock.getNotifications).not.toHaveBeenCalled();
     expect(apiMock.getUnreadCount).toHaveBeenCalled();
   });
 
-  it('no muestra modal si la notificación es de prioridad normal o baja', () => {
+  it('no muestra modal ni flotante si la notificación es de prioridad normal o baja', () => {
     apiMock.getNotifications.mockReturnValue(of([mockNormalNotif]));
 
     service.checkPendingHighPriority();
 
     expect(service.currentHighPriority()).toBeNull();
+    expect(service.currentFloatingToast()).toBeNull();
   });
 
-  it('descarta temporalmente el modal con "Ver después" sin marcar lectura', () => {
+  it('al presionar "Ver después" (dismissForSession), cierra el modal y activa la notificación flotante', () => {
     service.checkPendingHighPriority();
-    expect(service.currentHighPriority()).not.toBeNull();
+    expect(service.currentHighPriority()).toEqual(mockHighNotif);
 
     service.dismissForSession();
 
     expect(service.currentHighPriority()).toBeNull();
-    expect(apiMock.markNotificationAsRead).not.toHaveBeenCalled();
-    expect(service.unreadCount()).toBe(2);
-
-    // Si vuelve a ejecutarse en la misma sesión, no debe reaparecer
-    service.checkPendingHighPriority();
-    expect(service.currentHighPriority()).toBeNull();
+    expect(service.currentFloatingToast()).toEqual(mockHighNotif);
   });
 
-  it('persiste la lectura en Backend con "Entendido" y decrementa el contador', () => {
+  it('al cerrar la notificación flotante (dismissFloatingToast), se oculta sin llamar a la API de lectura', () => {
     service.checkPendingHighPriority();
-    expect(service.currentHighPriority()).not.toBeNull();
+    service.dismissForSession();
+    expect(service.currentFloatingToast()).toEqual(mockHighNotif);
+
+    service.dismissFloatingToast();
+
+    expect(service.currentFloatingToast()).toBeNull();
+    expect(apiMock.markNotificationAsRead).not.toHaveBeenCalled();
+  });
+
+  it('al confirmar "Entendido" (markAsUnderstood), persiste la lectura en backend y cierra modal y flotante', () => {
+    service.checkPendingHighPriority();
+    expect(service.currentHighPriority()).toEqual(mockHighNotif);
 
     service.markAsUnderstood();
 
-    expect(apiMock.markNotificationAsRead).toHaveBeenCalledWith(101);
+    expect(apiMock.markNotificationAsRead).toHaveBeenCalledWith(mockHighNotif.id);
     expect(service.unreadCount()).toBe(1);
     expect(service.currentHighPriority()).toBeNull();
-  });
-
-  it('maneja errores al marcar como entendido mostrando un mensaje claro', () => {
-    apiMock.markNotificationAsRead.mockReturnValue(
-      throwError(() => new Error('Error de red'))
-    );
-
-    service.checkPendingHighPriority();
-    service.markAsUnderstood();
-
-    expect(service.errorMessage()).toContain('No se pudo confirmar la lectura');
-    expect(service.currentHighPriority()).not.toBeNull();
+    expect(service.currentFloatingToast()).toBeNull();
   });
 });

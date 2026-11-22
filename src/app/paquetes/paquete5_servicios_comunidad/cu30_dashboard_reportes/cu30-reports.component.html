@@ -1,0 +1,371 @@
+@if (currentTenant() !== null) {
+  <section class="reports" aria-labelledby="cu30-reports-title" [attr.aria-busy]="busy() !== null">
+    <header class="reports-header">
+      <div>
+        <h2 id="cu30-reports-title">Reportes detallados</h2>
+        @if (catalog(); as available) {
+          <p class="reports-context">{{ available.context.name }} · {{ available.context.timezone }}</p>
+        }
+      </div>
+    </header>
+
+    @if (error(); as message) {
+      <div class="notice error" role="alert">
+        <taji-icon name="alert-triangle" [size]="16" />
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    @if (busy() === 'catalog') {
+      <div class="notice loading" role="status">
+        <taji-icon name="loader" [size]="16" />
+        <span>Cargando fuentes autorizadas…</span>
+      </div>
+    } @else if (!catalog()) {
+      <div class="catalog-retry">
+        <button type="button" class="button secondary compact-btn" (click)="reloadCatalog()">
+          <taji-icon name="refresh-cw" [size]="14" />
+          <span>Reintentar catálogo</span>
+        </button>
+      </div>
+    } @else if (!catalog()?.sources?.length) {
+      <div class="notice empty" role="status">
+        <taji-icon name="inbox" [size]="18" />
+        <span>No hay fuentes de reportes autorizadas para este contexto.</span>
+      </div>
+    } @else {
+      <form class="builder" (submit)="apply($event)" novalidate>
+        <!-- Barra de Configuración Principal -->
+        <div class="builder-toolbar">
+          <label class="control-label">Fuente de datos
+            <select #sourceSelect [value]="sourceKey()" (change)="selectSource(sourceSelect.value)">
+              @for (option of catalog()?.sources; track option.key) {
+                <option [value]="option.key">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="control-label">Fecha inicial
+            <input type="date" [value]="dates().date_from" (input)="setDate('date_from', $event.target.value)" />
+          </label>
+          <label class="control-label">Fecha final
+            <input type="date" [value]="dates().date_to" (input)="setDate('date_to', $event.target.value)" />
+          </label>
+          <label class="control-label">Filas por página
+            <select #sizeSelect [value]="pageSize()" (change)="setPageSize(sizeSelect.value)">
+              @for (size of [10, 25, 50, 100]; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select>
+          </label>
+          <div class="toolbar-action">
+            <button class="button primary preview-btn" type="submit" [disabled]="!source() || busy() !== null">
+              <taji-icon name="eye" [size]="15" />
+              <span>Previsualizar reporte</span>
+            </button>
+          </div>
+        </div>
+
+        @if (source(); as selected) {
+          <p class="source-description">{{ selected.description }}</p>
+
+          <!-- Sección Plegable: Columnas del reporte -->
+          <details class="accordion-card" open>
+            <summary class="accordion-header">
+              <div class="accordion-title">
+                <taji-icon name="layers" [size]="15" />
+                <span>Columnas del reporte</span>
+              </div>
+              <div class="accordion-meta">
+                <span class="count-badge">{{ columns().length }} de {{ selected.columns.length }} seleccionadas</span>
+                <span class="accordion-chevron"><taji-icon name="chevron-down" [size]="15" /></span>
+              </div>
+            </summary>
+            <div class="accordion-body">
+              <fieldset class="columns-fieldset">
+                <legend class="sr-only">Selección de columnas</legend>
+                <div class="columns-grid">
+                  @for (column of selected.columns; track column.key) {
+                    <label class="column-checkbox" [class.selected]="columns().includes(column.key)">
+                      <input
+                        type="checkbox"
+                        [checked]="columns().includes(column.key)"
+                        (change)="toggleColumn(column.key, $event.target.checked)"
+                      />
+                      <span>{{ column.label }}</span>
+                    </label>
+                  }
+                </div>
+              </fieldset>
+            </div>
+          </details>
+
+          <!-- Sección Plegable: Filtros avanzados -->
+          <details class="accordion-card" [open]="filters().length > 0">
+            <summary class="accordion-header">
+              <div class="accordion-title">
+                <taji-icon name="filter" [size]="15" />
+                <span>Filtros avanzados</span>
+              </div>
+              <div class="accordion-meta">
+                <span class="count-badge" [class.active]="filters().length > 0">
+                  {{ filters().length }} configurado{{ filters().length === 1 ? '' : 's' }}
+                </span>
+                <span class="accordion-chevron"><taji-icon name="chevron-down" [size]="15" /></span>
+              </div>
+            </summary>
+            <div class="accordion-body">
+              <fieldset class="rules-fieldset">
+                <legend class="sr-only">Filtros adicionales</legend>
+                @if (filters().length === 0) {
+                  <p class="empty-rules-hint">No hay filtros adicionales aplicados. Puedes agregar hasta 10 filtros específicos.</p>
+                }
+                @for (filter of filters(); track $index; let index = $index) {
+                  <div class="rule-row">
+                    <label class="rule-field">Campo del filtro {{ index + 1 }}
+                      <select #filterField [value]="filter.field" (change)="editFilter(index, 'field', filterField.value)">
+                        @for (item of selected.columns; track item.key) {
+                          @if (item.operators.length) { <option [value]="item.key">{{ item.label }}</option> }
+                        }
+                      </select>
+                    </label>
+                    <label class="rule-operator">Operador {{ index + 1 }}
+                      <select #filterOperator [value]="filter.operator" (change)="editFilter(index, 'operator', filterOperator.value)">
+                        @for (operator of column(filter.field)?.operators; track operator) {
+                          <option [value]="operator">{{ operatorLabel(operator) }}</option>
+                        }
+                      </select>
+                    </label>
+                    @if (needsValue(filter.operator)) {
+                      <label class="rule-value">Valor del filtro {{ index + 1 }}
+                        @if (column(filter.field)?.choices?.length) {
+                          <select #filterChoice [value]="filter.value" (change)="editFilter(index, 'value', filterChoice.value)">
+                            <option value="">Selecciona un valor</option>
+                            @for (choice of column(filter.field)?.choices; track choice.value) {
+                              <option [value]="choice.value">{{ choice.label }}</option>
+                            }
+                          </select>
+                        } @else {
+                          <input
+                            [type]="column(filter.field)?.type === 'datetime' || column(filter.field)?.type === 'date' ? 'date' : 'text'"
+                            [value]="filter.value"
+                            (input)="editFilter(index, 'value', $event.target.value)"
+                            placeholder="Valor a filtrar"
+                          />
+                        }
+                      </label>
+                    }
+                    <div class="rule-action">
+                      <button
+                        type="button"
+                        class="button danger compact-btn"
+                        (click)="removeFilter(index)"
+                        [attr.aria-label]="'Quitar filtro ' + (index + 1)"
+                      >
+                        <taji-icon name="trash-2" [size]="14" />
+                        <span>Quitar</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+                <div class="rules-footer">
+                  <button
+                    type="button"
+                    class="button secondary compact-btn"
+                    (click)="addFilter()"
+                    [disabled]="filters().length >= 10"
+                  >
+                    <taji-icon name="plus" [size]="14" />
+                    <span>Añadir filtro</span>
+                  </button>
+                  <small class="rules-limit-hint">{{ filters().length }} de 10 filtros</small>
+                </div>
+              </fieldset>
+            </div>
+          </details>
+
+          <!-- Sección Plegable: Ordenación -->
+          <details class="accordion-card" [open]="ordering().length > 0">
+            <summary class="accordion-header">
+              <div class="accordion-title">
+                <taji-icon name="bar-chart" [size]="15" />
+                <span>Ordenación</span>
+              </div>
+              <div class="accordion-meta">
+                <span class="count-badge" [class.active]="ordering().length > 0">
+                  {{ ordering().length }} criterio{{ ordering().length === 1 ? '' : 's' }}
+                </span>
+                <span class="accordion-chevron"><taji-icon name="chevron-down" [size]="15" /></span>
+              </div>
+            </summary>
+            <div class="accordion-body">
+              <fieldset class="rules-fieldset">
+                <legend class="sr-only">Criterios de ordenación</legend>
+                @if (ordering().length === 0) {
+                  <p class="empty-rules-hint">Orden predeterminado de la fuente. Puedes configurar hasta 3 criterios de orden.</p>
+                }
+                @for (order of ordering(); track $index; let index = $index) {
+                  <div class="rule-row order-row">
+                    <label class="rule-field">Campo de orden {{ index + 1 }}
+                      <select #orderField [value]="order.field" (change)="editOrder(index, 'field', orderField.value)">
+                        @for (key of selected.sortable; track key) {
+                          <option [value]="key" [disabled]="orderTaken(key, index)">{{ column(key)?.label }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label class="rule-operator">Dirección {{ index + 1 }}
+                      <select #orderDirection [value]="order.direction" (change)="editOrder(index, 'direction', orderDirection.value)">
+                        <option value="asc">Ascendente</option>
+                        <option value="desc">Descendente</option>
+                      </select>
+                    </label>
+                    <div class="rule-action">
+                      <button
+                        type="button"
+                        class="button danger compact-btn"
+                        (click)="removeOrder(index)"
+                        [attr.aria-label]="'Quitar orden ' + (index + 1)"
+                      >
+                        <taji-icon name="trash-2" [size]="14" />
+                        <span>Quitar</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+                <div class="rules-footer">
+                  <button
+                    type="button"
+                    class="button secondary compact-btn"
+                    (click)="addOrder()"
+                    [disabled]="ordering().length >= 3 || ordering().length >= selected.sortable.length"
+                  >
+                    <taji-icon name="plus" [size]="14" />
+                    <span>Añadir orden</span>
+                  </button>
+                  <small class="rules-limit-hint">{{ ordering().length }} de 3 criterios</small>
+                </div>
+              </fieldset>
+            </div>
+          </details>
+        }
+
+        @if (busy() === 'preview') {
+          <div class="notice loading" role="status">
+            <taji-icon name="loader" [size]="15" />
+            <span>Consultando registros…</span>
+          </div>
+        }
+      </form>
+
+      <!-- Área de Resultados y Previsualización -->
+      @if (result(); as preview) {
+        <section class="preview-card" aria-labelledby="cu30-preview-title">
+          <header class="preview-header">
+            <div class="preview-title-group">
+              <h3 id="cu30-preview-title">{{ preview.title }}</h3>
+              <div class="preview-badges">
+                <span class="count-pill">
+                  <strong>{{ preview.pagination.total }}</strong> registros
+                </span>
+                <span class="period-pill">
+                  {{ preview.period.date_from }} al {{ preview.period.date_to }}
+                </span>
+              </div>
+            </div>
+
+            <div class="export-actions" aria-label="Exportar reporte">
+              <span class="export-label">Descargar:</span>
+              <div class="export-buttons">
+                @for (format of formats(); track format) {
+                  <button
+                    type="button"
+                    class="button export-btn"
+                    (click)="download(format)"
+                    [disabled]="busy() !== null || !preview.can_export[format]"
+                    [title]="!preview.can_export[format] ? 'Excede el límite de ' + catalog()?.export_limits?.[format] + ' filas' : 'Descargar archivo ' + formatLabel(format)"
+                  >
+                    <taji-icon name="download" [size]="13" />
+                    <span>Exportar {{ formatLabel(format) }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          </header>
+
+          @if (busy() === 'export') {
+            <div class="notice loading" role="status">
+              <taji-icon name="loader" [size]="14" />
+              <span>Preparando descarga…</span>
+            </div>
+          }
+          @if (downloaded()) {
+            <div class="notice success" role="status">
+              <taji-icon name="check-circle" [size]="14" />
+              <span>Descarga iniciada.</span>
+            </div>
+          }
+
+          @for (format of formats(); track format) {
+            @if (!preview.can_export[format]) {
+              <p class="export-warning">
+                <taji-icon name="alert-triangle" [size]="13" />
+                <span>{{ formatLabel(format) }} admite hasta {{ catalog()?.export_limits?.[format] }} filas. Reduce el período o aplica filtros.</span>
+              </p>
+            }
+          }
+
+          @if (!preview.rows.length) {
+            <div class="empty-preview" role="status">
+              <span class="empty-icon"><taji-icon name="inbox" [size]="28" /></span>
+              <p class="empty-preview-text">Sin registros para los filtros aplicados.</p>
+            </div>
+          } @else {
+            <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de vista previa">
+              <table class="reports-table">
+                <thead>
+                  <tr>
+                    @for (column of preview.columns; track column.key) {
+                      <th scope="col">{{ column.label }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of preview.rows; track $index) {
+                    <tr>
+                      @for (cell of row; track $index) {
+                        <td>{{ cell === null || cell === '' ? '—' : cell }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @if (preview.pagination.pages > 1) {
+            <nav class="pagination-bar" aria-label="Paginación del reporte">
+              <button
+                type="button"
+                class="button secondary compact-btn"
+                (click)="goTo(preview.pagination.page - 1)"
+                [disabled]="busy() !== null || preview.pagination.page <= 1"
+              >
+                <taji-icon name="chevron-left" [size]="14" />
+                <span>Anterior</span>
+              </button>
+              <span class="pagination-info">Página {{ preview.pagination.page }} de {{ preview.pagination.pages }}</span>
+              <button
+                type="button"
+                class="button secondary compact-btn"
+                (click)="goTo(preview.pagination.page + 1)"
+                [disabled]="busy() !== null || preview.pagination.page >= preview.pagination.pages"
+              >
+                <span>Siguiente</span>
+                <taji-icon name="chevron-right" [size]="14" />
+              </button>
+            </nav>
+          }
+        </section>
+      }
+    }
+  </section>
+}

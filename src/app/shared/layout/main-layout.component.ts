@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
 import { IconComponent } from '../ui/icon.component';
 import { LogoComponent } from '../ui/logo.component';
+import { DASHBOARD_ROLES } from '../../paquetes/paquete5_servicios_comunidad/cu30_dashboard_reportes/operational-dashboard.api';
 
 interface SubNavItem {
   label: string;
@@ -443,7 +444,9 @@ export class MainLayoutComponent {
         {
           label: 'Dashboard y Reportes',
           icon: 'bar-chart',
-          isAvailable: false,
+          route: '/dashboard-reportes',
+          roles: DASHBOARD_ROLES,
+          isAvailable: true,
         },
         {
           label: 'Reportes personalizables',

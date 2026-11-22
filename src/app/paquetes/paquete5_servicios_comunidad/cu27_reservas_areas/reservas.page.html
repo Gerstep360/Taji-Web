@@ -1,0 +1,532 @@
+<div class="page-container">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Paquete 5 · Servicios y Comunidad</span>
+      <h1>Reservas de áreas comunes</h1>
+      <p>Revisa la agenda, aprueba solicitudes y gestiona el uso de las áreas del condominio.</p>
+    </div>
+    @if (canManage()) {
+      <button type="button" class="btn-primary" (click)="openCreate()" [disabled]="!bookableAreas().length">
+        <taji-icon name="plus" [size]="18" />
+        Nueva reserva
+      </button>
+    }
+  </header>
+
+  @if (errorMessage() && !createOpen() && !selected()) {
+    <div class="alert alert-danger" role="alert">
+      <taji-icon name="alert-triangle" [size]="18" />
+      <span>{{ errorMessage() }}</span>
+      <button type="button" class="alert-close" aria-label="Cerrar" (click)="errorMessage.set('')">×</button>
+    </div>
+  }
+  @if (successMessage()) {
+    <div class="alert alert-success" role="status">
+      <taji-icon name="check-circle" [size]="18" />
+      <span>{{ successMessage() }}</span>
+      <button type="button" class="alert-close" aria-label="Cerrar" (click)="successMessage.set('')">×</button>
+    </div>
+  }
+
+  @if (summary(); as s) {
+    <section class="summary-grid" aria-label="Resumen de reservas">
+      <button type="button" class="summary-card" (click)="setTab('pending')">
+        <span class="summary-icon amber"><taji-icon name="inbox" [size]="19" /></span>
+        <div><small>Por aprobar</small><strong>{{ s.pending }}</strong></div>
+      </button>
+      <article class="summary-card">
+        <span class="summary-icon blue"><taji-icon name="calendar" [size]="19" /></span>
+        <div><small>Hoy</small><strong>{{ s.today }}</strong></div>
+      </article>
+      <article class="summary-card">
+        <span class="summary-icon green"><taji-icon name="clock" [size]="19" /></span>
+        <div><small>En curso</small><strong>{{ s.in_progress }}</strong></div>
+      </article>
+      <article class="summary-card">
+        <span class="summary-icon slate"><taji-icon name="layout-grid" [size]="19" /></span>
+        <div><small>Próximos 7 días</small><strong>{{ s.next_7_days }}</strong></div>
+      </article>
+    </section>
+  }
+
+  <nav class="tabs-nav" aria-label="Secciones de reservas">
+    <button type="button" class="tab-btn" [class.active]="tab() === 'calendar'" (click)="setTab('calendar')">
+      <taji-icon name="calendar" [size]="16" /> Calendario
+    </button>
+    <button type="button" class="tab-btn" [class.active]="tab() === 'pending'" (click)="setTab('pending')">
+      <taji-icon name="inbox" [size]="16" /> Por aprobar
+      @if (summary()?.pending) { <span class="tab-badge">{{ summary()?.pending }}</span> }
+    </button>
+    <button type="button" class="tab-btn" [class.active]="tab() === 'history'" (click)="setTab('history')">
+      <taji-icon name="file-text" [size]="16" /> Historial
+    </button>
+  </nav>
+
+  @if (!areas().length && !loading()) {
+    <div class="empty-state">
+      <taji-icon name="layers" [size]="32" />
+      <h2>No hay áreas comunes registradas</h2>
+      <p>Cuando la administración registre áreas comunes podrás gestionar sus reservas aquí.</p>
+    </div>
+  }
+
+  <!-- ============================== CALENDARIO ============================== -->
+  @if (tab() === 'calendar' && areas().length) {
+    <section class="panel">
+      <div class="calendar-toolbar">
+        <div class="week-nav">
+          <button type="button" class="icon-btn" aria-label="Semana anterior" (click)="moveWeek(-1)">
+            <taji-icon name="chevron-down" [size]="18" class="rotate-left" />
+          </button>
+          <button type="button" class="btn-secondary small" (click)="goToday()" [disabled]="isCurrentWeek()">Hoy</button>
+          <button type="button" class="icon-btn" aria-label="Semana siguiente" (click)="moveWeek(1)">
+            <taji-icon name="chevron-down" [size]="18" class="rotate-right" />
+          </button>
+          <strong class="week-label">{{ weekLabel() }}</strong>
+        </div>
+        <div class="toolbar-filters">
+          <label class="field compact">
+            <span>Ir a fecha</span>
+            <input type="date" (change)="pickWeek($any($event.target).value)" />
+          </label>
+          <label class="field compact">
+            <span>Área</span>
+            <select [value]="areaFilter() ?? ''" (change)="setAreaFilter($any($event.target).value)">
+              <option value="">Todas las áreas</option>
+              @for (area of areas(); track area.id) {
+                <option [value]="area.id">{{ area.name }}</option>
+              }
+            </select>
+          </label>
+          <label class="check">
+            <input type="checkbox" [checked]="showClosed()" (change)="showClosed.set($any($event.target).checked)" />
+            Ver canceladas y rechazadas
+          </label>
+        </div>
+      </div>
+
+      <div class="legend" aria-label="Leyenda">
+        <span><i class="dot approved"></i> Aprobada</span>
+        <span><i class="dot pending"></i> Pendiente</span>
+        <span><i class="dot completed"></i> Finalizada</span>
+        <span><i class="dot closed"></i> Cancelada / rechazada</span>
+        <span><i class="dot block"></i> Bloqueo</span>
+        <span class="hint">Haz clic en un espacio libre para crear una reserva.</span>
+      </div>
+
+      @if (loading()) { <div class="loading-bar" aria-hidden="true"></div> }
+
+      <!-- Vista semanal (escritorio / tablet) -->
+      <div class="week-scroll">
+        <div class="week-grid">
+          <div class="grid-corner"></div>
+          @for (column of columns(); track column.key; let i = $index) {
+            <div class="day-head" [class.today]="column.isToday">
+              <small>{{ weekdayLabels[i].slice(0, 3) }}</small>
+              <strong>{{ column.date.getDate() }}</strong>
+            </div>
+          }
+
+          <div class="hour-rail" [style.height.px]="gridHeight()">
+            @for (hour of hours(); track hour) {
+              <span [style.top.px]="(hour - hours()[0]) * 60 * pxPerMinute">{{ hour < 10 ? '0' + hour : hour }}:00</span>
+            }
+          </div>
+          @for (column of columns(); track column.key) {
+            <div
+              class="day-col"
+              [class.today]="column.isToday"
+              [style.height.px]="gridHeight()"
+              [style.background-size]="'100% ' + 60 * pxPerMinute + 'px'"
+              (click)="canManage() && onSlotClick($event, column)"
+            >
+              @if (column.isToday && nowOffset() !== null) {
+                <div class="now-line" [style.top.px]="nowOffset()"></div>
+              }
+              @for (item of column.items; track item.key) {
+                @if (item.data.kind === 'reservation') {
+                  <button
+                    type="button"
+                    class="event"
+                    [class]="'event status-' + item.data.reservation!.status.toLowerCase()"
+                    [style.top.px]="eventTop(item)"
+                    [style.height.px]="eventHeight(item)"
+                    [style.left]="eventLeft(item)"
+                    [style.width]="eventWidth(item)"
+                    [attr.aria-label]="item.data.reservation!.common_area_name + ', ' + item.data.reservation!.resident_name + ', ' + timeRange(item.data.reservation!.start_at, item.data.reservation!.end_at)"
+                    (click)="openDetail(item.data.reservation!); $event.stopPropagation()"
+                  >
+                    <strong>{{ item.data.reservation!.common_area_name }}</strong>
+                    <span>{{ timeRange(item.data.reservation!.start_at, item.data.reservation!.end_at) }}</span>
+                    <span class="muted">{{ item.data.reservation!.resident_name }}</span>
+                  </button>
+                } @else {
+                  <div
+                    class="event block"
+                    [style.top.px]="eventTop(item)"
+                    [style.height.px]="eventHeight(item)"
+                    [style.left]="eventLeft(item)"
+                    [style.width]="eventWidth(item)"
+                    [title]="item.data.block!.common_area_name + ': ' + item.data.block!.reason"
+                  >
+                    <strong>{{ item.data.block!.common_area_name }}</strong>
+                    <span>Bloqueo · {{ item.data.block!.reason }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Agenda (móvil) -->
+      <div class="agenda">
+        @for (column of columns(); track column.key; let i = $index) {
+          <section class="agenda-day" [class.today]="column.isToday">
+            <header>
+              <strong>{{ weekdayLabels[i] }} {{ column.date.getDate() }}</strong>
+              @if (column.isToday) { <span class="pill">Hoy</span> }
+              @if (canManage()) {
+                <button type="button" class="btn-link small" (click)="openCreate({ date: column.key })">
+                  <taji-icon name="plus" [size]="14" /> Reservar
+                </button>
+              }
+            </header>
+            @for (entry of column.agenda; track $index) {
+              @if (entry.kind === 'reservation') {
+                <button type="button" class="agenda-item" [class]="'agenda-item status-' + entry.reservation!.status.toLowerCase()" (click)="openDetail(entry.reservation!)">
+                  <span class="agenda-time">{{ timeRange(entry.reservation!.start_at, entry.reservation!.end_at) }}</span>
+                  <span class="agenda-body">
+                    <strong>{{ entry.reservation!.common_area_name }}</strong>
+                    <small>{{ entry.reservation!.resident_name }} · {{ entry.reservation!.status_label }}</small>
+                  </span>
+                </button>
+              } @else {
+                <div class="agenda-item block">
+                  <span class="agenda-time">{{ timeRange(entry.block!.blocked_from, entry.block!.blocked_until) }}</span>
+                  <span class="agenda-body">
+                    <strong>{{ entry.block!.common_area_name }}</strong>
+                    <small>Bloqueo · {{ entry.block!.reason }}</small>
+                  </span>
+                </div>
+              }
+            } @empty {
+              <p class="agenda-empty">Sin reservas</p>
+            }
+          </section>
+        }
+      </div>
+    </section>
+
+    <section class="areas-strip" aria-label="Áreas comunes">
+      @for (area of areas(); track area.id) {
+        <article class="area-chip" [class.unavailable]="!area.bookable">
+          <div>
+            <strong>{{ area.name }}</strong>
+            <small>{{ scheduleText(area) }}</small>
+          </div>
+          <div class="area-tags">
+            @if (area.requires_approval) { <span class="pill amber">Requiere aprobación</span> }
+            @if (!area.bookable) { <span class="pill slate">{{ area.status_label }}</span> }
+            @if (area.capacity) { <span class="pill">{{ area.capacity }} personas</span> }
+          </div>
+        </article>
+      }
+    </section>
+  }
+
+  <!-- ============================== PENDIENTES ============================== -->
+  @if (tab() === 'pending') {
+    <section class="panel">
+      @if (loading()) { <div class="loading-bar" aria-hidden="true"></div> }
+      @for (item of pending(); track item.id) {
+        <article class="request-card">
+          <div class="request-main">
+            <div class="request-date">
+              <small>{{ fmt(item.start_at, 'weekday') }}</small>
+              <strong>{{ fmt(item.start_at, 'day') }}</strong>
+              <small>{{ fmt(item.start_at, 'month') }}</small>
+            </div>
+            <div class="request-info">
+              <strong>{{ item.common_area_name }}</strong>
+              <span>{{ timeRange(item.start_at, item.end_at) }} · {{ item.resident_name }}@if (item.resident_unit) { · {{ item.resident_unit }} }</span>
+              @if (item.purpose) { <small>“{{ item.purpose }}”</small> }
+              <small class="muted">Solicitada {{ fmt(item.created_at, 'dayMonthTime') }}</small>
+            </div>
+          </div>
+          <div class="request-actions">
+            <button type="button" class="btn-secondary small" (click)="openDetail(item)">Ver detalle</button>
+            <button type="button" class="btn-danger small" (click)="openDetail(item); startReasonAction('reject')" [disabled]="!item.permissions.reject">Rechazar</button>
+            <button type="button" class="btn-primary small" (click)="quickApprove(item)" [disabled]="saving() || !item.permissions.approve">
+              <taji-icon name="check" [size]="15" /> Aprobar
+            </button>
+          </div>
+        </article>
+      } @empty {
+        @if (!loading()) {
+          <div class="empty-state small">
+            <taji-icon name="check-circle" [size]="28" />
+            <h2>Todo al día</h2>
+            <p>No hay solicitudes de reserva pendientes de aprobación.</p>
+          </div>
+        }
+      }
+    </section>
+  }
+
+  <!-- ============================== HISTORIAL ============================== -->
+  @if (tab() === 'history') {
+    <section class="panel">
+      <form class="filters" (ngSubmit)="applyHistoryFilters()">
+        <label class="field">
+          <span>Buscar</span>
+          <input type="search" name="search" [(ngModel)]="historySearch" placeholder="Residente, área o motivo" />
+        </label>
+        <label class="field">
+          <span>Estado</span>
+          <select name="status" [(ngModel)]="historyStatus" (ngModelChange)="applyHistoryFilters()">
+            <option value="">Todos</option>
+            @for (status of historyStatuses; track status) {
+              <option [value]="status">{{ statusLabel(status) }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span>Área</span>
+          <select name="area" [(ngModel)]="historyArea" (ngModelChange)="applyHistoryFilters()">
+            <option value="">Todas</option>
+            @for (area of areas(); track area.id) { <option [value]="area.id">{{ area.name }}</option> }
+          </select>
+        </label>
+        <label class="field">
+          <span>Periodo</span>
+          <select name="when" [(ngModel)]="historyWhen" (ngModelChange)="applyHistoryFilters()">
+            <option value="">Todo</option>
+            <option value="upcoming">Próximas</option>
+            <option value="past">Pasadas</option>
+          </select>
+        </label>
+        <div class="filter-actions">
+          <button type="submit" class="btn-primary small"><taji-icon name="search" [size]="15" /> Buscar</button>
+          <button type="button" class="btn-secondary small" (click)="clearHistoryFilters()">Limpiar</button>
+        </div>
+      </form>
+
+      @if (loading()) { <div class="loading-bar" aria-hidden="true"></div> }
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Horario</th><th>Área</th><th>Residente</th><th>Estado</th><th><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of history(); track item.id) {
+              <tr>
+                <td data-label="Fecha">{{ fmt(item.start_at, 'shortDate') }}</td>
+                <td data-label="Horario">{{ timeRange(item.start_at, item.end_at) }}</td>
+                <td data-label="Área">{{ item.common_area_name }}</td>
+                <td data-label="Residente">{{ item.resident_name }}@if (item.resident_unit) { <small class="muted"> · {{ item.resident_unit }}</small> }</td>
+                <td data-label="Estado"><span class="status-pill" [class]="'status-pill status-' + item.status.toLowerCase()">{{ item.status_label }}</span></td>
+                <td class="cell-action"><button type="button" class="btn-link small" (click)="openDetail(item)">Ver</button></td>
+              </tr>
+            } @empty {
+              @if (!loading()) {
+                <tr><td colspan="6" class="empty-row">No hay reservas con estos filtros.</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (historyPages() > 1) {
+        <div class="pagination">
+          <span>{{ historyTotal() }} reservas · página {{ historyPage() }} de {{ historyPages() }}</span>
+          <div>
+            <button type="button" class="btn-secondary small" [disabled]="historyPage() <= 1" (click)="loadHistory(historyPage() - 1)">Anterior</button>
+            <button type="button" class="btn-secondary small" [disabled]="historyPage() >= historyPages()" (click)="loadHistory(historyPage() + 1)">Siguiente</button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+<!-- ============================== DETALLE ============================== -->
+@if (selected(); as r) {
+  <div class="modal-backdrop" role="presentation" (click)="closeDetail()">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detail-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <span class="status-pill" [class]="'status-pill status-' + r.status.toLowerCase()">{{ r.status_label }}</span>
+          <h2 id="detail-title">{{ r.common_area_name }}</h2>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Cerrar" (click)="closeDetail()"><taji-icon name="x" [size]="18" /></button>
+      </header>
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger" role="alert">
+          <taji-icon name="alert-triangle" [size]="18" /><span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <dl class="detail-list">
+        <div><dt>Fecha</dt><dd>{{ fmt(r.start_at, 'longDate') }}</dd></div>
+        <div><dt>Horario</dt><dd>{{ timeRange(r.start_at, r.end_at) }}</dd></div>
+        <div><dt>Residente</dt><dd>{{ r.resident_name }}@if (r.resident_unit) { · {{ r.resident_unit }} }</dd></div>
+        <div><dt>Motivo</dt><dd>{{ r.purpose || 'Sin detalle' }}</dd></div>
+        <div><dt>Registrada</dt><dd>{{ fmt(r.created_at, 'dateTime') }}@if (r.created_by_name) { · por {{ r.created_by_name }} }</dd></div>
+        @if (r.approved_at && r.status !== 'REJECTED') {
+          <div><dt>Aprobada</dt><dd>{{ fmt(r.approved_at, 'dateTime') }}@if (r.decided_by_name) { · {{ r.decided_by_name }} } @else { · automática }</dd></div>
+        }
+        @if (r.status === 'REJECTED') {
+          <div><dt>Rechazo</dt><dd>{{ r.rejection_reason }}@if (r.decided_by_name) { · {{ r.decided_by_name }} }</dd></div>
+        }
+        @if (r.cancelled_at) {
+          <div><dt>Cancelada</dt><dd>{{ fmt(r.cancelled_at, 'dateTime') }}@if (r.cancelled_by_name) { · {{ r.cancelled_by_name }} }@if (r.cancellation_reason) { — {{ r.cancellation_reason }} }</dd></div>
+        }
+        @if (r.completed_at) {
+          <div><dt>Finalizada</dt><dd>{{ fmt(r.completed_at, 'dateTime') }}</dd></div>
+        }
+      </dl>
+
+      @if (actionMode(); as mode) {
+        <label class="field">
+          <span>{{ mode === 'reject' ? 'Motivo del rechazo' : 'Motivo de la cancelación' }} (lo verá el residente)</span>
+          <textarea rows="3" maxlength="240" [(ngModel)]="reasonText" placeholder="Ej.: El área estará en mantenimiento ese día."></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="actionMode.set(null)">Volver</button>
+          <button type="button" class="btn-danger" [disabled]="saving() || reasonText.trim().length < 3" (click)="run(mode)">
+            {{ mode === 'reject' ? 'Confirmar rechazo' : 'Confirmar cancelación' }}
+          </button>
+        </div>
+      } @else {
+        <div class="modal-actions">
+          @if (r.permissions.cancel) {
+            <button type="button" class="btn-secondary danger-text" [disabled]="saving()" (click)="startReasonAction('cancel')">Cancelar reserva</button>
+          }
+          @if (r.permissions.reject) {
+            <button type="button" class="btn-danger" [disabled]="saving()" (click)="startReasonAction('reject')">Rechazar</button>
+          }
+          @if (r.permissions.complete) {
+            <button type="button" class="btn-primary" [disabled]="saving()" (click)="run('complete')">Marcar finalizada</button>
+          }
+          @if (r.permissions.approve) {
+            <button type="button" class="btn-primary" [disabled]="saving()" (click)="run('approve')"><taji-icon name="check" [size]="15" /> Aprobar</button>
+          }
+          @if (!r.permissions.cancel && !r.permissions.reject && !r.permissions.complete && !r.permissions.approve) {
+            <span class="muted">Esta reserva no tiene acciones disponibles.</span>
+          }
+        </div>
+      }
+    </section>
+  </div>
+}
+
+<!-- ============================== NUEVA RESERVA ============================== -->
+@if (createOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeCreate()">
+    <section class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="create-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="create-title">Nueva reserva</h2>
+        <button type="button" class="icon-btn" aria-label="Cerrar" (click)="closeCreate()"><taji-icon name="x" [size]="18" /></button>
+      </header>
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger" role="alert">
+          <taji-icon name="alert-triangle" [size]="18" /><span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form class="create-grid" (ngSubmit)="submitCreate()">
+        <div class="create-fields">
+          <label class="field">
+            <span>Área común</span>
+            <select name="area" [(ngModel)]="form.common_area" (ngModelChange)="loadAvailability()" required>
+              @for (area of bookableAreas(); track area.id) { <option [ngValue]="area.id">{{ area.name }}</option> }
+            </select>
+            @if (selectedArea(); as area) {
+              <small class="muted">{{ scheduleText(area) }}@if (area.requires_approval) { · requiere aprobación (al crearla la administración queda aprobada) }</small>
+            }
+          </label>
+
+          <div class="field resident-field">
+            <span>Residente</span>
+            <input type="search" name="resident" autocomplete="off" placeholder="Escribe al menos 2 letras del nombre o la unidad"
+              [ngModel]="residentQuery" (ngModelChange)="onResidentQuery($event)" />
+            @if (residentOptions().length && !form.resident) {
+              <ul class="suggestions" role="listbox">
+                @for (option of residentOptions(); track option.id) {
+                  <li><button type="button" (click)="chooseResident(option)">{{ option.full_name }} @if (option.unit) { <small>{{ option.unit }}</small> }</button></li>
+                }
+              </ul>
+            }
+            @if (form.resident) { <small class="ok"><taji-icon name="check" [size]="13" /> Residente seleccionado</small> }
+          </div>
+
+          <div class="row-3">
+            <label class="field">
+              <span>Fecha</span>
+              <input type="date" name="date" [(ngModel)]="form.date" (ngModelChange)="loadAvailability()" required />
+            </label>
+            <label class="field">
+              <span>Desde</span>
+              <input type="time" name="start" step="900" [(ngModel)]="form.start" required />
+            </label>
+            <label class="field">
+              <span>Hasta</span>
+              <input type="time" name="end" step="900" [(ngModel)]="form.end" required />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Motivo (opcional)</span>
+            <input type="text" name="purpose" maxlength="240" [(ngModel)]="form.purpose" placeholder="Ej.: Cumpleaños familiar" />
+          </label>
+        </div>
+
+        <aside class="availability">
+          <h3>Disponibilidad del día</h3>
+          @if (availabilityLoading()) {
+            <p class="muted">Consultando…</p>
+          } @else if (availability(); as a) {
+            @if (!a.bookable) {
+              <p class="availability-reason"><taji-icon name="ban" [size]="15" /> {{ a.reason }}</p>
+            }
+            @if (a.free.length) {
+              <p class="muted">Horarios libres (toca uno para usarlo):</p>
+              <div class="slot-list">
+                @for (range of a.free; track range.start) {
+                  <button type="button" class="slot free" (click)="useFreeRange(range)">{{ timeRange(range.start, range.end) }}</button>
+                }
+              </div>
+            }
+            @if (a.occupied.length) {
+              <p class="muted">Ocupado:</p>
+              <ul class="occupied-list">
+                @for (item of a.occupied; track $index) {
+                  <li [class.block]="item.kind === 'BLOCK'">
+                    <span>{{ timeRange(item.start, item.end) }}</span>
+                    <small>{{ item.label }}@if (item.kind === 'RESERVATION') { · {{ statusLabel(item.status) }} }</small>
+                  </li>
+                }
+              </ul>
+            }
+          } @else {
+            <p class="muted">Elige un área y una fecha.</p>
+          }
+        </aside>
+
+        <div class="modal-actions full">
+          @if (formProblem(); as problem) { <small class="muted form-hint">{{ problem }}</small> }
+          <button type="button" class="btn-secondary" (click)="closeCreate()">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving() || !!formProblem()">
+            {{ saving() ? 'Guardando…' : 'Crear reserva' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

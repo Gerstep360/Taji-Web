@@ -73,6 +73,12 @@ export const routes: Routes = [
         title: 'Órdenes de trabajo | Taji',
       },
       {
+        path: 'reservas-areas',
+        canActivate: [anyPermissionGuard(['manage_reservations'])],
+        loadComponent: () => import('./paquetes/paquete5_servicios_comunidad/cu27_reservas_areas/reservas.page').then(m => m.ReservasPage),
+        title: 'Reservas de áreas comunes | Taji',
+      },
+      {
         path: 'identificar-activo-qr',
         canActivate: [anyPermissionGuard(['manage_maintenance', 'manage_assets', 'view_general_status', 'maintain_assets'])],
         loadComponent: () => import('./paquetes/paquete4_activos_mantenimiento/cu24_identificar_activo_qr/asset-qr.page').then(m => m.AssetQRPage),
@@ -272,6 +278,20 @@ export const routes: Routes = [
             (m) => m.TurnosPage,
           ),
         title: 'Turnos de Seguridad | Taji',
+      },
+      {
+        path: 'mantenimiento-ordenes',
+        canActivate: [anyPermissionGuard([
+          'manage_maintenance',
+          'view_assigned_work_orders',
+          'update_work_order_status',
+          'attach_work_evidence',
+        ])],
+        loadComponent: () =>
+          import('./paquetes/paquete4_activos_mantenimiento/cu25_mantenimiento_ordenes/mantenimiento.page').then(
+            (m) => m.MantenimientoPage,
+          ),
+        title: 'Mantenimiento y órdenes de trabajo | Taji',
       },
       {
         path: 'novedades-turno',

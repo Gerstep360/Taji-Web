@@ -151,4 +151,3 @@ export const API_ENDPOINTS = {
   shiftLogs: { root: '/paquete2/novedades-turno/' },
   handovers: { root: '/paquete2/entregas-turno/', detail: (id: number) => `/paquete2/entregas-turno/${id}/` },
 } as const;
-
